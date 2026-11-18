@@ -15,9 +15,10 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensio
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Blob } from '@/components/auth/blob';
+import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
 import { price } from '@/lib/pricing';
-import { fromHourly, serviceBySlug, services } from '@/config/services';
+import { fromHourly, serviceBySlug } from '@/config/services';
 import { useBookingDraft } from '@/store/booking';
 import { useOnboardingArea, useOnboardingUserName } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
@@ -40,6 +41,7 @@ export default function HomeTab() {
   const userName = useOnboardingUserName();
   const user = useAuthUser();
   const draft = useBookingDraft();
+  const { services } = useServices(area?.id);
 
   const displayName = userName?.trim() || user?.name?.trim() || 'there';
   const initials =
@@ -106,7 +108,7 @@ export default function HomeTab() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Search cleaning services"
-          onPress={() => router.push('/services')}
+          onPress={() => router.push('/search')}
           style={styles.search}>
           <Search size={20} color={colors.textMuted} strokeWidth={2} />
           <Text style={styles.searchText} maxFontSizeMultiplier={1.3}>

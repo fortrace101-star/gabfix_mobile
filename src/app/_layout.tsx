@@ -73,6 +73,21 @@ export default function RootLayout() {
               animation: 'slide_from_right',
             }}
           />
+          <Stack.Screen
+            name="book/[slug]/add-ons"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="book/[slug]/schedule"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen name="search" />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

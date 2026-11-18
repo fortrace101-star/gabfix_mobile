@@ -130,10 +130,7 @@ export default function JobDetailsScreen() {
   const recurring = details.frequency !== 'once';
 
   const onNext = () => {
-    Alert.alert(
-      'Add-ons are next',
-      'Your job details are saved. The add-ons step (P9) is the next screen in the build.',
-    );
+    router.push({ pathname: '/book/[slug]/add-ons', params: { slug } });
   };
 
   return (

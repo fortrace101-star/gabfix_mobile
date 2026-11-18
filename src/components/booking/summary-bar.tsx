@@ -10,10 +10,11 @@ type Props = {
   total: number;
   actionLabel: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
 /** Sticky summary bar (Gabfix_App_Ui_2.md, 2.2): caption plus live total on the left, CTA right. */
-export function SummaryBar({ caption, total, actionLabel, onPress }: Props) {
+export function SummaryBar({ caption, total, actionLabel, onPress, disabled = false }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -26,7 +27,7 @@ export function SummaryBar({ caption, total, actionLabel, onPress }: Props) {
           {ugx(total)}
         </Text>
       </View>
-      <Button label={actionLabel} onPress={onPress} style={styles.action} />
+      <Button label={actionLabel} onPress={onPress} disabled={disabled} style={styles.action} />
     </View>
   );
 }

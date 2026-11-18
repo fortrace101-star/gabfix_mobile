@@ -1,18 +1,22 @@
 import { router } from 'expo-router';
-import { Building2, ChevronRight, Sparkles, Truck } from 'lucide-react-native';
+import { Building2, ChevronRight, Search, Sparkles, Truck } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
-import { fromHourly, services } from '@/config/services';
-import { base, colors, font, radius, shadow, space, text } from '@/theme';
+import { fromHourly } from '@/config/services';
+import { useOnboardingArea } from '@/store/onboarding';
+import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
 const icons = [Sparkles, Sparkles, Building2, Truck] as const;
 
-/** P6 shell. The category chip bar and grid land with the catalogue API. */
+/** P6 shell. Reads `GET /services` (bundled catalogue until an API base URL is set). */
 export default function ServicesTab() {
   const insets = useSafeAreaInsets();
+  const area = useOnboardingArea();
+  const { services, error, refresh } = useServices(area?.id);
   useStatusBarStyle('dark');
 
   return (
@@ -21,13 +25,40 @@ export default function ServicesTab() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + space[4] }]}>
         <View style={styles.header}>
-          <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-            Services
-          </Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+              Services
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Search services"
+              hitSlop={8}
+              onPress={() => router.push('/search')}
+              style={styles.searchButton}>
+              <Search size={20} color={colors.green700} strokeWidth={2} />
+            </Pressable>
+          </View>
           <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
             Pick a service to see the price before you book.
           </Text>
         </View>
+
+        {error ? (
+          <View style={styles.error}>
+            <Text style={styles.errorText} maxFontSizeMultiplier={1.3}>
+              {error}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading services"
+              hitSlop={8}
+              onPress={refresh}>
+              <Text style={styles.errorLink} maxFontSizeMultiplier={1.3}>
+                Retry
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.list}>
           {services.map((service, index) => {
@@ -69,15 +100,6 @@ export default function ServicesTab() {
           })}
         </View>
 
-        <View style={base.card}>
-          <Text style={styles.noteTitle} maxFontSizeMultiplier={1.3}>
-            Search and categories are next
-          </Text>
-          <Text style={styles.noteCopy} maxFontSizeMultiplier={1.3}>
-            The full P5 search and P6 category grid are tracked in Gabfix_UI_Progress.md. This shell
-            already links every service to the booking flow.
-          </Text>
-        </View>
       </ScrollView>
     </View>
   );
@@ -87,6 +109,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: space[4], paddingBottom: space[6], gap: space[5] },
   header: { gap: space[1] },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: { ...text.h1 },
   subtitle: { ...text.body, color: colors.textMuted },
   list: {
@@ -104,6 +135,17 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   rowPressed: { backgroundColor: colors.green50 },
+  error: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[3],
+    backgroundColor: colors.warningBg,
+    borderRadius: radius.input,
+    padding: space[3],
+  },
+  errorText: { ...text.caption, color: colors.text, flex: 1 },
+  errorLink: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green700, fontSize: 13 },
   iconTile: {
     width: 52,
     height: 52,
@@ -124,6 +166,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tagText: { fontFamily: font.bodySemi, fontSize: 11, lineHeight: 14, color: colors.green900 },
-  noteTitle: { ...text.h3, fontSize: 15 },
-  noteCopy: { ...text.caption, marginTop: space[1] },
 });
