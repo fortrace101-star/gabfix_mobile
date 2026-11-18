@@ -85,7 +85,7 @@ export default function SearchScreen() {
 
   const openService = (slug: string) => {
     remember(term);
-    router.push({ pathname: '/book/[slug]/details', params: { slug } });
+    router.push({ pathname: '/service/[slug]', params: { slug } });
   };
 
   const onClear = () => {

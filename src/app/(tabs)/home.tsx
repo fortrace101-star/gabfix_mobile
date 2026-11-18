@@ -180,7 +180,7 @@ export default function HomeTab() {
                 accessibilityLabel={`${service.name}. From ${ugx(fromHourly)} per hour`}
                 onPress={() =>
                   router.push({
-                    pathname: '/book/[slug]/details',
+                    pathname: '/service/[slug]',
                     params: { slug: service.slug },
                   })
                 }

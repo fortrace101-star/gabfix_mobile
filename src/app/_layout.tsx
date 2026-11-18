@@ -87,7 +87,15 @@ export default function RootLayout() {
               animation: 'slide_from_right',
             }}
           />
+          <Stack.Screen
+            name="book/[slug]/location"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+            }}
+          />
           <Stack.Screen name="search" />
+          <Stack.Screen name="service/[slug]" />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

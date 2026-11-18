@@ -36,6 +36,9 @@ export type BookingLocation = {
   access?: string;
   contactName: string;
   contactPhone: string;
+  /** Set when someone else will let the cleaner in (P11). */
+  alternateContactName?: string;
+  alternateContactPhone?: string;
 };
 
 export type BookingDraft = {

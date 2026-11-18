@@ -184,10 +184,7 @@ export default function ScheduleScreen() {
   };
 
   const onNext = () => {
-    Alert.alert(
-      'Location is next',
-      'Your time is saved. The location step (P11) is the next screen in the build.',
-    );
+    router.push({ pathname: '/book/[slug]/location', params: { slug } });
   };
 
   return (
