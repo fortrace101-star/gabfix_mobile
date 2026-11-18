@@ -24,6 +24,18 @@ export const pricing = {
   popularHours: 4,
   /** Minutes added by each extra on the add-ons page. */
   addOnMinutes: 30,
+  /** Dummy add-on catalogue (P9). Replace with the service catalogue. */
+  addOns: {
+    inside_fridge: { price: 5_000 },
+    inside_oven: { price: 8_000 },
+    laundry: { price: 10_000 },
+    balcony: { price: 6_000 },
+  },
+  /** Dummy promo codes so the draft and price preview can show a discount. */
+  promos: {
+    WELCOME20: { rate: 0.2 },
+    CLEAN10: { rate: 0.1 },
+  },
 } as const;
 
 export type Frequency = keyof typeof pricing.frequencyDiscounts;

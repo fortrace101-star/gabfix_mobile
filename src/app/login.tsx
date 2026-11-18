@@ -1,34 +1,24 @@
-import { Apple } from 'lucide-react-native';
+import { Mail } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import {
-  Alert,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LogoBadge } from '@/components/brand/logo-badge';
-import { Button } from '@/components/ui/button';
+import { AuthScreen } from '@/components/auth/auth-screen';
+import { GlassInput } from '@/components/auth/glass-input';
+import { OrDivider } from '@/components/auth/or-divider';
+import { PillButton } from '@/components/auth/pill-button';
+import { SocialButton } from '@/components/auth/social-button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { TopBar } from '@/components/ui/top-bar';
-import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
-import { colors, font, radius, space, text } from '@/theme';
+import { login, requestOtp } from '@/lib/api/auth';
+import { ApiError } from '@/lib/api/client';
+import { startSession } from '@/store/session';
+import { auth, authSize, font } from '@/theme';
 import { isPhoneOrEmail, isStrongEnoughPassword, normalisePhone } from '@/utils/validation';
 
 type Errors = { identifier?: string; password?: string };
 
 export default function LoginScreen() {
-  const insets = useSafeAreaInsets();
-  useStatusBarStyle('light');
   const reducedMotion = useReducedMotion();
   const [shake] = useState(() => new Animated.Value(0));
   const [identifier, setIdentifier] = useState('');
@@ -36,6 +26,7 @@ export default function LoginScreen() {
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
+  const submitted = useRef(false);
 
   const phoneLike = identifier.trim().length > 0 && /^\+?[\d\s]+$/.test(identifier.trim());
 
@@ -62,20 +53,30 @@ export default function LoginScreen() {
     return Object.keys(next).length === 0;
   };
 
-  const logIn = () => {
+  const logIn = async () => {
+    if (loading || submitted.current) return;
     if (!validate()) {
       shakeCard();
       return;
     }
+    submitted.current = true;
     setLoading(true);
-    // Phase 2 UI: the auth API is not connected yet, so a validated form opens the app shell.
-    setTimeout(() => {
+    try {
+      const session = await login({ identifier: identifier.trim(), password });
+      await startSession(session);
+      router.replace('/welcome-back');
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : 'Could not sign in. Check your details and try again.';
+      setErrors((current) => ({ ...current, password: message }));
+      shakeCard();
+    } finally {
       setLoading(false);
-      router.replace('/home');
-    }, 700);
+      submitted.current = false;
+    }
   };
 
-  const loginWithCode = () => {
+  const loginWithCode = async () => {
     if (!isPhoneOrEmail(identifier) || !/^\d+$/.test(identifier.replace(/\D/g, ''))) {
       setErrors((current) => ({
         ...current,
@@ -84,192 +85,173 @@ export default function LoginScreen() {
       shakeCard();
       return;
     }
-    router.push({ pathname: '/otp', params: { phone: normalisePhone(identifier) } });
+    const phone = normalisePhone(identifier);
+    try {
+      await requestOtp({ phone });
+      router.push({ pathname: '/otp', params: { phone } });
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Could not send the code. Try again.';
+      setErrors((current) => ({ ...current, identifier: message }));
+      shakeCard();
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
-        showsVerticalScrollIndicator={false}>
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <TopBar onGreen />
-          <View style={styles.brand}>
-            <LogoBadge size={64} />
-            <Text style={styles.wordmark}>Gabfix</Text>
-          </View>
-        </View>
+    <AuthScreen
+      blobs={['topRight']}
+      loading={loading}
+      contentTop={84}
+      footer={
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Create account"
+          onPress={() => router.push('/sign-up')}
+          style={styles.footer}>
+          <Text style={styles.footerText} maxFontSizeMultiplier={1.3}>
+            Don&apos;t have an account? <Text style={styles.accentLink}>Sign up</Text>
+          </Text>
+        </Pressable>
+      }>
+      <Text style={styles.hey} maxFontSizeMultiplier={1.3}>
+        Hey,
+      </Text>
+      <Text style={styles.lets} maxFontSizeMultiplier={1.3}>
+        Let&apos;s Sign In!
+      </Text>
 
-        <Animated.View
-          style={[
-            styles.card,
-            { paddingBottom: insets.bottom + space[6], transform: [{ translateX: shake }] },
-          ]}>
-          <View style={styles.titleBlock}>
-            <Text accessibilityRole="header" style={styles.title}>
-              Welcome back
-            </Text>
-            <Text style={styles.subtitle}>Log in to manage your bookings</Text>
-          </View>
+      <Animated.View style={[styles.form, { transform: [{ translateX: shake }] }]}>
+        <GlassInput
+          value={identifier}
+          onChangeText={(value) => {
+            setIdentifier(value);
+            setErrors((current) => ({ ...current, identifier: undefined }));
+          }}
+          placeholder="Email or Phone"
+          icon={Mail}
+          prefix={phoneLike ? '+256' : undefined}
+          keyboardType={phoneLike ? 'phone-pad' : 'email-address'}
+          autoCapitalize="none"
+          autoComplete="username"
+          textContentType="username"
+          returnKeyType="next"
+          error={errors.identifier}
+        />
 
-          <Input
-            label="Phone number or email"
-            value={identifier}
-            onChangeText={(value) => {
-              setIdentifier(value);
-              setErrors((current) => ({ ...current, identifier: undefined }));
-            }}
-            prefix={phoneLike ? '+256' : undefined}
-            placeholder="7XX XXX XXX or you@email.com"
-            keyboardType={phoneLike ? 'phone-pad' : 'email-address'}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="username"
-            textContentType="username"
-            returnKeyType="next"
-            error={errors.identifier}
+        <GlassInput
+          value={password}
+          onChangeText={(value) => {
+            setPassword(value);
+            setErrors((current) => ({ ...current, password: undefined }));
+          }}
+          placeholder="Password"
+          secure
+          autoCapitalize="none"
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="done"
+          onSubmitEditing={logIn}
+          error={errors.password}
+        />
+
+        <View style={styles.optionsRow}>
+          <Checkbox
+            tone="onColor"
+            compact
+            checked={remember}
+            onChange={setRemember}
+            label="Remember me"
           />
-
-          <Input
-            label="Password"
-            value={password}
-            onChangeText={(value) => {
-              setPassword(value);
-              setErrors((current) => ({ ...current, password: undefined }));
-            }}
-            placeholder="Your password"
-            secure
-            autoCapitalize="none"
-            autoComplete="current-password"
-            textContentType="password"
-            returnKeyType="done"
-            onSubmitEditing={logIn}
-            error={errors.password}
-          />
-
-          <View style={styles.optionsRow}>
-            <Checkbox checked={remember} onChange={setRemember} label="Remember me" />
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel="Forgot password"
-              hitSlop={12}
-              onPress={() => router.push('/forgot-password')}>
-              <Text style={styles.link}>Forgot password?</Text>
-            </Pressable>
-          </View>
-
-          <Button label="Log in" onPress={logIn} loading={loading} />
-
-          <Button
-            label="Log in with a code via SMS"
-            variant="secondary"
-            onPress={loginWithCode}
-          />
-
-          <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerLabel}>or continue with</Text>
-            <View style={styles.divider} />
-          </View>
-
-          <View style={styles.socialRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Continue with Google"
-              onPress={() =>
-                Alert.alert('Google sign-in', 'Google sign-in is connected with the auth API in a later phase.')
-              }
-              style={({ pressed }) => [styles.socialButton, pressed && styles.pressed]}>
-              <Text style={styles.googleGlyph}>G</Text>
-              <Text style={styles.socialLabel}>Google</Text>
-            </Pressable>
-            {Platform.OS === 'ios' ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Continue with Apple"
-                onPress={() =>
-                  Alert.alert('Apple sign-in', 'Apple sign-in is connected with the auth API in a later phase.')
-                }
-                style={({ pressed }) => [styles.socialButton, pressed && styles.pressed]}>
-                <Apple size={20} color={colors.text} strokeWidth={2} />
-                <Text style={styles.socialLabel}>Apple</Text>
-              </Pressable>
-            ) : null}
-          </View>
-
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel="Create account"
-            onPress={() => router.push('/sign-up')}
-            style={styles.footer}>
-            <Text style={styles.footerText}>
-              New to Gabfix? <Text style={styles.link}>Create account</Text>
+            accessibilityLabel="Forgot password"
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 0 }}
+            onPress={() => router.push('/forgot-password')}>
+            <Text style={styles.forgot} maxFontSizeMultiplier={1.3}>
+              Forgot Password?
             </Text>
           </Pressable>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </View>
+      </Animated.View>
+
+      <PillButton label="Login" onPress={logIn} style={styles.primary} />
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Use SMS code"
+        hitSlop={8}
+        onPress={loginWithCode}
+        style={styles.smsLink}>
+        <Text style={styles.smsLabel} maxFontSizeMultiplier={1.3}>
+          Use SMS code
+        </Text>
+      </Pressable>
+
+      <OrDivider label="Or Login With" style={styles.divider} />
+
+      <SocialButton
+        label="Login With Google"
+        onPress={() =>
+          Alert.alert('Google sign-in', 'Google sign-in is connected with the auth API in a later phase.')
+        }
+        style={styles.social}
+      />
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.green500 },
-  scroll: { flexGrow: 1 },
-  header: {
-    minHeight: 230,
-    backgroundColor: colors.green500,
+  hey: {
+    fontFamily: font.poppinsBold,
+    fontSize: 28,
+    lineHeight: 34,
+    color: auth.text,
   },
-  brand: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space[2],
-    paddingBottom: space[6],
+  lets: {
+    marginTop: 4,
+    fontFamily: font.poppinsSemi,
+    fontSize: 22,
+    lineHeight: 28,
+    color: auth.textSoft,
   },
-  wordmark: { fontFamily: font.headingSemi, fontSize: 22, color: colors.surface },
-  card: {
-    flexGrow: 1,
-    marginTop: -40,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    padding: space[6],
-    gap: space[4],
-  },
-  titleBlock: { gap: space[1], marginBottom: space[1] },
-  title: { ...text.h1 },
-  subtitle: { ...text.body, color: colors.textMuted },
+  form: { marginTop: 28, gap: authSize.gap },
   optionsRow: {
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: space[3],
-    marginTop: -space[2],
+    paddingHorizontal: 4,
   },
-  link: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green500 },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
-  divider: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  dividerLabel: { ...text.caption },
-  socialRow: { flexDirection: 'row', gap: space[3] },
-  socialButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: radius.button,
-    borderWidth: 1.5,
-    borderColor: colors.green500,
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
+  forgot: {
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.text,
+  },
+  primary: { marginTop: 20 },
+  smsLink: {
+    height: 32,
+    marginTop: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space[2],
   },
-  pressed: { opacity: 0.88 },
-  googleGlyph: { fontFamily: font.heading, fontSize: 20, color: '#4285F4' },
-  socialLabel: { ...text.button, color: colors.text },
-  footer: { alignItems: 'center', justifyContent: 'center', minHeight: 48, marginTop: 'auto' },
-  footerText: { ...text.body, color: colors.textMuted },
+  smsLabel: {
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.text,
+    textDecorationLine: 'underline',
+  },
+  divider: { marginTop: 16 },
+  social: { marginTop: 16 },
+  footer: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  footerText: {
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.textSoft,
+  },
+  accentLink: {
+    fontFamily: font.poppinsSemi,
+    color: auth.accent,
+  },
 });

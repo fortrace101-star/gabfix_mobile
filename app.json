@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Gabfix",
+    "name": "Gabfix Home Solutions",
     "slug": "gabfix-client-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -35,15 +35,20 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#118E45"
+          "backgroundColor": "#118E45",
+          "image": "./assets/images/gabfix-logo.png",
+          "imageWidth": 168,
+          "resizeMode": "contain"
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Gabfix uses your location to place the cleaning pin and find nearby cleaners."
+          "locationWhenInUsePermission": "Gabfix Home Solutions uses your location to place the cleaning pin and find nearby cleaners."
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

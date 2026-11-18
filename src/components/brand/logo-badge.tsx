@@ -17,7 +17,7 @@ export function LogoBadge({ size = 40 }: Props) {
       source={logo}
       style={{ width: size, height: size }}
       resizeMode="contain"
-      accessibilityLabel="Gabfix logo"
+      accessibilityLabel="Gabfix Home Solutions logo"
       accessible
     />
   );

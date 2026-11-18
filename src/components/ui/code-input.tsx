@@ -6,7 +6,7 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 
-import { colors, font, radius, space } from '@/theme';
+import { auth, colors, font, radius, space } from '@/theme';
 
 type Props = {
   code: string;
@@ -15,10 +15,20 @@ type Props = {
   error?: boolean;
   onComplete?: (code: string) => void;
   autoFocus?: boolean;
+  variant?: 'default' | 'glass';
 };
 
 /** Six 56-high code boxes with auto-advance, backspace-back and paste support (Part 2, P2c). */
-export function CodeInput({ code, onChange, length = 6, error = false, onComplete, autoFocus }: Props) {
+export function CodeInput({
+  code,
+  onChange,
+  length = 6,
+  error = false,
+  onComplete,
+  autoFocus,
+  variant = 'default',
+}: Props) {
+  const glass = variant === 'glass';
   const inputs = useRef<(ComponentRef<typeof TextInput> | null)[]>([]);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const digits = code.split('').slice(0, length);
@@ -91,12 +101,14 @@ export function CodeInput({ code, onChange, length = 6, error = false, onComplet
             selectTextOnFocus
             accessibilityLabel={`Digit ${index + 1} of ${length}`}
             maxFontSizeMultiplier={1.3}
-            placeholderTextColor={colors.placeholder}
+            placeholderTextColor={glass ? auth.placeholder : colors.placeholder}
+            selectionColor={glass ? auth.accent : undefined}
             style={[
               styles.box,
-              focusedIndex === index && styles.boxFocused,
-              filled && styles.boxFilled,
-              error && styles.boxError,
+              glass && styles.boxGlass,
+              focusedIndex === index && (glass ? styles.boxGlassFocused : styles.boxFocused),
+              filled && (glass ? styles.boxGlassFilled : styles.boxFilled),
+              error && (glass ? styles.boxGlassError : styles.boxError),
             ]}
           />
         );
@@ -124,4 +136,13 @@ const styles = StyleSheet.create({
   boxFocused: { borderColor: colors.green500 },
   boxFilled: { backgroundColor: colors.green50, borderColor: colors.green100 },
   boxError: { borderColor: colors.error },
+  boxGlass: {
+    backgroundColor: auth.glass,
+    borderColor: auth.glassBorder,
+    fontFamily: font.poppinsSemi,
+    color: auth.text,
+  },
+  boxGlassFocused: { borderColor: auth.text, backgroundColor: auth.glassStrong },
+  boxGlassFilled: { backgroundColor: auth.glassStrong, borderColor: auth.glassBorder },
+  boxGlassError: { borderColor: auth.error },
 });

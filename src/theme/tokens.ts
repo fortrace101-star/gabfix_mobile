@@ -114,6 +114,42 @@ export const font = {
   body: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   bodySemi: 'Inter_600SemiBold',
+  poppins: 'Poppins_400Regular',
+  poppinsMedium: 'Poppins_500Medium',
+  poppinsSemi: 'Poppins_600SemiBold',
+  poppinsBold: 'Poppins_700Bold',
+} as const;
+
+/**
+ * Auth/onboarding surface palette (Page_refactor, 2.2, Palette A).
+ * Colours are role-mapped from the mockups to the Gabfix green/yellow brand.
+ */
+export const auth = {
+  bgTop: colors.green500,
+  bgBottom: colors.green700,
+  accent: colors.yellow500,
+  onAccentText: colors.green900,
+  glass: 'rgba(255,255,255,0.20)',
+  glassStrong: 'rgba(255,255,255,0.30)',
+  glassBorder: 'rgba(255,255,255,0.00)',
+  placeholder: 'rgba(255,255,255,0.80)',
+  fieldIcon: 'rgba(255,255,255,0.80)',
+  text: '#FFFFFF',
+  textSoft: 'rgba(255,255,255,0.88)',
+  btnBg: '#FFFFFF',
+  btnText: colors.green700,
+  line: 'rgba(255,255,255,0.35)',
+  dim: 0.45,
+  error: '#FFD6D6',
+} as const;
+
+export const authSize = {
+  pageX: 24,
+  field: 48,
+  gap: 12,
+  radius: 999,
+  brandTop: 12,
+  logoMark: 28,
 } as const;
 
 export const text: Record<

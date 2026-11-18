@@ -1,19 +1,29 @@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import { Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme';
+import { hydrateBookingDraft } from '@/store/booking';
+import { restoreSession } from '@/store/session';
+import { auth } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
     Inter_400Regular,
@@ -21,13 +31,21 @@ export default function RootLayout() {
     Inter_600SemiBold,
   });
 
+  const [sessionRestored, setSessionRestored] = useState(false);
+
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    // Restore both before the first screen renders: the splash route needs the session and the
+    // order flow needs any saved draft.
+    Promise.all([restoreSession(), hydrateBookingDraft()]).finally(() => setSessionRestored(true));
+  }, []);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && sessionRestored) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, sessionRestored]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if ((!fontsLoaded && !fontError) || !sessionRestored) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -36,16 +54,25 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
+            contentStyle: { backgroundColor: auth.bgTop },
             animation: 'slide_from_right',
           }}>
           <Stack.Screen name="index" options={{ animation: 'fade' }} />
+          <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
+          <Stack.Screen name="welcome-back" options={{ animation: 'fade' }} />
           <Stack.Screen name="login" />
           <Stack.Screen name="sign-up" />
           <Stack.Screen name="otp" />
           <Stack.Screen name="forgot-password" />
           <Stack.Screen name="area-select" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="home" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          <Stack.Screen
+            name="book/[slug]/details"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+            }}
+          />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

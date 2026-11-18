@@ -1,43 +1,34 @@
-import { Check } from 'lucide-react-native';
+import { Check, CircleAlert, Mail } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Animated,
-} from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/button';
+import { AuthScreen } from '@/components/auth/auth-screen';
+import { GlassInput } from '@/components/auth/glass-input';
+import { PillButton } from '@/components/auth/pill-button';
+import { RadioPill } from '@/components/auth/radio-pill';
 import { CodeInput } from '@/components/ui/code-input';
-import { Input } from '@/components/ui/input';
-import { TopBar } from '@/components/ui/top-bar';
-import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
-import { colors, duration, font, space, text } from '@/theme';
+import { requestOtp } from '@/lib/api/auth';
+import { ApiError } from '@/lib/api/client';
+import { auth, duration, font } from '@/theme';
 import { maskPhone } from '@/utils/format';
 import { successHaptic } from '@/utils/haptics';
 import {
-  isPhoneOrEmail,
   isStrongEnoughPassword,
+  isValidEmail,
   isValidUGPhone,
   normalisePhone,
 } from '@/utils/validation';
 
 type Step = 1 | 2 | 3 | 4;
+type Mode = 'phone' | 'email';
 
 export default function ForgotPasswordScreen() {
-  const insets = useSafeAreaInsets();
-  useStatusBarStyle('dark');
   const reducedMotion = useReducedMotion();
   const [fade] = useState(() => new Animated.Value(1));
-  const [checkScale] = useState(() => new Animated.Value(0.6));
   const [step, setStep] = useState<Step>(1);
+  const [mode, setMode] = useState<Mode>('phone');
   const [identifier, setIdentifier] = useState('');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
@@ -52,30 +43,40 @@ export default function ForgotPasswordScreen() {
     return () => clearInterval(timer);
   }, [step, seconds]);
 
-  useEffect(() => {
-    if (step !== 4 || reducedMotion) return;
-    checkScale.setValue(0.6);
-    Animated.spring(checkScale, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
-  }, [checkScale, reducedMotion, step]);
-
   const goTo = (next: Step) => {
     if (reducedMotion) {
       setStep(next);
+      setError(null);
       return;
     }
-    Animated.timing(fade, { toValue: 0, duration: duration.fast, useNativeDriver: true }).start(() => {
-      setStep(next);
-      setError(null);
-      Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-    });
+    Animated.timing(fade, { toValue: 0, duration: duration.fast, useNativeDriver: true }).start(
+      () => {
+        setStep(next);
+        setError(null);
+        Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      },
+    );
   };
 
-  const sendCode = () => {
-    if (!isPhoneOrEmail(identifier)) {
-      setError('Enter the phone number or email on your account');
+  const sendCode = async () => {
+    const valid = mode === 'phone' ? isValidUGPhone(identifier) : isValidEmail(identifier);
+    if (!valid) {
+      setError(
+        mode === 'phone'
+          ? 'Enter your 9-digit phone number'
+          : 'Enter the email on your account',
+      );
       return;
     }
     setError(null);
+    if (mode === 'phone') {
+      try {
+        await requestOtp({ phone: normalisePhone(identifier) });
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : 'Could not send the code. Try again.');
+        return;
+      }
+    }
     setSeconds(30);
     goTo(2);
   };
@@ -111,10 +112,6 @@ export default function ForgotPasswordScreen() {
     }, 700);
   };
 
-  const maskedIdentifier = isValidUGPhone(identifier)
-    ? maskPhone(normalisePhone(identifier))
-    : identifier;
-
   const back = () => {
     if (step === 2 || step === 3) {
       goTo((step - 1) as Step);
@@ -124,54 +121,109 @@ export default function ForgotPasswordScreen() {
     else router.replace('/login');
   };
 
+  const maskedIdentifier =
+    mode === 'phone' && isValidUGPhone(identifier)
+      ? maskPhone(normalisePhone(identifier))
+      : identifier;
+
+  const errorLine = error ? (
+    <View style={styles.errorRow} accessibilityLiveRegion="polite">
+      <CircleAlert size={12} color={auth.error} strokeWidth={2.2} />
+      <Text style={styles.error} maxFontSizeMultiplier={1.3}>
+        {error}
+      </Text>
+    </View>
+  ) : null;
+
   return (
-    <KeyboardAvoidingView
-      style={[styles.screen, { paddingTop: insets.top }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TopBar onBack={back} />
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space[6] }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <Animated.View style={[styles.step, { opacity: fade }]}>
-          {step === 1 ? (
-            <>
-              <View style={styles.titleBlock}>
-                <Text accessibilityRole="header" style={styles.title}>
-                  Reset your password
-                </Text>
-                <Text style={styles.subtitle}>
-                  Enter the phone number or email on your account and we&apos;ll send a reset code.
-                </Text>
-              </View>
-              <Input
-                label="Phone number or email"
-                value={identifier}
-                onChangeText={(value) => {
-                  setIdentifier(value);
+    <AuthScreen
+      blobs={step === 4 ? ['topRight', 'bottomLeft'] : ['topRight']}
+      showBack={step === 2 || step === 3}
+      onBack={back}
+      contentTop={40}
+      loading={loading}>
+      <Animated.View style={[styles.step, { opacity: fade }]}>
+        {step === 1 ? (
+          <>
+            <Text accessibilityRole="header" style={styles.title} maxFontSizeMultiplier={1.3}>
+              Reset Password
+            </Text>
+            <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
+              Enter your Email/Phone number below to receive your OTP number.
+            </Text>
+
+            <View style={styles.radios} accessibilityRole="radiogroup">
+              <RadioPill
+                label="Email"
+                selected={mode === 'email'}
+                onPress={() => {
+                  setMode('email');
+                  setIdentifier('');
                   setError(null);
                 }}
-                placeholder="7XX XXX XXX or you@email.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                error={error ?? undefined}
               />
-              <Button label="Send code" onPress={sendCode} />
-            </>
-          ) : null}
+              <RadioPill
+                label="Phone"
+                selected={mode === 'phone'}
+                onPress={() => {
+                  setMode('phone');
+                  setIdentifier('');
+                  setError(null);
+                }}
+              />
+            </View>
 
-          {step === 2 ? (
-            <>
-              <View style={styles.titleBlock}>
-                <Text accessibilityRole="header" style={styles.title}>
-                  Enter the code
-                </Text>
-                <Text style={styles.subtitle}>
-                  We sent a 6-digit code to <Text style={styles.strong}>{maskedIdentifier}</Text>.
-                </Text>
-              </View>
+            <View style={styles.field}>
+              {mode === 'phone' ? (
+                <GlassInput
+                  value={identifier}
+                  onChangeText={(value) => {
+                    setIdentifier(value);
+                    setError(null);
+                  }}
+                  placeholder="Phone Number"
+                  prefix="+256"
+                  keyboardType="number-pad"
+                  maxLength={9}
+                  accessibilityLabel="Phone Number"
+                  error={error ?? undefined}
+                />
+              ) : (
+                <GlassInput
+                  value={identifier}
+                  onChangeText={(value) => {
+                    setIdentifier(value);
+                    setError(null);
+                  }}
+                  placeholder="Email"
+                  icon={Mail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  accessibilityLabel="Email"
+                  error={error ?? undefined}
+                />
+              )}
+            </View>
+
+            <PillButton label="Continue" onPress={sendCode} style={styles.primary} />
+          </>
+        ) : null}
+
+        {step === 2 ? (
+          <>
+            <Text accessibilityRole="header" style={styles.title} maxFontSizeMultiplier={1.3}>
+              Enter the code
+            </Text>
+            <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
+              We sent a 6-digit code to{' '}
+              <Text style={styles.strong}>{maskedIdentifier}</Text>.
+            </Text>
+
+            <View style={styles.code}>
               <CodeInput
+                variant="glass"
                 code={code}
                 onChange={(value) => {
                   setCode(value);
@@ -181,117 +233,180 @@ export default function ForgotPasswordScreen() {
                 error={Boolean(error)}
                 autoFocus
               />
-              {error ? <Text style={styles.error}>{error}</Text> : null}
-              <View style={styles.resendRow}>
-                {seconds > 0 ? (
-                  <Text style={styles.muted}>
-                    Resend code in 0:{seconds.toString().padStart(2, '0')}
-                  </Text>
-                ) : (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Resend code"
-                    hitSlop={12}
-                    onPress={() => {
-                      setSeconds(30);
-                      setCode('');
-                      setError(null);
-                    }}>
-                    <Text style={styles.link}>Resend code</Text>
-                  </Pressable>
-                )}
-              </View>
-              <Button label="Verify code" onPress={verifyCode} disabled={code.length !== 6} />
-            </>
-          ) : null}
+            </View>
 
-          {step === 3 ? (
-            <>
-              <View style={styles.titleBlock}>
-                <Text accessibilityRole="header" style={styles.title}>
-                  Choose a new password
+            {errorLine}
+
+            <View style={styles.resendRow}>
+              {seconds > 0 ? (
+                <Text style={styles.muted} maxFontSizeMultiplier={1.3}>
+                  Resend code in 0:{seconds.toString().padStart(2, '0')}
                 </Text>
-                <Text style={styles.subtitle}>Use at least 8 characters you haven&apos;t used before.</Text>
-              </View>
-              <Input
-                label="New password"
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Resend code"
+                  hitSlop={12}
+                  onPress={() => {
+                    setSeconds(30);
+                    setCode('');
+                    setError(null);
+                  }}>
+                  <Text style={styles.link} maxFontSizeMultiplier={1.3}>
+                    Resend code
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+
+            <PillButton
+              label="Verify"
+              onPress={verifyCode}
+              disabled={code.length !== 6}
+              style={styles.primary}
+            />
+          </>
+        ) : null}
+
+        {step === 3 ? (
+          <>
+            <Text accessibilityRole="header" style={styles.title} maxFontSizeMultiplier={1.3}>
+              Choose a new password
+            </Text>
+            <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
+              Use at least 8 characters you haven&apos;t used before.
+            </Text>
+
+            <View style={styles.fields}>
+              <GlassInput
                 value={password}
                 onChangeText={(value) => {
                   setPassword(value);
                   setError(null);
                 }}
-                placeholder="At least 8 characters"
+                placeholder="New Password"
                 secure
                 autoCapitalize="none"
                 autoComplete="new-password"
                 textContentType="newPassword"
               />
-              <Input
-                label="Confirm new password"
+              <GlassInput
                 value={confirm}
                 onChangeText={(value) => {
                   setConfirm(value);
                   setError(null);
                 }}
-                placeholder="Repeat your new password"
+                placeholder="Confirm Password"
                 secure
                 autoCapitalize="none"
                 autoComplete="new-password"
                 textContentType="newPassword"
                 error={error ?? undefined}
               />
-              <Button label="Save new password" onPress={savePassword} loading={loading} />
-            </>
-          ) : null}
-
-          {step === 4 ? (
-            <View style={styles.success}>
-              <Animated.View style={[styles.checkCircle, { transform: [{ scale: checkScale }] }]}>
-                <Check size={56} color={colors.surface} strokeWidth={3} />
-              </Animated.View>
-              <Text accessibilityRole="header" style={styles.successTitle}>
-                Password updated
-              </Text>
-              <Text style={styles.subtitle}>
-                You can now log in with your new password. For your security, other devices have
-                been signed out.
-              </Text>
-              <Button
-                label="Back to log in"
-                onPress={() => router.replace('/login')}
-                style={styles.successButton}
-              />
             </View>
-          ) : null}
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+            <PillButton label="Save Password" onPress={savePassword} style={styles.primary} />
+          </>
+        ) : null}
+
+        {step === 4 ? (
+          <View style={styles.success}>
+            <View style={styles.disc}>
+              <Check size={56} color={auth.text} strokeWidth={3} />
+            </View>
+            <Text accessibilityRole="header" style={styles.successTitle} maxFontSizeMultiplier={1.3}>
+              Password Updated
+            </Text>
+            <Text style={styles.successBody} maxFontSizeMultiplier={1.3}>
+              You can now log in with your new password. For your security, other devices have been
+              signed out.
+            </Text>
+            <PillButton
+              label="Back To Login"
+              onPress={() => router.replace('/login')}
+              style={styles.successButton}
+            />
+          </View>
+        ) : null}
+      </Animated.View>
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  content: { flexGrow: 1, paddingHorizontal: space[6], paddingTop: space[4] },
-  step: { gap: space[5] },
-  titleBlock: { gap: space[2] },
-  title: { ...text.h1 },
-  subtitle: { ...text.bodyL, color: colors.textMuted },
-  strong: { color: colors.text, fontFamily: font.bodySemi },
-  error: { ...text.bodyM, color: colors.error, marginTop: -space[3] },
-  muted: { ...text.bodyM, color: colors.textMuted },
-  link: { ...text.bodyM, color: colors.green500, fontWeight: '600' },
-  resendRow: { minHeight: 32, justifyContent: 'center', marginTop: -space[3] },
-  success: { alignItems: 'center', gap: space[4], paddingTop: space[8] },
-  checkCircle: {
+  step: { gap: 0 },
+  title: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 24,
+    lineHeight: 30,
+    color: auth.text,
+  },
+  subtitle: {
+    marginTop: 8,
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.textSoft,
+  },
+  strong: { fontFamily: font.poppinsSemi, color: auth.text },
+  radios: { flexDirection: 'row', gap: 24, marginTop: 20 },
+  field: { marginTop: 16 },
+  fields: { marginTop: 24, gap: 12 },
+  primary: { marginTop: 20 },
+  code: { marginTop: 24 },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 18,
+    marginTop: 6,
+    paddingHorizontal: 6,
+  },
+  error: {
+    flexShrink: 1,
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.error,
+  },
+  resendRow: { minHeight: 32, justifyContent: 'center', marginTop: 8 },
+  muted: {
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.textSoft,
+  },
+  link: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.accent,
+  },
+  success: { alignItems: 'center', paddingTop: 60 },
+  disc: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.green500,
+    backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 6,
-    borderColor: colors.yellow500,
   },
-  successTitle: { ...text.h1, textAlign: 'center' },
-  successButton: { alignSelf: 'stretch', marginTop: space[4] },
+  successTitle: {
+    marginTop: 28,
+    fontFamily: font.poppinsSemi,
+    fontSize: 24,
+    lineHeight: 30,
+    color: auth.text,
+    textAlign: 'center',
+  },
+  successBody: {
+    marginTop: 10,
+    maxWidth: '85%',
+    fontFamily: font.poppins,
+    fontSize: 12,
+    lineHeight: 18,
+    color: auth.textSoft,
+    textAlign: 'center',
+  },
+  successButton: { alignSelf: 'stretch', marginTop: 32 },
 });
