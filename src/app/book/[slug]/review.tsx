@@ -33,8 +33,6 @@ import { addOns } from '@/config/add-ons';
 import {
   isValidDeposit,
   minimumDeposit,
-  savedCardById,
-  savedCards,
   savedCardLabel,
 } from '@/config/payments';
 import { hourlyRate, pricing } from '@/config/pricing';
@@ -46,6 +44,7 @@ import {
   type PaymentMethod,
   type PaymentPlan,
 } from '@/lib/pricing';
+import { totalAccountBalance } from '@/lib/wallet';
 import {
   getBookingDraft,
   patchDraft,
@@ -54,6 +53,8 @@ import {
   startDraft,
   useBookingDraft,
 } from '@/store/booking';
+import { useBookings } from '@/store/bookings';
+import { useSavedCards } from '@/store/payment-methods';
 import { useAuthUser } from '@/store/session';
 import { chip, colors, font, radius, selectable, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
@@ -261,6 +262,9 @@ export default function ReviewScreen() {
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const draft = useBookingDraft();
   const user = useAuthUser();
+  const bookings = useBookings();
+  const savedCards = useSavedCards();
+  const accountBalance = totalAccountBalance(bookings);
   const service = serviceBySlug(slug);
   const active = draft && draft.serviceSlug === slug ? draft : null;
 
@@ -299,10 +303,9 @@ export default function ReviewScreen() {
     ),
   );
   const [saveCard, setSaveCard] = useState(Boolean(savedPayment?.saveCard));
-  const [cardChoice, setCardChoice] = useState(() => {
-    const id = getBookingDraft()?.payment?.savedCardId;
-    return id && savedCardById(id) ? id : (savedCards[0]?.id ?? 'new');
-  });
+  const [cardChoice, setCardChoice] = useState(
+    () => getBookingDraft()?.payment?.savedCardId ?? savedCards[0]?.id ?? 'new',
+  );
   const [submitting, setSubmitting] = useState(false);
   const [promoInput, setPromoInput] = useState('');
   const [promoError, setPromoError] = useState<string>();
@@ -346,6 +349,13 @@ export default function ReviewScreen() {
 
   if (!active) return <View style={styles.screen} />;
 
+  // A card removed in P27b must stop being selectable here without an effect.
+  const effectiveCardChoice =
+    cardChoice === 'new' || savedCards.some((card) => card.id === cardChoice)
+      ? cardChoice
+      : (savedCards[0]?.id ?? 'new');
+  const selectedCard = savedCards.find((card) => card.id === effectiveCardChoice);
+
   const quote = price(active);
   const total = quote.total;
   const minDeposit = minimumDeposit(total);
@@ -383,6 +393,7 @@ export default function ReviewScreen() {
     hasSchedule &&
     hasLocation &&
     consent &&
+    accountBalance <= 0 &&
     (plan !== 'deposit' || depositValid) &&
     (!payNowNeedsPhone || phoneValid) &&
     (!afterNeedsPhone || phoneValid);
@@ -405,8 +416,6 @@ export default function ReviewScreen() {
     active.details.cleaners === 1 ? '' : 's'
   } · ${active.details.hours} h · ${frequencyLabel(active.details.frequency)}`;
   const methodLabel = methodInfo[balanceMethod].label;
-  const selectedCard = savedCardById(cardChoice);
-
   const infoText =
     plan === 'full_now'
       ? `You'll pay ${ugx(total)} now. Nothing is due after the service.`
@@ -545,6 +554,23 @@ export default function ReviewScreen() {
             <Text style={styles.warningText} maxFontSizeMultiplier={1.3}>
               Add a time and an address before confirming this booking.
             </Text>
+          </View>
+        ) : null}
+        {accountBalance > 0 ? (
+          <View style={styles.accountBlock}>
+            <Text style={styles.accountBlockTitle} maxFontSizeMultiplier={1.3}>
+              Clear your account balance to book
+            </Text>
+            <Text style={styles.accountBlockBody} maxFontSizeMultiplier={1.3}>
+              You owe {ugx(accountBalance)} in cash late fees. Pay it in Payments and wallet before
+              placing a new booking.
+            </Text>
+            <Button
+              label="Open Payments and wallet"
+              variant="secondary"
+              onPress={() => router.push('/profile/payments' as never)}
+              style={styles.accountBlockButton}
+            />
           </View>
         ) : null}
 
@@ -799,7 +825,7 @@ export default function ReviewScreen() {
                 </Text>
                 <View style={styles.cardList}>
                   {savedCards.map((card) => {
-                    const selected = cardChoice === card.id;
+                    const selected = effectiveCardChoice === card.id;
                     return (
                       <Pressable
                         key={card.id}
@@ -827,19 +853,19 @@ export default function ReviewScreen() {
                   <Pressable
                     accessibilityRole="radio"
                     accessibilityLabel="Use a new card"
-                    accessibilityState={{ selected: cardChoice === 'new' }}
-                    aria-checked={cardChoice === 'new'}
+                    accessibilityState={{ selected: effectiveCardChoice === 'new' }}
+                    aria-checked={effectiveCardChoice === 'new'}
                     onPress={() => setCardChoice('new')}
-                    style={[styles.cardRow, cardChoice === 'new' && styles.cardRowOn]}>
+                    style={[styles.cardRow, effectiveCardChoice === 'new' && styles.cardRowOn]}>
                     <Text style={styles.cardNew} maxFontSizeMultiplier={1.3}>
                       + Use a new card
                     </Text>
-                    {cardChoice === 'new' ? (
+                    {effectiveCardChoice === 'new' ? (
                       <Check size={18} color={colors.green700} strokeWidth={2.5} />
                     ) : null}
                   </Pressable>
                 </View>
-                {cardChoice === 'new' ? (
+                {effectiveCardChoice === 'new' ? (
                   <>
                     <Text style={styles.detailText} maxFontSizeMultiplier={1.3}>
                       You&apos;ll enter the card on the secure hosted page at payment.
@@ -1146,6 +1172,15 @@ const styles = StyleSheet.create({
     padding: space[3],
   },
   warningText: { ...text.caption, color: colors.text },
+  accountBlock: {
+    borderRadius: radius.input,
+    backgroundColor: colors.errorBg,
+    padding: space[3],
+    gap: space[2],
+  },
+  accountBlockTitle: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.error },
+  accountBlockBody: { ...text.caption, color: colors.text },
+  accountBlockButton: { alignSelf: 'flex-start', marginTop: space[1] },
   consent: { gap: space[2] },
   legalRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   legalLink: {

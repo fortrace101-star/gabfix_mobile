@@ -19,6 +19,7 @@ import { SessionExpiredModal } from '@/components/ui/session-expired-modal';
 import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
+import { hydratePaymentMethods } from '@/store/payment-methods';
 import { hydratePlans } from '@/store/plans';
 import { hydrateQuotes } from '@/store/quotes';
 import { restoreSession } from '@/store/session';
@@ -49,6 +50,7 @@ export default function RootLayout() {
       hydratePlans(),
       hydrateAddresses(),
       hydrateQuotes(),
+      hydratePaymentMethods(),
     ]).finally(() => setSessionRestored(true));
   }, []);
 
@@ -143,6 +145,7 @@ export default function RootLayout() {
           <Stack.Screen name="search" />
           <Stack.Screen name="service/[slug]/reviews" />
           <Stack.Screen name="service/[slug]" />
+          <Stack.Screen name="profile/payments" />
         </Stack>
         <OfflineBanner />
         <SessionExpiredModal />

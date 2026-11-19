@@ -12,6 +12,7 @@ import {
   Phone,
   ShieldCheck,
   Tag,
+  Wallet,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -148,6 +149,25 @@ export default function ProfileTab() {
           <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
         </Pressable>
 
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Payments and wallet"
+          onPress={() => router.push('/profile/payments' as Href)}
+          style={[base.card, styles.row]}>
+          <View style={styles.iconTile}>
+            <Wallet size={20} color={colors.green500} strokeWidth={2} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
+              Payments and wallet
+            </Text>
+            <Text style={styles.rowValue} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+              Methods, balances and receipts
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
+        </Pressable>
+
         <View style={styles.legalCard}>
           <LegalRow
             icon={<CircleHelp size={20} color={colors.green500} strokeWidth={2} />}
@@ -197,7 +217,7 @@ export default function ProfileTab() {
         />
 
         <Text style={styles.footnote} maxFontSizeMultiplier={1.3}>
-          Payment methods and notification settings arrive in later phases.
+          Notification settings arrive in a later phase.
         </Text>
       </ScrollView>
     </View>

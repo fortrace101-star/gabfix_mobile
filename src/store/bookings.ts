@@ -49,6 +49,15 @@ export type SavedBooking = {
   refundAmount?: number;
   /** Late fee charged when cancelling within 24 hours (UGX). */
   lateFee?: number;
+  /** P27b: the balance was settled in-app (not cash at the door). */
+  balancePayment?: {
+    amount: number;
+    method: string;
+    atISO: string;
+  };
+  /** P27b: a cash late fee on the account was cleared with a digital method. */
+  lateFeeSettledAtISO?: string;
+  lateFeePaidMethod?: string;
 };
 
 type BookingsState = {
@@ -112,6 +121,34 @@ export function rescheduleBooking(
   schedule: { dateISO: string; startTime: string },
 ): void {
   updateBooking(id, { ...schedule, rescheduledAtISO: new Date().toISOString() });
+}
+
+/** P27b: pays the remaining balance of one booking from the wallet screen. */
+export function payBookingBalance(id: string, method: string): void {
+  const booking = state.bookings.find((item) => item.id === id);
+  if (!booking || booking.balance <= 0) return;
+  updateBooking(id, {
+    paid: booking.paid + booking.balance,
+    balance: 0,
+    balancePayment: {
+      amount: booking.balance,
+      method,
+      atISO: new Date().toISOString(),
+    },
+  });
+}
+
+/** P27b: clears late fees charged to the account (cancelled cash bookings). */
+export function settleLateFees(ids: string[], method: string): void {
+  if (ids.length === 0) return;
+  const atISO = new Date().toISOString();
+  setBookings(
+    state.bookings.map((item) =>
+      ids.includes(item.id)
+        ? { ...item, lateFeeSettledAtISO: atISO, lateFeePaidMethod: method }
+        : item,
+    ),
+  );
 }
 
 /** P16 cancel. Records the reason and the local refund/late-fee outcome. */
