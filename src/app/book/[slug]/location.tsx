@@ -6,6 +6,7 @@ import {
   Alert,
   BackHandler,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +21,7 @@ import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { PermissionCard } from '@/components/ui/permission-card';
 import { TopBar } from '@/components/ui/top-bar';
 import { allAreas } from '@/config/areas';
 import type { FixturePlace } from '@/config/location-fixtures';
@@ -95,6 +97,7 @@ export default function LocationScreen() {
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [locating, setLocating] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -238,12 +241,10 @@ export default function LocationScreen() {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
-          'Location permission needed',
-          'Allow location to fill your street automatically, or type it in below.',
-        );
+        setPermissionDenied(true);
         return;
       }
+      setPermissionDenied(false);
 
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -310,6 +311,18 @@ export default function LocationScreen() {
           onUseCurrentLocation={useCurrentLocation}
           locating={locating}
         />
+
+        {permissionDenied ? (
+          <PermissionCard
+            title="Location access is off"
+            body="Turn it on to fill your street automatically. You can also type your street, landmark and area below."
+            onOpenSettings={() => {
+              Linking.openSettings().catch(() =>
+                Alert.alert('Could not open settings', 'Open Settings and allow location for Gabfix.'),
+              );
+            }}
+          />
+        ) : null}
 
         <View style={styles.group}>
           <View style={styles.groupHeader}>

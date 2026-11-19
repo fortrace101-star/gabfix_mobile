@@ -1,5 +1,13 @@
 import { router } from 'expo-router';
-import { CalendarDays, ChevronRight, ClipboardList, MapPin, Repeat } from 'lucide-react-native';
+import {
+  CalendarDays,
+  CalendarX2,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardList,
+  MapPin,
+  Repeat,
+} from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   type GestureResponderEvent,
@@ -14,7 +22,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { QuoteRequestCard } from '@/components/booking/quote-request-card';
 import { SegmentedControl } from '@/components/booking/segmented-control';
 import { slotLabel } from '@/components/booking/slot-chips';
-import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
 import { type BookingStatus, type SavedBooking, useBookings, useBookingsHydrated } from '@/store/bookings';
@@ -147,51 +156,58 @@ function BookingCard({ booking }: { booking: SavedBooking }) {
 
 function RequestsEmpty() {
   return (
-    <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <ClipboardList size={28} color={colors.green500} strokeWidth={2} />
-      </View>
-      <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-        No quote requests yet
-      </Text>
-      <Text style={styles.emptyBody} maxFontSizeMultiplier={1.3}>
-        Tell us about office, school or specialised work and we&apos;ll send a fixed price before
-        you book.
-      </Text>
-      <Button
-        label="Request a quote"
-        onPress={() =>
-          router.push({ pathname: '/quote/[slug]', params: { slug: 'custom' } } as never)
-        }
-      />
-    </View>
+    <EmptyState
+      icon={ClipboardList}
+      title="No quote requests yet"
+      body="Tell us about office, school or specialised work and we'll send a fixed price before you book."
+      actionLabel="Request a quote"
+      onAction={() =>
+        router.push({ pathname: '/quote/[slug]', params: { slug: 'custom' } } as never)
+      }
+    />
   );
 }
 
-function EmptyState({ tab }: { tab: BookingStatus }) {
+function BookingsEmpty({ tab }: { tab: BookingStatus }) {
   if (tab === 'upcoming') {
     return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-          No upcoming bookings
-        </Text>
-        <Text style={styles.emptyBody} maxFontSizeMultiplier={1.3}>
-          When you book a service, it will appear here so you can track and manage it.
-        </Text>
-        <Button label="Browse services" onPress={() => router.push('/(tabs)/services')} />
-      </View>
+      <EmptyState
+        icon={CalendarDays}
+        title="No upcoming bookings"
+        body="When you book a service, it will appear here so you can track and manage it."
+        actionLabel="Browse services"
+        onAction={() => router.push('/(tabs)/services')}
+      />
     );
   }
+
   return (
-    <View style={styles.empty}>
-      <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-        {tab === 'completed' ? 'No completed bookings yet' : 'No cancelled bookings'}
-      </Text>
-      <Text style={styles.emptyBody} maxFontSizeMultiplier={1.3}>
-        {tab === 'completed'
+    <EmptyState
+      icon={tab === 'completed' ? CheckCircle2 : CalendarX2}
+      title={tab === 'completed' ? 'No completed bookings yet' : 'No cancelled bookings'}
+      body={
+        tab === 'completed'
           ? 'Bookings you finish will show up here.'
-          : 'Bookings you cancel will show up here.'}
-      </Text>
+          : 'Bookings you cancel will show up here.'
+      }
+    />
+  );
+}
+
+function BookingsSkeleton() {
+  return (
+    <View style={styles.skeletonList} accessibilityLabel="Loading bookings">
+      {Array.from({ length: 3 }, (_, index) => (
+        <View key={index} style={styles.skeletonCard}>
+          <View style={styles.skeletonTop}>
+            <Skeleton style={styles.skeletonTitle} />
+            <Skeleton style={styles.skeletonChip} />
+          </View>
+          <Skeleton style={styles.skeletonMeta} />
+          <Skeleton style={styles.skeletonMetaShort} />
+          <Skeleton style={styles.skeletonFooter} />
+        </View>
+      ))}
     </View>
   );
 }
@@ -243,7 +259,7 @@ export default function BookingsScreen() {
             requests.length === 0 && styles.listEmpty,
           ]}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={requestsHydrated ? <RequestsEmpty /> : undefined}
+          ListEmptyComponent={requestsHydrated ? <RequestsEmpty /> : <BookingsSkeleton />}
         />
       ) : (
         <FlatList
@@ -252,7 +268,7 @@ export default function BookingsScreen() {
           renderItem={({ item }) => <BookingCard booking={item} />}
           contentContainerStyle={[styles.listContent, filtered.length === 0 && styles.listEmpty]}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={hydrated ? <EmptyState tab={tab} /> : undefined}
+          ListEmptyComponent={hydrated ? <BookingsEmpty tab={tab} /> : <BookingsSkeleton />}
         />
       )}
     </SafeAreaView>
@@ -306,16 +322,12 @@ const styles = StyleSheet.create({
   rebookText: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   detailsText: { ...text.bodyM, color: colors.green700, fontFamily: font.bodySemi },
-  empty: { alignItems: 'center', paddingHorizontal: space[6], gap: space[2] },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.pill,
-    backgroundColor: colors.green50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: space[1],
-  },
-  emptyTitle: { ...text.h3, color: colors.text, textAlign: 'center' },
-  emptyBody: { ...text.bodyM, color: colors.textMuted, textAlign: 'center', marginBottom: space[2] },
+  skeletonList: { gap: space[3] },
+  skeletonCard: { backgroundColor: colors.surface, borderRadius: radius.card, padding: space[4], gap: space[3] },
+  skeletonTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  skeletonTitle: { width: '46%', height: 20, borderRadius: radius.input },
+  skeletonChip: { width: 72, height: 24, borderRadius: radius.pill },
+  skeletonMeta: { width: '76%', height: 16, borderRadius: radius.input },
+  skeletonMetaShort: { width: '58%', height: 16, borderRadius: radius.input },
+  skeletonFooter: { width: '100%', height: 48, borderRadius: radius.input, marginTop: space[1] },
 });

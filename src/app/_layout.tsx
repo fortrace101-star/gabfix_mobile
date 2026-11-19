@@ -14,6 +14,8 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { OfflineBanner } from '@/components/ui/offline-banner';
+import { SessionExpiredModal } from '@/components/ui/session-expired-modal';
 import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
@@ -142,6 +144,8 @@ export default function RootLayout() {
           <Stack.Screen name="service/[slug]/reviews" />
           <Stack.Screen name="service/[slug]" />
         </Stack>
+        <OfflineBanner />
+        <SessionExpiredModal />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

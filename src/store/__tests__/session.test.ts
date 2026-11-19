@@ -145,6 +145,18 @@ describe('session store', () => {
     await Promise.resolve();
 
     expect(session.getSessionState().status).toBe('unauthenticated');
+    expect(session.getSessionExpiredState()).toBe(true);
     expect(storage.saveSession).toHaveBeenLastCalledWith(null);
+  });
+
+  it('clears the expired-session flag after the login prompt is acknowledged', async () => {
+    const { session, bridge } = load();
+    await session.startSession(storedSession);
+    bridge.getAuthBridge()?.onUnauthorized();
+
+    await session.acknowledgeSessionExpired();
+
+    expect(session.getSessionExpiredState()).toBe(false);
+    expect(session.getSessionState().status).toBe('unauthenticated');
   });
 });

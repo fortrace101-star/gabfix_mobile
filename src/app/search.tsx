@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { fromHourly } from '@/config/services';
 import { useServiceSearch } from '@/hooks/use-service-search';
 import {
@@ -205,24 +206,17 @@ export default function SearchScreen() {
             {loading ? (
               <View style={styles.skeletons}>
                 {Array.from({ length: 3 }, (_, index) => (
-                  <View key={index} style={styles.skeletonRow} />
+                  <Skeleton key={index} style={styles.skeletonRow} />
                 ))}
               </View>
             ) : services.length === 0 ? (
-              <View style={styles.empty}>
-                <View style={styles.emptyIcon}>
-                  <Search size={26} color={colors.green500} strokeWidth={2} />
-                </View>
-                <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-                  We couldn&apos;t find that
-                </Text>
-                <Text style={styles.emptyCaption} maxFontSizeMultiplier={1.3}>
-                  Try a different word, or tell us what you need and we&apos;ll quote it.
-                </Text>
-                <Button
-                  label="Request a custom service"
-                  variant="secondary"
-                  onPress={() =>
+              <View style={styles.emptyCard}>
+                <EmptyState
+                  icon={Search}
+                  title="We couldn't find that"
+                  body="Try a different word, or tell us what you need and we'll quote it."
+                  actionLabel="Request a custom service"
+                  onAction={() =>
                     router.push({
                       pathname: '/quote/[slug]',
                       params: {
@@ -364,23 +358,11 @@ const styles = StyleSheet.create({
   price: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   skeletons: { gap: space[2] },
   skeletonRow: { height: 84, borderRadius: radius.card, backgroundColor: colors.disabledBg },
-  empty: {
-    alignItems: 'center',
-    gap: space[3],
-    padding: space[6],
+  emptyCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.card,
+    overflow: 'hidden',
   },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.pill,
-    backgroundColor: colors.green50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: { ...text.h3 },
-  emptyCaption: { ...text.caption, textAlign: 'center' },
   error: {
     backgroundColor: colors.errorBg,
     borderRadius: radius.input,

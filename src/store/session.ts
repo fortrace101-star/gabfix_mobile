@@ -13,7 +13,9 @@ type SessionState = {
 };
 
 let state: SessionState = { status: 'loading', session: null };
+let expired = false;
 const listeners = new Set<() => void>();
+const expiredListeners = new Set<() => void>();
 
 const getState = () => state;
 
@@ -25,6 +27,16 @@ const subscribe = (listener: () => void) => {
 const emit = (next: SessionState) => {
   state = next;
   listeners.forEach((listener) => listener());
+};
+
+const emitExpired = () => {
+  expiredListeners.forEach((listener) => listener());
+};
+
+const markSessionExpired = () => {
+  if (expired) return;
+  expired = true;
+  emitExpired();
 };
 
 const firstNameOf = (user: AuthUser) => user.name?.trim().split(/\s+/)[0] || null;
@@ -43,6 +55,10 @@ export async function restoreSession(): Promise<void> {
 
 /** Called after login or OTP verification. Persists the tokens and updates the greeting. */
 export async function startSession(session: AuthSession): Promise<void> {
+  if (expired) {
+    expired = false;
+    emitExpired();
+  }
   const firstName = firstNameOf(session.user);
   if (firstName) setUserName(firstName);
   emit({ status: 'authenticated', session });
@@ -75,6 +91,7 @@ async function refreshActiveSession(): Promise<boolean> {
         await saveSession(next);
         return true;
       } catch {
+        markSessionExpired();
         await endSession();
         return false;
       } finally {
@@ -90,6 +107,7 @@ setAuthBridge({
   getAccessToken: () => state.session?.accessToken ?? null,
   refreshSession: refreshActiveSession,
   onUnauthorized: () => {
+    markSessionExpired();
     void endSession();
   },
 });
@@ -103,6 +121,27 @@ export function useSessionStatus(): SessionStatus {
 
 export function useSession(): AuthSession | null {
   return useSyncExternalStore(subscribe, getState, getState).session;
+}
+
+const subscribeExpired = (listener: () => void) => {
+  expiredListeners.add(listener);
+  return () => expiredListeners.delete(listener);
+};
+
+const getExpired = () => expired;
+
+/** Imperative snapshot for the modal guard and tests. */
+export const getSessionExpiredState = (): boolean => expired;
+
+export function useSessionExpired(): boolean {
+  return useSyncExternalStore(subscribeExpired, getExpired, getExpired);
+}
+
+/** Dismisses the expired-session modal after the user returns to the login screen. */
+export async function acknowledgeSessionExpired(): Promise<void> {
+  expired = false;
+  emitExpired();
+  await endSession();
 }
 
 export function useAuthUser(): AuthUser | null {

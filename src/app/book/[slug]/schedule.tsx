@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, ChevronRight, Clock, Info, Repeat, Users, X } from 'lucide-react-native';
+import { CalendarX2, ChevronLeft, ChevronRight, Clock, Info, Repeat, Users, X } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
@@ -15,9 +15,13 @@ import { DateStrip, toISODate } from '@/components/booking/date-strip';
 import { SlotChips, slotLabel } from '@/components/booking/slot-chips';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { EmptyState } from '@/components/ui/empty-state';
+import { RetryHint } from '@/components/ui/retry-hint';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TopBar } from '@/components/ui/top-bar';
 import { serviceBySlug } from '@/config/services';
 import { useAvailability } from '@/hooks/use-availability';
+import { getAvailability } from '@/lib/api/availability';
 import { price, type BookingFrequency } from '@/lib/pricing';
 import {
   getBookingDraft,
@@ -105,6 +109,7 @@ export default function ScheduleScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(
     () => getBookingDraft()?.schedule?.startTime ?? null,
   );
+  const [findingNext, setFindingNext] = useState(false);
 
   const { slots, loading, error, refresh } = useAvailability(
     slug,
@@ -186,6 +191,31 @@ export default function ScheduleScreen() {
     const target = days[index + direction * 7];
     if (!target) return;
     onSelectDate(toISODate(target));
+  };
+
+  const seeNextAvailableDay = async () => {
+    if (findingNext) return;
+    setFindingNext(true);
+    try {
+      for (let offset = Math.max(index, 0) + 1; offset < days.length; offset += 1) {
+        const nextISO = toISODate(days[offset]);
+        const nextSlots = await getAvailability({
+          serviceSlug: slug,
+          areaId: area?.id,
+          dateISO: nextISO,
+          cleanerId: active?.preferredCleanerId,
+        });
+        if (nextSlots.some((slot) => slot.available)) {
+          onSelectDate(nextISO);
+          return;
+        }
+      }
+      Alert.alert('No times available', 'Please try another week or contact support.');
+    } catch {
+      Alert.alert('Could not check times', 'Please try again or contact support.');
+    } finally {
+      setFindingNext(false);
+    }
   };
 
   const onNext = () => {
@@ -304,18 +334,28 @@ export default function ScheduleScreen() {
           ) : null}
 
           {loading ? (
-            <View style={styles.skeletonGrid} accessibilityLabel="Checking availability">
-              {Array.from({ length: 6 }, (_, index) => (
-                <View key={index} style={styles.skeletonChip} />
-              ))}
-            </View>
+            <>
+              <View style={styles.skeletonGrid} accessibilityLabel="Checking availability">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <Skeleton key={index} style={styles.skeletonChip} />
+                ))}
+              </View>
+              <RetryHint />
+            </>
           ) : visibleSlots.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText} maxFontSizeMultiplier={1.3}>
-                {active.preferredCleanerId
-                  ? "Your preferred cleaner has no times on this day. Try another date and we'll suggest similar cleaners."
-                  : 'No times left for this day. Try another date.'}
-              </Text>
+              <EmptyState
+                icon={CalendarX2}
+                title="No times left on this day"
+                body={
+                  active.preferredCleanerId
+                    ? "Your preferred cleaner has no times on this day. We can find the next day with availability."
+                    : 'Every start time is taken or too close to book. We can find the next day with availability.'
+                }
+                actionLabel="See next available day"
+                onAction={seeNextAvailableDay}
+                actionLoading={findingNext}
+              />
             </View>
           ) : (
             <SlotChips slots={visibleSlots} value={selectedTime} onSelect={onSelectTime} />
@@ -402,14 +442,12 @@ const styles = StyleSheet.create({
     width: '31%',
     height: 44,
     borderRadius: 12,
-    backgroundColor: colors.disabledBg,
   },
   empty: {
-    borderRadius: radius.input,
+    borderRadius: radius.card,
     backgroundColor: colors.surface,
-    padding: space[3],
+    overflow: 'hidden',
   },
-  emptyText: { ...text.caption },
   error: {
     flexDirection: 'row',
     alignItems: 'center',

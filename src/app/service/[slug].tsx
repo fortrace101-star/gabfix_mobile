@@ -23,6 +23,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { ReviewCard } from '@/components/reviews/review-card';
 import { Stars } from '@/components/reviews/stars';
+import { ErrorState } from '@/components/ui/error-state';
+import { RetryHint } from '@/components/ui/retry-hint';
+import { Skeleton } from '@/components/ui/skeleton';
 import { addOns } from '@/config/add-ons';
 import { reviewsForService } from '@/config/reviews';
 import { relatedServices } from '@/config/service-content';
@@ -48,6 +51,35 @@ const steps = [
   { icon: Sparkles, title: 'Your clean happens', caption: 'Pay after the service, or in full at checkout.' },
 ];
 
+function ServiceLandingSkeleton({ onBack, top }: { onBack: () => void; top: number }) {
+  return (
+    <View style={styles.screen}>
+      <View style={[styles.skeletonHero, { paddingTop: top + space[2] }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={8}
+          onPress={onBack}
+          style={styles.skeletonBack}>
+          <ArrowLeft size={24} color={colors.text} strokeWidth={2} />
+        </Pressable>
+        <Skeleton style={[styles.skeletonLine, styles.skeletonEyebrow]} />
+        <Skeleton style={[styles.skeletonLine, styles.skeletonTitle]} />
+        <Skeleton style={[styles.skeletonLine, styles.skeletonCaption]} />
+      </View>
+      <View style={styles.skeletonBody}>
+        <Skeleton style={styles.skeletonCard} />
+        <Skeleton style={styles.skeletonCard} />
+        <Skeleton style={[styles.skeletonLine, styles.skeletonHeading]} />
+        {Array.from({ length: 3 }, (_, index) => (
+          <Skeleton key={index} style={[styles.skeletonLine, styles.skeletonRow]} />
+        ))}
+        <RetryHint />
+      </View>
+    </View>
+  );
+}
+
 function TrustItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <View style={styles.trustItem}>
@@ -68,7 +100,7 @@ export default function ServiceLandingScreen() {
   const insets = useSafeAreaInsets();
   const area = useOnboardingArea();
   const service = serviceBySlug(slug);
-  const { content, error, refresh } = useServiceContent(slug, area?.id);
+  const { content, loading, error, refresh } = useServiceContent(slug, area?.id);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const goBack = () => {
@@ -90,6 +122,8 @@ export default function ServiceLandingScreen() {
     router.push({ pathname: '/book/[slug]/details', params: { slug } });
   };
 
+  if (loading) return <ServiceLandingSkeleton onBack={goBack} top={insets.top} />;
+
   if (!content) {
     return (
       <View style={styles.screen}>
@@ -101,23 +135,12 @@ export default function ServiceLandingScreen() {
           style={[styles.emptyBack, { top: insets.top + space[2] }]}>
           <ArrowLeft size={24} color={colors.text} strokeWidth={2} />
         </Pressable>
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-            We couldn&apos;t load this service
-          </Text>
-          <Text style={styles.emptyCaption} maxFontSizeMultiplier={1.3}>
-            {error ?? 'The service may have been removed. Try again or browse the catalogue.'}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Retry loading the service"
-            hitSlop={8}
-            onPress={refresh}>
-            <Text style={styles.retry} maxFontSizeMultiplier={1.3}>
-              Retry
-            </Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          title="We couldn't load this service"
+          body={error ?? 'The service may have been removed. Try again or browse the catalogue.'}
+          onRetry={refresh}
+          onContactSupport={() => router.push('/help/contact' as Href)}
+        />
       </View>
     );
   }
@@ -623,9 +646,22 @@ const styles = StyleSheet.create({
   relatedPressed: { backgroundColor: colors.green50 },
   relatedName: { ...text.bodyM, fontFamily: font.bodySemi },
   relatedPrice: { ...text.caption, color: colors.green700 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[3], padding: space[6] },
-  emptyTitle: { ...text.h3, textAlign: 'center' },
-  emptyCaption: { ...text.caption, textAlign: 'center' },
-  retry: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green700 },
   emptyBack: { position: 'absolute', left: space[4], zIndex: 1, width: 44, height: 44 },
+  skeletonHero: {
+    minHeight: 210,
+    paddingHorizontal: space[4],
+    gap: space[3],
+    backgroundColor: colors.green50,
+    borderBottomLeftRadius: radius.hero,
+    borderBottomRightRadius: radius.hero,
+  },
+  skeletonBack: { width: 44, height: 44 },
+  skeletonLine: { borderRadius: radius.input },
+  skeletonEyebrow: { width: 110, height: 14 },
+  skeletonTitle: { width: '72%', height: 30, marginTop: space[4] },
+  skeletonCaption: { width: '88%', height: 18 },
+  skeletonBody: { padding: space[4], gap: space[3] },
+  skeletonCard: { height: 120, borderRadius: radius.card },
+  skeletonHeading: { width: '45%', height: 22, marginTop: space[2] },
+  skeletonRow: { height: 18 },
 });
