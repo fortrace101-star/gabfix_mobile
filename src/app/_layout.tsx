@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { hydrateBookingDraft } from '@/store/booking';
+import { hydrateBookings } from '@/store/bookings';
 import { restoreSession } from '@/store/session';
 import { auth } from '@/theme';
 
@@ -34,9 +35,11 @@ export default function RootLayout() {
   const [sessionRestored, setSessionRestored] = useState(false);
 
   useEffect(() => {
-    // Restore both before the first screen renders: the splash route needs the session and the
-    // order flow needs any saved draft.
-    Promise.all([restoreSession(), hydrateBookingDraft()]).finally(() => setSessionRestored(true));
+    // Restore before the first screen renders: the splash route needs the session, the order
+    // flow needs any saved draft, and the bookings tab needs saved booking history.
+    Promise.all([restoreSession(), hydrateBookingDraft(), hydrateBookings()]).finally(() =>
+      setSessionRestored(true),
+    );
   }, []);
 
   useEffect(() => {
@@ -94,6 +97,30 @@ export default function RootLayout() {
               animation: 'slide_from_right',
             }}
           />
+          <Stack.Screen
+            name="book/[slug]/review"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="payment/[id]"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen
+            name="book/[slug]/confirmed"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'fade',
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen name="booking/[id]" />
           <Stack.Screen name="search" />
           <Stack.Screen name="service/[slug]" />
         </Stack>

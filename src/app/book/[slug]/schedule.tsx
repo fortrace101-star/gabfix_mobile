@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, ChevronRight, Clock, Info, Repeat, X } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Clock, Info, Repeat, Users, X } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
@@ -106,7 +106,12 @@ export default function ScheduleScreen() {
     () => getBookingDraft()?.schedule?.startTime ?? null,
   );
 
-  const { slots, loading, error, refresh } = useAvailability(slug, selectedISO, area?.id);
+  const { slots, loading, error, refresh } = useAvailability(
+    slug,
+    selectedISO,
+    area?.id,
+    active?.preferredCleanerId,
+  );
 
   useEffect(() => {
     if (!slug) return;
@@ -215,6 +220,16 @@ export default function ScheduleScreen() {
           </Text>
         </View>
 
+        {active.rebookedFrom ? (
+          <View style={styles.rebook}>
+            <Repeat size={18} color={colors.green700} strokeWidth={2} />
+            <Text style={styles.rebookText} maxFontSizeMultiplier={1.3}>
+              Details, extras and address copied from booking {active.rebookedFrom}. Choose a new
+              time to continue.
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.monthRow}>
           <Pressable
             accessibilityRole="button"
@@ -252,6 +267,16 @@ export default function ScheduleScreen() {
             Start time
           </Text>
 
+          {active.preferredCleanerId ? (
+            <View style={styles.note}>
+              <Users size={16} color={colors.textMuted} strokeWidth={2} />
+              <Text style={styles.noteText} maxFontSizeMultiplier={1.3}>
+                Showing times for your preferred cleaner. Not available? We&apos;ll suggest similar
+                cleaners.
+              </Text>
+            </View>
+          ) : null}
+
           {isToday ? (
             <View style={styles.note}>
               <Info size={16} color={colors.textMuted} strokeWidth={2} />
@@ -287,7 +312,9 @@ export default function ScheduleScreen() {
           ) : visibleSlots.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyText} maxFontSizeMultiplier={1.3}>
-                No times left for this day. Try another date.
+                {active.preferredCleanerId
+                  ? "Your preferred cleaner has no times on this day. Try another date and we'll suggest similar cleaners."
+                  : 'No times left for this day. Try another date.'}
               </Text>
             </View>
           ) : (
@@ -359,6 +386,16 @@ const styles = StyleSheet.create({
   slots: { paddingHorizontal: space[4], gap: space[3], marginTop: space[1] },
   label: { ...text.h3 },
   note: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  rebook: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space[2],
+    backgroundColor: colors.successBg,
+    borderRadius: radius.input,
+    padding: space[3],
+    marginHorizontal: space[4],
+  },
+  rebookText: { ...text.bodyM, color: colors.green700, flex: 1 },
   noteText: { ...text.caption, flex: 1 },
   skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
   skeletonChip: {

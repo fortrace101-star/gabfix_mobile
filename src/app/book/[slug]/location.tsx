@@ -14,12 +14,15 @@ import {
   View,
 } from 'react-native';
 
+import { AddressSearch } from '@/components/booking/address-search';
 import { ChipSelector } from '@/components/booking/chip-selector';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { TopBar } from '@/components/ui/top-bar';
+import { allAreas } from '@/config/areas';
+import { savedAddresses, type FixturePlace } from '@/config/location-fixtures';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingLocation } from '@/lib/pricing';
 import {
@@ -29,7 +32,7 @@ import {
   startDraft,
   useBookingDraft,
 } from '@/store/booking';
-import { useOnboardingArea } from '@/store/onboarding';
+import { setArea, useOnboardingArea } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { colors, font, radius, space, text } from '@/theme';
 
@@ -37,6 +40,8 @@ type PropertyType = BookingLocation['propertyType'];
 
 type Form = {
   addressId?: string;
+  lat?: number;
+  lng?: number;
   street: string;
   landmark: string;
   access: string;
@@ -47,27 +52,6 @@ type Form = {
   alternateName: string;
   alternatePhone: string;
 };
-
-/**
- * Dummy saved addresses until P24 stores real ones. Only the street fields live here;
- * the area always follows the area chosen for the current session.
- */
-const savedAddresses: { id: string; label: string; street: string; landmark: string; propertyType: PropertyType }[] = [
-  {
-    id: 'home',
-    label: 'Home',
-    street: 'Plot 14, Ntinda Road',
-    landmark: 'Near Shell petrol station, blue gate',
-    propertyType: 'house',
-  },
-  {
-    id: 'work',
-    label: 'Work',
-    street: '3rd floor, Acacia Mall, Kololo',
-    landmark: 'Ask for reception on the third floor',
-    propertyType: 'office',
-  },
-];
 
 const propertyOptions: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -94,6 +78,8 @@ export default function LocationScreen() {
     const saved = getBookingDraft()?.location;
     return {
       addressId: saved?.addressId,
+      lat: saved?.lat,
+      lng: saved?.lng,
       street: saved?.street ?? '',
       landmark: saved?.landmark ?? '',
       access: saved?.access ?? '',
@@ -119,6 +105,8 @@ export default function LocationScreen() {
   const toLocation = (next: Form, nextArea: string): BookingLocation => ({
     addressId: next.addressId,
     area: nextArea,
+    lat: next.lat,
+    lng: next.lng,
     street: next.street.trim(),
     landmark: next.landmark.trim() || undefined,
     access: next.access.trim() || undefined,
@@ -136,6 +124,31 @@ export default function LocationScreen() {
   };
 
   const markTouched = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
+
+  const pickPlace = (place: FixturePlace) => {
+    const next: Form = {
+      ...form,
+      addressId: place.id,
+      lat: place.lat,
+      lng: place.lng,
+      street: place.street,
+      landmark: place.landmark ?? '',
+      propertyType: place.propertyType ?? form.propertyType,
+    };
+    const matchedArea = allAreas.find(
+      (candidate) => candidate.served && candidate.name.toLowerCase() === place.area.toLowerCase(),
+    );
+    const nextArea = matchedArea ?? area;
+    if (matchedArea) setArea(matchedArea);
+    setForm(next);
+    if (getBookingDraft()) {
+      patchDraft({ location: toLocation(next, nextArea?.name || areaName) });
+    }
+  };
+
+  const useTypedAddress = (address: string) => {
+    update({ street: address, landmark: '', addressId: undefined, lat: undefined, lng: undefined });
+  };
 
   const leave = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -214,6 +227,9 @@ export default function LocationScreen() {
       });
       const [place] = await Location.reverseGeocodeAsync(position.coords);
       update({
+        addressId: undefined,
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
         street: [place?.name, place?.street].filter(Boolean).join(', ').slice(0, 120),
         landmark: [place?.district, place?.city].filter(Boolean).join(', '),
       });
@@ -229,10 +245,7 @@ export default function LocationScreen() {
 
   const onNext = () => {
     if (getBookingDraft()) patchDraft({ location: toLocation(form, areaName) });
-    Alert.alert(
-      'Review and pay is next',
-      'Your address is saved. The review and payment step (P12) is the next screen in the build.',
-    );
+    router.push({ pathname: '/book/[slug]/review', params: { slug } });
   };
 
   return (
@@ -267,6 +280,13 @@ export default function LocationScreen() {
             Your cleaner sees this address and contact only after you book.
           </Text>
         </View>
+
+        <AddressSearch
+          onPick={pickPlace}
+          onUseTypedAddress={useTypedAddress}
+          onUseCurrentLocation={useCurrentLocation}
+          locating={locating}
+        />
 
         <View style={styles.group}>
           <Text style={styles.label} maxFontSizeMultiplier={1.3}>
@@ -335,18 +355,6 @@ export default function LocationScreen() {
               Your cleaner is matched to this area. The pin is confirmed when you review the booking.
             </Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Use my current location"
-            accessibilityState={{ disabled: locating, busy: locating }}
-            disabled={locating}
-            hitSlop={8}
-            onPress={useCurrentLocation}
-            style={[styles.locate, locating && styles.locateOff]}>
-            <Text style={styles.locateText} maxFontSizeMultiplier={1.2}>
-              {locating ? 'Locating…' : 'Use location'}
-            </Text>
-          </Pressable>
         </View>
 
         <View style={styles.group}>
@@ -382,7 +390,9 @@ export default function LocationScreen() {
         <Input
           label="Street, building or house number"
           value={form.street}
-          onChangeText={(street) => update({ street, addressId: undefined })}
+          onChangeText={(street) =>
+            update({ street, addressId: undefined, lat: undefined, lng: undefined })
+          }
           onBlur={() => markTouched('street')}
           error={streetError}
           placeholder="e.g. Plot 14, Ntinda Road"
@@ -564,16 +574,6 @@ const styles = StyleSheet.create({
   mapBody: { flex: 1, gap: 2 },
   mapTitle: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green900 },
   mapCaption: { ...text.caption, color: colors.green700 },
-  locate: {
-    minHeight: 36,
-    paddingHorizontal: space[3],
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locateOff: { opacity: 0.6 },
-  locateText: { ...text.caption, fontFamily: font.bodySemi, color: colors.green700 },
   areaRow: {
     flexDirection: 'row',
     alignItems: 'center',

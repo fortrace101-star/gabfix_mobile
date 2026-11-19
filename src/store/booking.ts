@@ -57,6 +57,11 @@ export function startDraft(serviceSlug: string): void {
   setDraft(emptyDraft(serviceSlug));
 }
 
+/** P18: replace the draft with one prefilled from an earlier booking. */
+export function startRebookDraft(draft: BookingDraft): void {
+  setDraft(draft);
+}
+
 export function patchDraft(changes: Partial<Omit<BookingDraft, 'serviceSlug'>>): void {
   if (!state.draft) return;
   setDraft({ ...state.draft, ...changes });

@@ -27,3 +27,22 @@ export const isValidDeposit = (total: number, deposit: number): boolean =>
 
 export const balanceAfterService = (total: number, deposit: number): number =>
   Math.max(total - deposit, 0);
+
+/** Local saved cards until P27b and card tokenisation exist. */
+export type SavedCard = {
+  id: string;
+  brand: 'Visa';
+  last4: string;
+  expiry: string;
+};
+
+export const savedCards: SavedCard[] = [
+  { id: 'card-visa-4242', brand: 'Visa', last4: '4242', expiry: '09/28' },
+  { id: 'card-visa-1881', brand: 'Visa', last4: '1881', expiry: '03/27' },
+];
+
+export const savedCardById = (id?: string): SavedCard | undefined =>
+  savedCards.find((card) => card.id === id);
+
+export const savedCardLabel = (card: SavedCard): string =>
+  `${card.brand} ending ${card.last4}`;

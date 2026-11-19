@@ -23,6 +23,8 @@ export type BookingPayment = {
   payerPhone?: string;
   depositAmount?: number;
   savedCardId?: string;
+  /** Set on P12 when the customer ticks “Save this card”. */
+  saveCard?: boolean;
 };
 
 export type BookingLocation = {
@@ -49,6 +51,10 @@ export type BookingDraft = {
   location?: BookingLocation;
   promoCode?: string;
   payment?: BookingPayment;
+  /** P18: set when the draft was prefilled from an earlier booking. */
+  rebookedFrom?: string;
+  /** P18: “Book same cleaner” preference sent with the availability request. */
+  preferredCleanerId?: string;
 };
 
 export type PriceBreakdown = {

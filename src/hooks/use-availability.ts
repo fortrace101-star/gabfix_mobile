@@ -24,16 +24,17 @@ export function useAvailability(
   serviceSlug: string,
   dateISO: string | null,
   areaId?: string,
+  cleanerId?: string,
 ): AvailabilityState {
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
-  const key = `${serviceSlug}:${areaId ?? ''}:${dateISO ?? ''}:${attempt}`;
+  const key = `${serviceSlug}:${areaId ?? ''}:${cleanerId ?? ''}:${dateISO ?? ''}:${attempt}`;
 
   useEffect(() => {
     if (!hasApiBaseUrl || !dateISO) return;
 
     let cancelled = false;
-    getAvailability({ serviceSlug, areaId, dateISO })
+    getAvailability({ serviceSlug, areaId, dateISO, cleanerId })
       .then((slots) => {
         if (!cancelled) setResult({ key, slots, error: null });
       })
@@ -46,7 +47,7 @@ export function useAvailability(
     return () => {
       cancelled = true;
     };
-  }, [areaId, dateISO, key, serviceSlug]);
+  }, [areaId, cleanerId, dateISO, key, serviceSlug]);
 
   const refresh = useCallback(() => setAttempt((value) => value + 1), []);
   const current = result?.key === key ? result : null;
