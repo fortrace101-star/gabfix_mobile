@@ -20,9 +20,12 @@ import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
 import { hydrateMessages } from '@/store/messages';
+import { hydrateNotifications } from '@/store/notifications';
 import { hydratePaymentMethods } from '@/store/payment-methods';
 import { hydratePlans } from '@/store/plans';
+import { hydrateProfileSettings } from '@/store/profile-settings';
 import { hydrateQuotes } from '@/store/quotes';
+import { hydrateReviews } from '@/store/reviews';
 import { restoreSession } from '@/store/session';
 import { auth } from '@/theme';
 
@@ -53,6 +56,9 @@ export default function RootLayout() {
       hydrateQuotes(),
       hydratePaymentMethods(),
       hydrateMessages(),
+      hydrateNotifications(),
+      hydrateProfileSettings(),
+      hydrateReviews(),
     ]).finally(() => setSessionRestored(true));
   }, []);
 
@@ -145,6 +151,9 @@ export default function RootLayout() {
           <Stack.Screen name="help/faq" />
           <Stack.Screen name="help/contact" />
           <Stack.Screen name="chat/[threadId]" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="booking/[id]/rate" />
+          <Stack.Screen name="profile/edit" />
           <Stack.Screen name="search" />
           <Stack.Screen name="service/[slug]/reviews" />
           <Stack.Screen name="service/[slug]" />

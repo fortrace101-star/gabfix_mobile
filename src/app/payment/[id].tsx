@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CreditCard, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native';
+import { CreditCard, Heart, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/ui/top-bar';
 import { demoNewCard } from '@/config/payments';
+import { addBookingTip } from '@/store/bookings';
 import { addCard } from '@/store/payment-methods';
 import { colors, font, radius, space, text } from '@/theme';
 import { successHaptic } from '@/utils/haptics';
@@ -41,6 +42,7 @@ export default function PaymentScreen() {
     phone?: string;
     last4?: string;
     saveCard?: string;
+    kind?: string;
   }>();
   const bookingId = typeof params.bookingId === 'string' ? params.bookingId : 'GBX-00000';
   const slug = typeof params.slug === 'string' ? params.slug : '';
@@ -49,7 +51,8 @@ export default function PaymentScreen() {
   const phone = typeof params.phone === 'string' ? params.phone : '';
   const last4 = typeof params.last4 === 'string' ? params.last4 : 'new';
   const isCard = method === 'visa_card';
-  const saveNewCard = isCard && params.saveCard === '1';
+  const isTip = params.kind === 'tip';
+  const saveNewCard = !isTip && isCard && params.saveCard === '1';
 
   const [approved, setApproved] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(120);
@@ -87,24 +90,34 @@ export default function PaymentScreen() {
   useEffect(() => {
     if (!approved) return;
     Animated.spring(tick, { toValue: 1, useNativeDriver: true }).start();
-    if (saveNewCard) addCard(demoNewCard.last4, demoNewCard.expiry);
+    if (isTip) {
+      addBookingTip(bookingId, amount, method);
+    } else if (saveNewCard) {
+      addCard(demoNewCard.last4, demoNewCard.expiry);
+    }
     const next = setTimeout(() => {
+      if (isTip) {
+        router.replace('/(tabs)/home');
+        return;
+      }
       router.replace({
         pathname: '/book/[slug]/confirmed',
         params: { slug, bookingId, paid: String(amount) },
       });
     }, 1600);
     return () => clearTimeout(next);
-  }, [approved, amount, bookingId, saveNewCard, slug, tick]);
+  }, [approved, amount, bookingId, isTip, method, saveNewCard, slug, tick]);
 
   const stop = () => {
     if (approved) return;
     Alert.alert(
-      'Stop this payment?',
-      'Your booking is saved. You can start the payment again from the review screen.',
+      isTip ? 'Cancel this tip?' : 'Stop this payment?',
+      isTip
+        ? 'No tip will be charged. Your review stays saved.'
+        : 'Your booking is saved. You can start the payment again from the review screen.',
       [
         { text: 'Keep waiting', style: 'cancel' },
-        { text: 'Stop', style: 'destructive', onPress: () => router.back() },
+        { text: isTip ? 'Cancel tip' : 'Stop', style: 'destructive', onPress: () => router.back() },
       ],
     );
   };
@@ -118,7 +131,7 @@ export default function PaymentScreen() {
   return (
     <View style={styles.screen}>
       <TopBar
-        title="Payment"
+        title={isTip ? 'Tip' : 'Payment'}
         onBack={stop}
         right={
           <Pressable
@@ -138,17 +151,23 @@ export default function PaymentScreen() {
             <View style={styles.successRing}>
               <Animated.View style={{ transform: [{ scale: tick }] }}>
                 <View style={styles.successCircle}>
-                  <ShieldCheck size={54} color={colors.surface} strokeWidth={2.4} />
+                  {isTip ? (
+                    <Heart size={50} color={colors.surface} strokeWidth={2.2} />
+                  ) : (
+                    <ShieldCheck size={54} color={colors.surface} strokeWidth={2.4} />
+                  )}
                 </View>
               </Animated.View>
             </View>
             <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-              Payment approved
+              {isTip ? 'Tip sent' : 'Payment approved'}
             </Text>
             <Text style={styles.body} maxFontSizeMultiplier={1.3}>
-              {ugx(amount)} paid
-              {saveNewCard ? ` · Visa ending ${demoNewCard.last4} saved` : ''}. Taking you to your
-              confirmation…
+              {isTip
+                ? `${ugx(amount)} tip sent to your cleaner. Taking you home…`
+                : `${ugx(amount)} paid${
+                    saveNewCard ? ` · Visa ending ${demoNewCard.last4} saved` : ''
+                  }. Taking you to your confirmation…`}
             </Text>
           </>
         ) : (
@@ -170,7 +189,9 @@ export default function PaymentScreen() {
             </View>
 
             <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-              {isCard ? 'Confirming your card payment…' : 'Approve the payment on your phone'}
+              {isCard
+                ? `Confirming your ${isTip ? 'tip' : 'card payment'}…`
+                : `Approve the ${isTip ? 'tip' : 'payment'} on your phone`}
             </Text>
 
             <Text style={styles.body} maxFontSizeMultiplier={1.3}>
@@ -213,9 +234,13 @@ export default function PaymentScreen() {
               </Text>
             </View>
 
-            <Button label="Use another method" variant="secondary" onPress={() => router.back()} />
+            <Button
+              label={isTip ? 'Cancel tip' : 'Use another method'}
+              variant="secondary"
+              onPress={() => router.back()}
+            />
             <Text style={styles.helper} maxFontSizeMultiplier={1.3}>
-              Booking {bookingId} is saved while you pay.
+              {isTip ? `Tip for booking ${bookingId}.` : `Booking ${bookingId} is saved while you pay.`}
             </Text>
           </>
         )}

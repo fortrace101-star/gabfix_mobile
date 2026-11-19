@@ -12,7 +12,7 @@ import {
   Star,
   Timer,
 } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Blob } from '@/components/auth/blob';
@@ -22,6 +22,7 @@ import { price } from '@/lib/pricing';
 import { cleaners } from '@/config/cleaners';
 import { fromHourly, serviceBySlug } from '@/config/services';
 import { useBookingDraft } from '@/store/booking';
+import { useNotificationsHydrated, useUnreadNotificationCount } from '@/store/notifications';
 import { useOnboardingArea, useOnboardingUserName } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { auth, base, colors, font, radius, shadow, space, text } from '@/theme';
@@ -43,6 +44,8 @@ export default function HomeTab() {
   const userName = useOnboardingUserName();
   const user = useAuthUser();
   const draft = useBookingDraft();
+  const notificationsReady = useNotificationsHydrated();
+  const unreadNotifications = useUnreadNotificationCount();
   const { services } = useServices(area?.id);
 
   const displayName = userName?.trim() || user?.name?.trim() || 'there';
@@ -79,12 +82,18 @@ export default function HomeTab() {
             <View style={styles.heroActions}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Notifications"
+                accessibilityLabel={
+                  unreadNotifications > 0
+                    ? `Notifications, ${unreadNotifications} unread`
+                    : 'Notifications'
+                }
                 hitSlop={8}
-                onPress={() => Alert.alert('Notifications', 'Booking updates arrive here in Phase 3.')}
+                onPress={() => router.push('/notifications')}
                 style={styles.bell}>
                 <Bell size={20} color={colors.surface} strokeWidth={2} />
-                <View style={styles.bellDot} />
+                {notificationsReady && unreadNotifications > 0 ? (
+                  <View style={styles.bellDot} />
+                ) : null}
               </Pressable>
               <View style={styles.avatar} accessibilityLabel={`Signed in as ${displayName}`}>
                 <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>

@@ -58,6 +58,12 @@ export type SavedBooking = {
   /** P27b: a cash late fee on the account was cleared with a digital method. */
   lateFeeSettledAtISO?: string;
   lateFeePaidMethod?: string;
+  /** P27f: a digital tip sent after a completed clean. */
+  tip?: {
+    amount: number;
+    method: string;
+    atISO: string;
+  };
 };
 
 type BookingsState = {
@@ -135,6 +141,14 @@ export function payBookingBalance(id: string, method: string): void {
       method,
       atISO: new Date().toISOString(),
     },
+  });
+}
+
+/** P27f: records a digital tip against the completed booking. */
+export function addBookingTip(id: string, amount: number, method: string): void {
+  if (amount <= 0) return;
+  updateBooking(id, {
+    tip: { amount, method, atISO: new Date().toISOString() },
   });
 }
 

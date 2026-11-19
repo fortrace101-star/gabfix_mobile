@@ -71,6 +71,16 @@ export async function endSession(): Promise<void> {
   await saveSession(null);
 }
 
+/** Edits the local profile until `PUT /me` is connected. */
+export async function updateSessionUser(patch: Partial<AuthUser>): Promise<void> {
+  const current = state.session;
+  if (!current) return;
+  const next: AuthSession = { ...current, user: { ...current.user, ...patch } };
+  emit({ status: 'authenticated', session: next });
+  setUserName(next.user.name?.trim().split(/\s+/)[0] || null);
+  await saveSession(next);
+}
+
 let refreshInFlight: Promise<boolean> | null = null;
 
 /** Refresh once per expiry window even when several requests fail at the same time. */

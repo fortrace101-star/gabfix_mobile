@@ -47,6 +47,12 @@
           "locationWhenInUsePermission": "Gabfix Home Solutions uses your location to place the cleaning pin and find nearby cleaners."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Gabfix Home Solutions uses your photos to add a profile picture and attach photos to a service review."
+        }
+      ],
       "expo-web-browser",
       "expo-secure-store"
     ],

@@ -5,10 +5,12 @@ import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from '
 
 import { slotLabel } from '@/components/booking/slot-chips';
 import { Button } from '@/components/ui/button';
+import { cleanerById } from '@/config/cleaners';
 import { serviceBySlug } from '@/config/services';
 import { price } from '@/lib/pricing';
 import { getBookingDraft, resetDraft } from '@/store/booking';
 import { addBooking } from '@/store/bookings';
+import { addNotification } from '@/store/notifications';
 import { colors, font, radius, space, text } from '@/theme';
 import { successHaptic } from '@/utils/haptics';
 import { ugx } from '@/utils/format';
@@ -38,6 +40,7 @@ export default function ConfirmedScreen() {
   const balance = Math.max(total - paid, 0);
   const schedule = snapshot?.schedule;
   const location = snapshot?.location;
+  const preferredCleaner = cleanerById(snapshot?.preferredCleanerId);
 
   useEffect(() => {
     if (!savedRef.current) {
@@ -62,6 +65,8 @@ export default function ConfirmedScreen() {
         paymentMethod: snapshot?.payment?.method,
         phone: snapshot?.payment?.payerPhone,
         contactName: location?.contactName,
+        cleanerId: preferredCleaner?.id,
+        cleanerName: preferredCleaner?.name,
         rebook: snapshot
           ? {
               details: snapshot.details,
@@ -72,11 +77,19 @@ export default function ConfirmedScreen() {
             }
           : undefined,
       });
+      addNotification({
+        id: `booking-confirmed-${bookingId}`,
+        kind: 'booking',
+        title: 'Booking confirmed',
+        body: `${service?.name ?? 'Your clean'} is booked. Tap to view the details.`,
+        createdAtISO: new Date().toISOString(),
+        href: `/booking/${bookingId}`,
+      });
     }
     resetDraft();
     successHaptic();
     Animated.spring(tick, { toValue: 1, useNativeDriver: true }).start();
-  }, [balance, bookingId, location?.area, location?.contactName, location?.propertyType, location?.street, paid, schedule?.dateISO, schedule?.startTime, service?.name, service?.slug, slug, snapshot, snapshot?.details.cleaners, snapshot?.details.hours, snapshot?.payment?.method, snapshot?.payment?.payerPhone, snapshot?.payment?.plan, snapshot?.serviceSlug, tick, total]);
+  }, [balance, bookingId, location?.area, location?.contactName, location?.propertyType, location?.street, paid, preferredCleaner?.id, preferredCleaner?.name, schedule?.dateISO, schedule?.startTime, service?.name, service?.slug, slug, snapshot, snapshot?.details.cleaners, snapshot?.details.hours, snapshot?.payment?.method, snapshot?.payment?.payerPhone, snapshot?.payment?.plan, snapshot?.serviceSlug, tick, total]);
 
   const when = schedule
     ? `${parseISODate(schedule.dateISO).toLocaleDateString('en-GB', {

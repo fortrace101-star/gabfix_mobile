@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { ArrowLeft, CalendarDays, CircleHelp, Clock3, FileText, MapPin, Phone, Users, Wallet, XCircle } from 'lucide-react-native';
+import { ArrowLeft, CalendarDays, CircleHelp, Clock3, FileText, MapPin, Phone, Star, Users, Wallet, XCircle } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { paymentMethodLabel } from '@/lib/booking-policy';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
 import { type BookingStatus, getBookingById, useBookings } from '@/store/bookings';
+import { useReviews } from '@/store/reviews';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { hoursLabel, ugx } from '@/utils/format';
 
@@ -89,7 +90,9 @@ export default function BookingDetailScreen() {
   const id = typeof params.id === 'string' ? params.id : '';
   // Subscribe so the screen updates if store hydrates after mount.
   useBookings();
+  const reviews = useReviews();
   const booking = id ? getBookingById(id) : undefined;
+  const review = reviews.find((item) => item.bookingId === booking?.id);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
@@ -223,9 +226,18 @@ export default function BookingDetailScreen() {
           <Text style={styles.cardTitle} maxFontSizeMultiplier={1.3}>
             Cleaner
           </Text>
-          <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
-            A cleaner will be assigned before your appointment. You’ll be notified once assigned.
-          </Text>
+          {booking.cleanerName ? (
+            <>
+              <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
+                Assigned to your preferred cleaner.
+              </Text>
+              <InfoRow icon={Users} label="Cleaner" value={booking.cleanerName} />
+            </>
+          ) : (
+            <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
+              A cleaner will be assigned before your appointment. You’ll be notified once assigned.
+            </Text>
+          )}
         </View>
 
         <View style={styles.card}>
@@ -249,6 +261,45 @@ export default function BookingDetailScreen() {
             </Text>
           </Pressable>
         </View>
+
+        {booking.status === 'completed' ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle} maxFontSizeMultiplier={1.3}>
+              {review ? 'Your review' : 'How was your clean?'}
+            </Text>
+            {review ? (
+              <>
+                <View style={styles.reviewStars}>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Star
+                      key={value}
+                      size={20}
+                      color={value <= review.stars ? colors.yellow600 : colors.border}
+                      fill={value <= review.stars ? colors.yellow600 : 'transparent'}
+                      strokeWidth={1.8}
+                    />
+                  ))}
+                </View>
+                {review.comment ? (
+                  <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
+                    “{review.comment}”
+                  </Text>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
+                  Rate {booking.cleanerName ?? 'your cleaner'} and add a tip in a few taps.
+                </Text>
+                <Button
+                  label="Rate your clean"
+                  icon={Star}
+                  onPress={() => router.push(`/booking/${booking.id}/rate` as never)}
+                />
+              </>
+            )}
+          </View>
+        ) : null}
 
         {booking.status === 'cancelled' ? (
           <View style={styles.card}>
@@ -422,6 +473,7 @@ const styles = StyleSheet.create({
   },
   receiptText: { ...text.bodyM, color: colors.green700, fontFamily: font.bodySemi },
   bodyMuted: { ...text.bodyM, color: colors.textMuted },
+  reviewStars: { flexDirection: 'row', gap: 4, paddingVertical: 2 },
   actions: { gap: space[2], marginTop: space[1] },
   footerNote: { alignItems: 'center', paddingHorizontal: space[3] },
   footerText: { ...text.caption, color: colors.textMuted, textAlign: 'center' },
