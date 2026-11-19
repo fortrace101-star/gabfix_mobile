@@ -85,12 +85,6 @@ export default function SignUpScreen() {
     }
   };
 
-  const showPolicy = (policy: string) =>
-    Alert.alert(
-      policy,
-      `The ${policy.toLowerCase()} page is scheduled for Phase 6. The summary shown at sign-up is the approved launch text.`,
-    );
-
   return (
     <AuthScreen
       blobs={['topCenterLeft']}
@@ -239,14 +233,18 @@ export default function SignUpScreen() {
               I agree to the{' '}
               <Text
                 accessibilityRole="link"
-                onPress={() => showPolicy('Terms')}
+                onPress={() =>
+                  router.push({ pathname: '/policies/[doc]', params: { doc: 'terms' } })
+                }
                 style={styles.termsLink}>
                 Terms
               </Text>{' '}
               and{' '}
               <Text
                 accessibilityRole="link"
-                onPress={() => showPolicy('Privacy Policy')}
+                onPress={() =>
+                  router.push({ pathname: '/policies/[doc]', params: { doc: 'privacy' } })
+                }
                 style={styles.termsLink}>
                 Privacy Policy
               </Text>

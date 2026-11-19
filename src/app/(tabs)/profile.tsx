@@ -1,5 +1,14 @@
-import { router } from 'expo-router';
-import { ChevronDown, LogOut, MapPin } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import {
+  BookOpenText,
+  ChevronDown,
+  ChevronRight,
+  CreditCard,
+  LogOut,
+  MapPin,
+  ShieldCheck,
+} from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -70,6 +79,49 @@ export default function ProfileTab() {
           <ChevronDown size={18} color={colors.textMuted} strokeWidth={2} />
         </Pressable>
 
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Saved addresses"
+          onPress={() => router.push('/addresses' as Href)}
+          style={[base.card, styles.row]}>
+          <View style={styles.iconTile}>
+            <MapPin size={20} color={colors.green500} strokeWidth={2} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
+              Saved addresses
+            </Text>
+            <Text style={styles.rowValue} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+              Home, Work and other places
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
+        </Pressable>
+
+        <View style={styles.legalCard}>
+          <LegalRow
+            icon={<BookOpenText size={20} color={colors.green500} strokeWidth={2} />}
+            label="Terms and conditions"
+            onPress={() => router.push({ pathname: '/policies/[doc]', params: { doc: 'terms' } })}
+          />
+          <View style={styles.divider} />
+          <LegalRow
+            icon={<ShieldCheck size={20} color={colors.green500} strokeWidth={2} />}
+            label="Privacy policy"
+            onPress={() =>
+              router.push({ pathname: '/policies/[doc]', params: { doc: 'privacy' } })
+            }
+          />
+          <View style={styles.divider} />
+          <LegalRow
+            icon={<CreditCard size={20} color={colors.green500} strokeWidth={2} />}
+            label="Payment and refund policy"
+            onPress={() =>
+              router.push({ pathname: '/policies/[doc]', params: { doc: 'payments-refunds' } })
+            }
+          />
+        </View>
+
         <Button
           label="Log out"
           variant="secondary"
@@ -81,10 +133,34 @@ export default function ProfileTab() {
         />
 
         <Text style={styles.footnote} maxFontSizeMultiplier={1.3}>
-          Payments, addresses and notification settings arrive in later phases.
+          Payment methods and notification settings arrive in later phases.
         </Text>
       </ScrollView>
     </View>
+  );
+}
+
+function LegalRow({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: ReactNode;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={styles.legalRow}>
+      <View style={styles.iconTile}>{icon}</View>
+      <Text style={styles.legalLabel} maxFontSizeMultiplier={1.3}>
+        {label}
+      </Text>
+      <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
+    </Pressable>
   );
 }
 
@@ -122,5 +198,20 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, gap: 2 },
   rowLabel: { ...text.caption },
   rowValue: { ...text.bodyM, fontFamily: font.bodySemi },
+  legalCard: {
+    ...base.card,
+    padding: 0,
+    overflow: 'hidden',
+  },
+  legalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+    minHeight: 64,
+    paddingHorizontal: space[4],
+    paddingVertical: space[2],
+  },
+  legalLabel: { ...text.bodyM, flex: 1, color: colors.text },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginLeft: 68 },
   footnote: { ...text.caption, textAlign: 'center' },
 });

@@ -132,6 +132,14 @@ export default function BookingDetailScreen() {
       })}${booking.startTime ? ` · ${slotLabel(booking.startTime)}` : ''}`
     : 'Time to confirm';
   const where = [booking.area, booking.street].filter(Boolean).join(', ') || 'Address to confirm';
+  const propertyLabel =
+    booking.propertyType === 'apartment'
+      ? 'Apartment'
+      : booking.propertyType === 'office'
+        ? 'Office'
+        : booking.propertyType === 'house'
+          ? 'House'
+          : booking.propertyType;
   const planLabel =
     booking.paymentPlan === 'full_now'
       ? 'Pay in full'
@@ -205,8 +213,8 @@ export default function BookingDetailScreen() {
             label="Service details"
             value={`${booking.cleaners} cleaner${booking.cleaners === 1 ? '' : 's'} · ${hoursLabel(booking.hours)}`}
           />
-          {booking.propertyType ? (
-            <InfoRow icon={Clock3} label="Property" value={booking.propertyType} />
+          {propertyLabel ? (
+            <InfoRow icon={Clock3} label="Property" value={propertyLabel} />
           ) : null}
         </View>
 

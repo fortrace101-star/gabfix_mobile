@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import * as Location from 'expo-location';
 import { Check, ChevronRight, Home, MapPin, X } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
@@ -22,7 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { TopBar } from '@/components/ui/top-bar';
 import { allAreas } from '@/config/areas';
-import { savedAddresses, type FixturePlace } from '@/config/location-fixtures';
+import type { FixturePlace } from '@/config/location-fixtures';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingLocation } from '@/lib/pricing';
 import {
@@ -32,6 +32,7 @@ import {
   startDraft,
   useBookingDraft,
 } from '@/store/booking';
+import { useAddresses, type SavedAddress } from '@/store/addresses';
 import { setArea, useOnboardingArea } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { colors, font, radius, space, text } from '@/theme';
@@ -70,6 +71,7 @@ export default function LocationScreen() {
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const draft = useBookingDraft();
   const area = useOnboardingArea();
+  const savedAddresses = useAddresses();
   const user = useAuthUser();
   const service = serviceBySlug(slug);
   const active = draft && draft.serviceSlug === slug ? draft : null;
@@ -143,6 +145,27 @@ export default function LocationScreen() {
     setForm(next);
     if (getBookingDraft()) {
       patchDraft({ location: toLocation(next, nextArea?.name || areaName) });
+    }
+  };
+
+  const pickSavedAddress = (address: SavedAddress) => {
+    const matchedArea = allAreas.find(
+      (candidate) => candidate.served && candidate.name.toLowerCase() === address.area.toLowerCase(),
+    );
+    if (matchedArea) setArea(matchedArea);
+    const next: Form = {
+      ...form,
+      addressId: address.id,
+      lat: address.lat,
+      lng: address.lng,
+      street: address.street,
+      landmark: address.landmark ?? '',
+      access: address.access ?? '',
+      propertyType: address.propertyType,
+    };
+    setForm(next);
+    if (getBookingDraft()) {
+      patchDraft({ location: toLocation(next, matchedArea?.name || areaName) });
     }
   };
 
@@ -289,9 +312,20 @@ export default function LocationScreen() {
         />
 
         <View style={styles.group}>
-          <Text style={styles.label} maxFontSizeMultiplier={1.3}>
-            Saved addresses
-          </Text>
+          <View style={styles.groupHeader}>
+            <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+              Saved addresses
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Manage saved addresses"
+              hitSlop={8}
+              onPress={() => router.push('/addresses' as Href)}>
+              <Text style={styles.manageText} maxFontSizeMultiplier={1.3}>
+                Manage
+              </Text>
+            </Pressable>
+          </View>
           {savedAddresses.map((address) => {
             const selected = form.addressId === address.id;
             return (
@@ -301,14 +335,7 @@ export default function LocationScreen() {
                 accessibilityState={{ selected }}
                 aria-checked={selected}
                 accessibilityLabel={`${address.label}. ${address.street}`}
-                onPress={() =>
-                  update({
-                    addressId: address.id,
-                    street: address.street,
-                    landmark: address.landmark,
-                    propertyType: address.propertyType,
-                  })
-                }
+                onPress={() => pickSavedAddress(address)}
                 style={[styles.addressCard, selected && styles.addressCardOn]}>
                 <View style={styles.addressChip}>
                   <Home size={14} color={colors.green700} strokeWidth={2} />
@@ -331,10 +358,7 @@ export default function LocationScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add a new address"
             onPress={() =>
-              Alert.alert(
-                'Saved addresses',
-                'The address book (P24) is not built yet. Type the new address below and it will be saved with this booking.',
-              )
+              router.push({ pathname: '/addresses/[id]', params: { id: 'new' } })
             }
             style={({ pressed }) => [styles.addAddress, pressed && styles.addAddressPressed]}>
             <Text style={styles.addAddressText} maxFontSizeMultiplier={1.3}>
@@ -512,7 +536,9 @@ const styles = StyleSheet.create({
   title: { ...text.h2 },
   subtitle: { ...text.caption },
   group: { gap: space[3] },
+  groupHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   label: { ...text.h3 },
+  manageText: { ...text.bodyM, color: colors.green700, fontFamily: font.bodySemi },
   flexItem: { flex: 1 },
   addressCard: {
     flexDirection: 'row',

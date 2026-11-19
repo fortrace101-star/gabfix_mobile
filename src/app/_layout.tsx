@@ -14,8 +14,10 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
+import { hydratePlans } from '@/store/plans';
 import { restoreSession } from '@/store/session';
 import { auth } from '@/theme';
 
@@ -37,9 +39,13 @@ export default function RootLayout() {
   useEffect(() => {
     // Restore before the first screen renders: the splash route needs the session, the order
     // flow needs any saved draft, and the bookings tab needs saved booking history.
-    Promise.all([restoreSession(), hydrateBookingDraft(), hydrateBookings()]).finally(() =>
-      setSessionRestored(true),
-    );
+    Promise.all([
+      restoreSession(),
+      hydrateBookingDraft(),
+      hydrateBookings(),
+      hydratePlans(),
+      hydrateAddresses(),
+    ]).finally(() => setSessionRestored(true));
   }, []);
 
   useEffect(() => {
@@ -120,7 +126,10 @@ export default function RootLayout() {
               gestureEnabled: false,
             }}
           />
+          <Stack.Screen name="booking/plans" />
           <Stack.Screen name="booking/[id]" />
+          <Stack.Screen name="addresses/index" />
+          <Stack.Screen name="addresses/[id]" />
           <Stack.Screen name="search" />
           <Stack.Screen name="service/[slug]" />
         </Stack>

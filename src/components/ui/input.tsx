@@ -8,6 +8,7 @@ import {
   View,
   type StyleProp,
   type TextInputProps,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 
@@ -22,6 +23,7 @@ export type InputProps = Omit<TextInputProps, 'style'> & {
   leftIcon?: LucideIcon;
   secure?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
+  inputStyle?: StyleProp<TextStyle>;
 };
 
 /**
@@ -37,6 +39,7 @@ export const Input = forwardRef<ComponentRef<typeof TextInput>, InputProps>(func
     leftIcon: LeftIcon,
     secure = false,
     containerStyle,
+    inputStyle,
     onFocus,
     onBlur,
     editable = true,
@@ -83,7 +86,7 @@ export const Input = forwardRef<ComponentRef<typeof TextInput>, InputProps>(func
               setFocused(false);
               onBlur?.(event);
             }}
-            style={[input.text, !editable && styles.textDisabled]}
+            style={[input.text, !editable && styles.textDisabled, inputStyle]}
           />
           {secure ? (
             <Pressable

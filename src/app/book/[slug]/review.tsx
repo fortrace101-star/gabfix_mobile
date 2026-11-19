@@ -941,9 +941,7 @@ export default function ReviewScreen() {
               accessibilityRole="link"
               accessibilityLabel="Read the Terms"
               hitSlop={8}
-              onPress={() =>
-                Alert.alert('Terms', 'The Terms and conditions (P23) are not built yet.')
-              }>
+              onPress={() => router.push({ pathname: '/policies/[doc]', params: { doc: 'terms' } })}>
               <Text style={styles.legalLink} maxFontSizeMultiplier={1.3}>
                 Read the Terms
               </Text>
@@ -956,10 +954,7 @@ export default function ReviewScreen() {
               accessibilityLabel="Payment and refund policy"
               hitSlop={8}
               onPress={() =>
-                Alert.alert(
-                  'Payment and refund policy',
-                  'The payment and refund policy (P23) is not built yet.',
-                )
+                router.push({ pathname: '/policies/[doc]', params: { doc: 'payments-refunds' } })
               }>
               <Text style={styles.legalLink} maxFontSizeMultiplier={1.3}>
                 Payment and refund policy
