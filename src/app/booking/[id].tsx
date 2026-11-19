@@ -1,8 +1,8 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, CalendarDays, Clock3, FileText, MapPin, Phone, Users, Wallet, XCircle } from 'lucide-react-native';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
+import { ArrowLeft, CalendarDays, CircleHelp, Clock3, FileText, MapPin, Phone, Users, Wallet, XCircle } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CancelSheet } from '@/components/booking/cancel-sheet';
 import { RescheduleSheet } from '@/components/booking/reschedule-sheet';
@@ -85,6 +85,7 @@ const soon = (title: string, message: string) => () => Alert.alert(title, messag
 /** P15b Booking detail (local snapshot saved on this device). */
 export default function BookingDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
+  const insets = useSafeAreaInsets();
   const id = typeof params.id === 'string' ? params.id : '';
   // Subscribe so the screen updates if store hydrates after mount.
   useBookings();
@@ -276,8 +277,8 @@ export default function BookingDetailScreen() {
             Manage booking
           </Text>
           <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
-            Reschedule and cancel here. Live tracking, extras changes, balance payment, and support
-            actions will connect once their backend is available.
+            Reschedule and cancel here. Live tracking, extras changes and balance payment will
+            connect once their backend is available.
           </Text>
           <View style={styles.actions}>
             {booking.balance > 0 && booking.status === 'upcoming' ? (
@@ -329,7 +330,7 @@ export default function BookingDetailScreen() {
               label="Contact support"
               variant="secondary"
               icon={Phone}
-              onPress={soon('Support', 'Support contact will be available in a later build.')}
+              onPress={() => router.push('/help/contact' as Href)}
             />
           </View>
         </View>
@@ -340,6 +341,17 @@ export default function BookingDetailScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Need help? Open help centre"
+        onPress={() => router.push('/help' as Href)}
+        style={[styles.needHelp, { bottom: insets.bottom + space[4] }]}>
+        <CircleHelp size={20} color={colors.yellow500} strokeWidth={2} />
+        <Text style={styles.needHelpText} maxFontSizeMultiplier={1.2}>
+          Need help?
+        </Text>
+      </Pressable>
 
       <RescheduleSheet
         booking={booking}
@@ -413,6 +425,24 @@ const styles = StyleSheet.create({
   actions: { gap: space[2], marginTop: space[1] },
   footerNote: { alignItems: 'center', paddingHorizontal: space[3] },
   footerText: { ...text.caption, color: colors.textMuted, textAlign: 'center' },
+  needHelp: {
+    position: 'absolute',
+    right: space[4],
+    height: 48,
+    borderRadius: radius.pill,
+    paddingHorizontal: space[4],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.green900,
+    zIndex: 10,
+    ...shadow.floating,
+  },
+  needHelpText: {
+    ...text.bodyM,
+    fontFamily: font.bodySemi,
+    color: colors.surface,
+  },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[6], gap: space[2] },
   notFoundTitle: { ...text.h3, color: colors.text, textAlign: 'center' },
   notFoundBody: { ...text.bodyM, color: colors.textMuted, textAlign: 'center', marginBottom: space[2] },

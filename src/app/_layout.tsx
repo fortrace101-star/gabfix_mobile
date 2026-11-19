@@ -135,6 +135,9 @@ export default function RootLayout() {
           <Stack.Screen name="refer" />
           <Stack.Screen name="addresses/index" />
           <Stack.Screen name="addresses/[id]" />
+          <Stack.Screen name="help/index" />
+          <Stack.Screen name="help/faq" />
+          <Stack.Screen name="help/contact" />
           <Stack.Screen name="search" />
           <Stack.Screen name="service/[slug]/reviews" />
           <Stack.Screen name="service/[slug]" />

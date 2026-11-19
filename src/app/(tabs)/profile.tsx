@@ -4,10 +4,12 @@ import {
   BookOpenText,
   ChevronDown,
   ChevronRight,
+  CircleHelp,
   CreditCard,
   Gift,
   LogOut,
   MapPin,
+  Phone,
   ShieldCheck,
   Tag,
 } from 'lucide-react-native';
@@ -145,6 +147,20 @@ export default function ProfileTab() {
           </View>
           <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
         </Pressable>
+
+        <View style={styles.legalCard}>
+          <LegalRow
+            icon={<CircleHelp size={20} color={colors.green500} strokeWidth={2} />}
+            label="Help centre"
+            onPress={() => router.push('/help' as Href)}
+          />
+          <View style={styles.divider} />
+          <LegalRow
+            icon={<Phone size={20} color={colors.green500} strokeWidth={2} />}
+            label="Contact support"
+            onPress={() => router.push('/help/contact' as Href)}
+          />
+        </View>
 
         <View style={styles.legalCard}>
           <LegalRow
