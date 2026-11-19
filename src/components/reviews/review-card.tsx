@@ -7,14 +7,14 @@ import type { ServiceReview } from '@/config/reviews';
 import { base, colors, font, radius, space, text } from '@/theme';
 
 /** P21 review card: identity, rating, up to four lines, verification and cleaner reply. */
-export function ReviewCard({ review }: { review: ServiceReview }) {
+export function ReviewCard({ review, compact = false }: { review: ServiceReview; compact?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const hasLongComment = review.comment.length > 220;
 
   return (
-    <View style={[base.card, styles.card]}>
+    <View style={[base.card, styles.card, compact && styles.cardCompact]}>
       <View style={styles.header}>
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, compact && styles.avatarCompact]}>
           <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>
             {review.initials}
           </Text>
@@ -34,7 +34,7 @@ export function ReviewCard({ review }: { review: ServiceReview }) {
           <Text
             style={styles.comment}
             maxFontSizeMultiplier={1.3}
-            numberOfLines={expanded ? undefined : 4}>
+            numberOfLines={expanded ? undefined : compact ? 3 : 4}>
             {review.comment}
           </Text>
           {hasLongComment ? (
@@ -58,7 +58,7 @@ export function ReviewCard({ review }: { review: ServiceReview }) {
         </Text>
       </View>
 
-      {review.cleanerReply ? (
+      {review.cleanerReply && !compact ? (
         <View style={styles.reply}>
           <Text style={styles.replyLabel} maxFontSizeMultiplier={1.2}>
             Cleaner reply
@@ -74,6 +74,7 @@ export function ReviewCard({ review }: { review: ServiceReview }) {
 
 const styles = StyleSheet.create({
   card: { gap: space[2] },
+  cardCompact: { padding: space[3] },
   header: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
   avatar: {
     width: 40,
@@ -83,6 +84,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarCompact: { width: 32, height: 32 },
   avatarText: { fontFamily: font.poppinsSemi, fontSize: 14, color: colors.green900 },
   name: { ...text.bodyM, fontFamily: font.bodySemi, flex: 1 },
   date: { ...text.caption },

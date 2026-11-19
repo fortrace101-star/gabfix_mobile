@@ -27,6 +27,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { RetryHint } from '@/components/ui/retry-hint';
 import { Skeleton } from '@/components/ui/skeleton';
 import { addOns } from '@/config/add-ons';
+import { cleanersForService } from '@/config/cleaners';
 import { reviewsForService } from '@/config/reviews';
 import { relatedServices } from '@/config/service-content';
 import { hourlyRate, pricing } from '@/config/pricing';
@@ -356,6 +357,49 @@ export default function ServiceLandingScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+              Top cleaners
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.cleaners}>
+              {cleanersForService(slug).map((cleaner) => (
+                <Pressable
+                  key={cleaner.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${cleaner.name}'s profile`}
+                  onPress={() => router.push(`/cleaner/${cleaner.id}` as Href)}
+                  style={({ pressed }) => [
+                    styles.cleanerCard,
+                    pressed && styles.cleanerPressed,
+                  ]}>
+                  <View style={styles.cleanerAvatar}>
+                    <Text style={styles.cleanerInitials} maxFontSizeMultiplier={1.2}>
+                      {cleaner.initials}
+                    </Text>
+                  </View>
+                  <Text
+                    style={styles.cleanerName}
+                    maxFontSizeMultiplier={1.3}
+                    numberOfLines={1}>
+                    {cleaner.name}
+                  </Text>
+                  <View style={styles.cleanerMeta}>
+                    <Star size={12} color={colors.yellow600} fill={colors.yellow500} strokeWidth={1.5} />
+                    <Text style={styles.cleanerMetaText} maxFontSizeMultiplier={1.2}>
+                      {cleaner.rating.toFixed(1)} · {cleaner.jobsDone} jobs
+                    </Text>
+                  </View>
+                  <Text style={styles.cleanerLink} maxFontSizeMultiplier={1.2}>
+                    View profile
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
               Questions
             </Text>
             <View style={styles.card}>
@@ -635,6 +679,30 @@ const styles = StyleSheet.create({
   },
   faqQuestion: { ...text.bodyM, fontFamily: font.bodySemi, flex: 1 },
   faqAnswer: { ...text.caption, lineHeight: 20, paddingBottom: space[2] },
+  cleaners: { gap: space[3], paddingRight: space[4] },
+  cleanerCard: {
+    width: 156,
+    gap: space[1],
+    padding: space[3],
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    ...shadow.card,
+  },
+  cleanerPressed: { backgroundColor: colors.green50 },
+  cleanerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space[1],
+  },
+  cleanerInitials: { fontFamily: font.poppinsSemi, fontSize: 16, color: colors.green900 },
+  cleanerName: { ...text.bodyM, fontFamily: font.bodySemi },
+  cleanerMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  cleanerMetaText: { ...text.caption, fontSize: 11 },
+  cleanerLink: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   relatedCard: {
     width: 200,
     gap: space[2],
