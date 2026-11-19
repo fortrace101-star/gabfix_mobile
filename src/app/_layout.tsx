@@ -18,6 +18,7 @@ import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
 import { hydratePlans } from '@/store/plans';
+import { hydrateQuotes } from '@/store/quotes';
 import { restoreSession } from '@/store/session';
 import { auth } from '@/theme';
 
@@ -45,6 +46,7 @@ export default function RootLayout() {
       hydrateBookings(),
       hydratePlans(),
       hydrateAddresses(),
+      hydrateQuotes(),
     ]).finally(() => setSessionRestored(true));
   }, []);
 
@@ -128,6 +130,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="booking/plans" />
           <Stack.Screen name="booking/[id]" />
+          <Stack.Screen name="quote/[slug]" />
           <Stack.Screen name="addresses/index" />
           <Stack.Screen name="addresses/[id]" />
           <Stack.Screen name="search" />

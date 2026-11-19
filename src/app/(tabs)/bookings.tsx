@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { CalendarDays, ChevronRight, MapPin, Repeat } from 'lucide-react-native';
+import { CalendarDays, ChevronRight, ClipboardList, MapPin, Repeat } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   type GestureResponderEvent,
@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { QuoteRequestCard } from '@/components/booking/quote-request-card';
 import { SegmentedControl } from '@/components/booking/segmented-control';
 import { slotLabel } from '@/components/booking/slot-chips';
 import { Button } from '@/components/ui/button';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
 import { type BookingStatus, type SavedBooking, useBookings, useBookingsHydrated } from '@/store/bookings';
+import { useQuoteRequests, useQuotesHydrated } from '@/store/quotes';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
@@ -24,7 +26,10 @@ const TABS = [
   { value: 'upcoming', label: 'Upcoming' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
+  { value: 'requests', label: 'Requests' },
 ] as const;
+
+type BookingsTab = (typeof TABS)[number]['value'];
 
 const statusLabel: Record<BookingStatus, string> = {
   upcoming: 'Confirmed',
@@ -140,6 +145,29 @@ function BookingCard({ booking }: { booking: SavedBooking }) {
   );
 }
 
+function RequestsEmpty() {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyIcon}>
+        <ClipboardList size={28} color={colors.green500} strokeWidth={2} />
+      </View>
+      <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
+        No quote requests yet
+      </Text>
+      <Text style={styles.emptyBody} maxFontSizeMultiplier={1.3}>
+        Tell us about office, school or specialised work and we&apos;ll send a fixed price before
+        you book.
+      </Text>
+      <Button
+        label="Request a quote"
+        onPress={() =>
+          router.push({ pathname: '/quote/[slug]', params: { slug: 'custom' } } as never)
+        }
+      />
+    </View>
+  );
+}
+
 function EmptyState({ tab }: { tab: BookingStatus }) {
   if (tab === 'upcoming') {
     return (
@@ -172,10 +200,15 @@ function EmptyState({ tab }: { tab: BookingStatus }) {
 export default function BookingsScreen() {
   const bookings = useBookings();
   const hydrated = useBookingsHydrated();
-  const [tab, setTab] = useState<BookingStatus>('upcoming');
+  const requests = useQuoteRequests();
+  const requestsHydrated = useQuotesHydrated();
+  const [tab, setTab] = useState<BookingsTab>('upcoming');
 
   const filtered = useMemo(
-    () => bookings.filter((booking) => booking.status === tab),
+    () =>
+      tab === 'requests'
+        ? []
+        : bookings.filter((booking) => booking.status === tab),
     [bookings, tab],
   );
 
@@ -200,14 +233,28 @@ export default function BookingsScreen() {
       <View style={styles.tabsWrap}>
         <SegmentedControl options={TABS} value={tab} onChange={setTab} />
       </View>
-      <FlatList
-        data={hydrated ? filtered : []}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <BookingCard booking={item} />}
-        contentContainerStyle={[styles.listContent, filtered.length === 0 && styles.listEmpty]}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={hydrated ? <EmptyState tab={tab} /> : undefined}
-      />
+      {tab === 'requests' ? (
+        <FlatList
+          data={requestsHydrated ? requests : []}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <QuoteRequestCard request={item} />}
+          contentContainerStyle={[
+            styles.listContent,
+            requests.length === 0 && styles.listEmpty,
+          ]}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={requestsHydrated ? <RequestsEmpty /> : undefined}
+        />
+      ) : (
+        <FlatList
+          data={hydrated ? filtered : []}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <BookingCard booking={item} />}
+          contentContainerStyle={[styles.listContent, filtered.length === 0 && styles.listEmpty]}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={hydrated ? <EmptyState tab={tab} /> : undefined}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -260,6 +307,15 @@ const styles = StyleSheet.create({
   detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   detailsText: { ...text.bodyM, color: colors.green700, fontFamily: font.bodySemi },
   empty: { alignItems: 'center', paddingHorizontal: space[6], gap: space[2] },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space[1],
+  },
   emptyTitle: { ...text.h3, color: colors.text, textAlign: 'center' },
   emptyBody: { ...text.bodyM, color: colors.textMuted, textAlign: 'center', marginBottom: space[2] },
 });

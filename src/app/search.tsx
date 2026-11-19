@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { ArrowLeft, Clock3, Search, Sparkles, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -224,10 +223,13 @@ export default function SearchScreen() {
                   label="Request a custom service"
                   variant="secondary"
                   onPress={() =>
-                    Alert.alert(
-                      'Custom requests',
-                      'The request form (P25) is not built yet. It will collect what you need and a contact number.',
-                    )
+                    router.push({
+                      pathname: '/quote/[slug]',
+                      params: {
+                        slug: 'custom',
+                        details: term ? `I'm looking for ${term}` : '',
+                      },
+                    } as never)
                   }
                 />
               </View>
