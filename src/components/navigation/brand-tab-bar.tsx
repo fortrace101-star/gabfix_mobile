@@ -2,6 +2,7 @@ import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import {
   CalendarDays,
   House,
+  MessageCircle,
   Sparkles,
   UserRound,
   type LucideIcon,
@@ -15,6 +16,7 @@ const tabIcons: Record<string, LucideIcon> = {
   home: House,
   services: Sparkles,
   bookings: CalendarDays,
+  messages: MessageCircle,
   profile: UserRound,
 };
 
@@ -22,6 +24,7 @@ const tabLabels: Record<string, string> = {
   home: 'Home',
   services: 'Services',
   bookings: 'Bookings',
+  messages: 'Messages',
   profile: 'Profile',
 };
 

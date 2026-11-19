@@ -26,7 +26,7 @@ const checklist = [
   },
 ];
 
-/** P22 Contact support. Chat is a placeholder until P27c is built. */
+/** P22 Contact support. Chat opens the local P27c support thread. */
 export default function ContactScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -75,8 +75,7 @@ export default function ContactScreen() {
         />
 
         <Text style={styles.footnote} maxFontSizeMultiplier={1.2}>
-          In-app chat is coming soon. Until then, the phone, WhatsApp and email options above reach
-          the same support team.
+          In-app chat is open 7 days a week. Calls, WhatsApp and email reach the same support team.
         </Text>
       </ScrollView>
     </SafeAreaView>

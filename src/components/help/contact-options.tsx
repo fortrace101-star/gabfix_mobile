@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import {
   ChevronRight,
   Clock3,
@@ -18,7 +19,7 @@ type ContactRow = {
   caption: string;
   icon: LucideIcon;
   href?: string;
-  soon?: boolean;
+  route?: string;
 };
 
 const rows: readonly ContactRow[] = [
@@ -39,9 +40,9 @@ const rows: readonly ContactRow[] = [
   {
     key: 'chat',
     label: 'Chat',
-    caption: 'In-app chat is coming soon',
+    caption: 'Message the support team',
     icon: MessagesSquare,
-    soon: true,
+    route: '/chat/support',
   },
   {
     key: 'email',
@@ -79,14 +80,11 @@ export function ContactOptions({ heading = 'Contact us' }: { heading?: string })
         {rows.map((row, index) => {
           const Icon = row.icon;
           const onPress = () => {
-            if (row.href) {
-              void openLink(row.href);
+            if (row.route) {
+              router.push(row.route as never);
               return;
             }
-            Alert.alert(
-              'In-app chat is coming soon',
-              'For now, call, WhatsApp or email the support team and we will help you there.',
-            );
+            if (row.href) void openLink(row.href);
           };
 
           return (
@@ -111,15 +109,7 @@ export function ContactOptions({ heading = 'Contact us' }: { heading?: string })
                   {row.caption}
                 </Text>
               </View>
-              {row.soon ? (
-                <View style={styles.soonBadge}>
-                  <Text style={styles.soonText} maxFontSizeMultiplier={1.2}>
-                    SOON
-                  </Text>
-                </View>
-              ) : (
-                <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
-              )}
+              <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
             </Pressable>
           );
         })}
@@ -183,21 +173,6 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, gap: 1 },
   rowLabel: { ...text.bodyM, fontFamily: font.bodySemi },
   rowCaption: { ...text.caption },
-  soonBadge: {
-    height: 22,
-    borderRadius: radius.pill,
-    paddingHorizontal: space[2],
-    backgroundColor: colors.yellow50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  soonText: {
-    fontFamily: font.bodySemi,
-    fontSize: 9,
-    lineHeight: 13,
-    letterSpacing: 0.7,
-    color: colors.yellow800,
-  },
   hours: {
     minHeight: 42,
     flexDirection: 'row',

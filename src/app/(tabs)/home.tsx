@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Star,
   Timer,
 } from 'lucide-react-native';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -18,6 +19,7 @@ import { Blob } from '@/components/auth/blob';
 import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
 import { price } from '@/lib/pricing';
+import { cleaners } from '@/config/cleaners';
 import { fromHourly, serviceBySlug } from '@/config/services';
 import { useBookingDraft } from '@/store/booking';
 import { useOnboardingArea, useOnboardingUserName } from '@/store/onboarding';
@@ -160,6 +162,54 @@ export default function HomeTab() {
               </View>
             ))}
           </ScrollView>
+
+          <View style={styles.sectionBlock}>
+            <View style={base.between}>
+              <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                Top cleaners
+              </Text>
+              <Text style={styles.sectionCaption} maxFontSizeMultiplier={1.2}>
+                Vetted pros near you
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.cleanerScroll}
+              contentContainerStyle={styles.cleanerRow}>
+              {cleaners.map((cleaner) => (
+                <Pressable
+                  key={cleaner.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${cleaner.name}, rated ${cleaner.rating.toFixed(1)} from ${cleaner.jobsDone} jobs`}
+                  onPress={() =>
+                    router.push({ pathname: '/cleaner/[id]', params: { id: cleaner.id } })
+                  }
+                  style={({ pressed }) => [styles.cleanerCard, pressed && styles.cleanerPressed]}>
+                  <View style={styles.cleanerAvatar}>
+                    <Text style={styles.cleanerInitials} maxFontSizeMultiplier={1.2}>
+                      {cleaner.initials}
+                    </Text>
+                  </View>
+                  <View style={styles.ratingRow}>
+                    <Star size={12} color={colors.yellow500} fill={colors.yellow500} strokeWidth={2} />
+                    <Text style={styles.rating} maxFontSizeMultiplier={1.2}>
+                      {cleaner.rating.toFixed(1)}
+                    </Text>
+                    <Text style={styles.jobs} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+                      · {cleaner.jobsDone} jobs
+                    </Text>
+                  </View>
+                  <Text style={styles.cleanerName} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+                    {cleaner.name}
+                  </Text>
+                  <Text style={styles.cleanerSkill} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+                    {cleaner.skills[0]}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
 
           <View style={base.between}>
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
@@ -345,8 +395,46 @@ const styles = StyleSheet.create({
     gap: space[2],
   },
   trustText: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: colors.text },
+  sectionBlock: { gap: space[3] },
   sectionTitle: { ...text.h2 },
+  sectionCaption: { ...text.caption },
   seeAll: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green500 },
+  cleanerScroll: { marginHorizontal: -space[4] },
+  cleanerRow: { paddingHorizontal: space[4], gap: space[3] },
+  cleanerCard: {
+    width: 150,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    padding: space[3],
+    gap: space[1],
+    ...shadow.card,
+  },
+  cleanerPressed: { opacity: 0.8 },
+  cleanerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space[1],
+  },
+  cleanerInitials: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.green900,
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  rating: {
+    fontFamily: font.bodySemi,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.text,
+  },
+  jobs: { ...text.caption, fontSize: 11, lineHeight: 15, flexShrink: 1 },
+  cleanerName: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, color: colors.text },
+  cleanerSkill: { ...text.caption, fontSize: 11, lineHeight: 15 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3] },
   serviceCard: {
     aspectRatio: 1.05,

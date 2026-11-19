@@ -496,6 +496,10 @@ export default function ReviewScreen() {
             method: payNowMethod,
             phone: payerPhone,
             last4: selectedCard?.last4 ?? 'new',
+            saveCard:
+              payNowMethod === 'visa_card' && plan !== 'after_service' && !selectedCard && saveCard
+                ? '1'
+                : '0',
           },
         });
       } else {

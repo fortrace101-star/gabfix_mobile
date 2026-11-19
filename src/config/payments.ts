@@ -41,6 +41,13 @@ export const savedCards: SavedCard[] = [
   { id: 'card-visa-1881', brand: 'Visa', last4: '1881', expiry: '03/27' },
 ];
 
+/** The tokenised card the demo hosted page returns; no real card details are collected. */
+export const demoNewCard: Pick<SavedCard, 'brand' | 'last4' | 'expiry'> = {
+  brand: 'Visa',
+  last4: '4002',
+  expiry: '11/29',
+};
+
 /** Saved Mobile Money numbers. P27b is the single place that edits them. */
 export type SavedMobileMoney = {
   id: string;

@@ -100,6 +100,9 @@ export function usePaymentMethodsHydrated(): boolean {
 }
 
 export function addCard(last4: string, expiry: string): SavedCard {
+  const existing = state.cards.find((item) => item.last4 === last4 && item.expiry === expiry);
+  if (existing) return existing;
+
   const card: SavedCard = {
     id: `card-visa-${Date.now()}`,
     brand: 'Visa',

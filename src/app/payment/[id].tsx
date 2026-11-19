@@ -13,6 +13,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/ui/top-bar';
+import { demoNewCard } from '@/config/payments';
+import { addCard } from '@/store/payment-methods';
 import { colors, font, radius, space, text } from '@/theme';
 import { successHaptic } from '@/utils/haptics';
 import { ugx } from '@/utils/format';
@@ -38,6 +40,7 @@ export default function PaymentScreen() {
     method?: string;
     phone?: string;
     last4?: string;
+    saveCard?: string;
   }>();
   const bookingId = typeof params.bookingId === 'string' ? params.bookingId : 'GBX-00000';
   const slug = typeof params.slug === 'string' ? params.slug : '';
@@ -46,6 +49,7 @@ export default function PaymentScreen() {
   const phone = typeof params.phone === 'string' ? params.phone : '';
   const last4 = typeof params.last4 === 'string' ? params.last4 : 'new';
   const isCard = method === 'visa_card';
+  const saveNewCard = isCard && params.saveCard === '1';
 
   const [approved, setApproved] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(120);
@@ -83,6 +87,7 @@ export default function PaymentScreen() {
   useEffect(() => {
     if (!approved) return;
     Animated.spring(tick, { toValue: 1, useNativeDriver: true }).start();
+    if (saveNewCard) addCard(demoNewCard.last4, demoNewCard.expiry);
     const next = setTimeout(() => {
       router.replace({
         pathname: '/book/[slug]/confirmed',
@@ -90,7 +95,7 @@ export default function PaymentScreen() {
       });
     }, 1600);
     return () => clearTimeout(next);
-  }, [approved, amount, bookingId, slug, tick]);
+  }, [approved, amount, bookingId, saveNewCard, slug, tick]);
 
   const stop = () => {
     if (approved) return;
@@ -141,7 +146,9 @@ export default function PaymentScreen() {
               Payment approved
             </Text>
             <Text style={styles.body} maxFontSizeMultiplier={1.3}>
-              {ugx(amount)} paid. Taking you to your confirmation…
+              {ugx(amount)} paid
+              {saveNewCard ? ` · Visa ending ${demoNewCard.last4} saved` : ''}. Taking you to your
+              confirmation…
             </Text>
           </>
         ) : (
