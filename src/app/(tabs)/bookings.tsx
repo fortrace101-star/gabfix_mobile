@@ -14,11 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SegmentedControl } from '@/components/booking/segmented-control';
 import { slotLabel } from '@/components/booking/slot-chips';
 import { Button } from '@/components/ui/button';
-import { recurringPlans } from '@/lib/plans';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
 import { type BookingStatus, type SavedBooking, useBookings, useBookingsHydrated } from '@/store/bookings';
-import { usePlanOverrides } from '@/store/plans';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
@@ -174,16 +172,11 @@ function EmptyState({ tab }: { tab: BookingStatus }) {
 export default function BookingsScreen() {
   const bookings = useBookings();
   const hydrated = useBookingsHydrated();
-  const planOverrides = usePlanOverrides();
   const [tab, setTab] = useState<BookingStatus>('upcoming');
 
   const filtered = useMemo(
     () => bookings.filter((booking) => booking.status === tab),
     [bookings, tab],
-  );
-  const plans = useMemo(
-    () => recurringPlans(bookings, planOverrides),
-    [bookings, planOverrides],
   );
 
   return (
@@ -192,19 +185,17 @@ export default function BookingsScreen() {
         <Text style={styles.title} maxFontSizeMultiplier={1.3}>
           Bookings
         </Text>
-        {plans.length > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open recurring plans"
-            hitSlop={8}
-            onPress={() => router.push('/booking/plans')}
-            style={styles.plansLink}>
-            <Repeat size={16} color={colors.green700} strokeWidth={2} />
-            <Text style={styles.plansLinkText} maxFontSizeMultiplier={1.2}>
-              Plans
-            </Text>
-          </Pressable>
-        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open recurring plans"
+          hitSlop={8}
+          onPress={() => router.push('/booking/plans')}
+          style={styles.plansLink}>
+          <Repeat size={16} color={colors.green700} strokeWidth={2} />
+          <Text style={styles.plansLinkText} maxFontSizeMultiplier={1.2}>
+            Plans
+          </Text>
+        </Pressable>
       </View>
       <View style={styles.tabsWrap}>
         <SegmentedControl options={TABS} value={tab} onChange={setTab} />
