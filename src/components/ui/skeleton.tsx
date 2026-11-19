@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
+import { supportsNativeDriver } from '@/lib/animation';
 import { colors } from '@/theme';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -25,7 +26,7 @@ export function Skeleton({ style }: Props) {
       Animated.timing(opacity, {
         toValue: 1,
         duration: 1200,
-        useNativeDriver: true,
+        useNativeDriver: supportsNativeDriver,
       }),
     );
     loop.start();

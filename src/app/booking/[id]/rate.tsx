@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TopBar } from '@/components/ui/top-bar';
 import { cleanerById } from '@/config/cleaners';
+import { supportsNativeDriver } from '@/lib/animation';
 import { getBookingById, useBookings } from '@/store/bookings';
 import { useSavedCards, useSavedMobileMoney } from '@/store/payment-methods';
 import { addReview, getReviewForBooking } from '@/store/reviews';
@@ -70,8 +71,8 @@ function StarButton({
   const select = () => {
     if (!reducedMotion) {
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.2, duration: 90, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 90, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.2, duration: 90, useNativeDriver: supportsNativeDriver }),
+        Animated.timing(scale, { toValue: 1, duration: 90, useNativeDriver: supportsNativeDriver }),
       ]).start();
     }
     onPress();

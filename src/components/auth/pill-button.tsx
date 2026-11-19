@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
+import { supportsNativeDriver } from '@/lib/animation';
 import { auth, authSize, duration, font } from '@/theme';
 import { pressHaptic } from '@/utils/haptics';
 
@@ -45,7 +46,7 @@ export function PillButton({
     Animated.timing(scale, {
       toValue: value,
       duration: duration.press,
-      useNativeDriver: true,
+      useNativeDriver: supportsNativeDriver,
     }).start();
   };
 

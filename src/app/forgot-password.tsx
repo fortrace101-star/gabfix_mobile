@@ -9,6 +9,7 @@ import { GlassInput } from '@/components/auth/glass-input';
 import { PillButton } from '@/components/auth/pill-button';
 import { RadioPill } from '@/components/auth/radio-pill';
 import { CodeInput } from '@/components/ui/code-input';
+import { supportsNativeDriver } from '@/lib/animation';
 import { requestOtp } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import { auth, duration, font } from '@/theme';
@@ -49,11 +50,11 @@ export default function ForgotPasswordScreen() {
       setError(null);
       return;
     }
-    Animated.timing(fade, { toValue: 0, duration: duration.fast, useNativeDriver: true }).start(
+    Animated.timing(fade, { toValue: 0, duration: duration.fast, useNativeDriver: supportsNativeDriver }).start(
       () => {
         setStep(next);
         setError(null);
-        Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+        Animated.timing(fade, { toValue: 1, duration: 200, useNativeDriver: supportsNativeDriver }).start();
       },
     );
   };

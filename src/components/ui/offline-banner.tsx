@@ -5,6 +5,7 @@ import { WifiOff } from 'lucide-react-native';
 import { useNetworkState } from 'expo-network';
 import { useReducedMotion } from 'react-native-reanimated';
 
+import { supportsNativeDriver } from '@/lib/animation';
 import { colors, duration, font, z } from '@/theme';
 
 /** P26 offline banner driven by the device network state. */
@@ -23,7 +24,7 @@ export function OfflineBanner() {
     Animated.timing(progress, {
       toValue: isOffline ? 1 : 0,
       duration: duration.base,
-      useNativeDriver: true,
+      useNativeDriver: supportsNativeDriver,
     }).start();
   }, [isOffline, progress, reducedMotion]);
 

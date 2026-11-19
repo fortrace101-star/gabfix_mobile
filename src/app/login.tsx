@@ -10,6 +10,7 @@ import { OrDivider } from '@/components/auth/or-divider';
 import { PillButton } from '@/components/auth/pill-button';
 import { SocialButton } from '@/components/auth/social-button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supportsNativeDriver } from '@/lib/animation';
 import { login, requestOtp } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import { startSession } from '@/store/session';
@@ -34,10 +35,10 @@ export default function LoginScreen() {
     if (reducedMotion) return;
     shake.setValue(0);
     Animated.sequence([
-      Animated.timing(shake, { toValue: 8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: 8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: 0, duration: 60, useNativeDriver: true }),
+      Animated.timing(shake, { toValue: 8, duration: 60, useNativeDriver: supportsNativeDriver }),
+      Animated.timing(shake, { toValue: -8, duration: 60, useNativeDriver: supportsNativeDriver }),
+      Animated.timing(shake, { toValue: 8, duration: 60, useNativeDriver: supportsNativeDriver }),
+      Animated.timing(shake, { toValue: 0, duration: 60, useNativeDriver: supportsNativeDriver }),
     ]).start();
   };
 

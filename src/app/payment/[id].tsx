@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/ui/top-bar';
 import { demoNewCard } from '@/config/payments';
+import { supportsNativeDriver } from '@/lib/animation';
 import { addBookingTip } from '@/store/bookings';
 import { addCard } from '@/store/payment-methods';
 import { colors, font, radius, space, text } from '@/theme';
@@ -65,7 +66,7 @@ export default function PaymentScreen() {
         toValue: 1,
         duration: 1400,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: supportsNativeDriver,
       }),
     );
     loop.start();
@@ -89,7 +90,7 @@ export default function PaymentScreen() {
 
   useEffect(() => {
     if (!approved) return;
-    Animated.spring(tick, { toValue: 1, useNativeDriver: true }).start();
+    Animated.spring(tick, { toValue: 1, useNativeDriver: supportsNativeDriver }).start();
     if (isTip) {
       addBookingTip(bookingId, amount, method);
     } else if (saveNewCard) {

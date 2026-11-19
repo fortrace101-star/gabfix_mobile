@@ -3,6 +3,7 @@ import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { LogoBadge } from '@/components/brand/logo-badge';
+import { supportsNativeDriver } from '@/lib/animation';
 import { auth, font } from '@/theme';
 
 type Props = {
@@ -26,13 +27,13 @@ export function LoadingOverlay({ visible }: Props) {
           toValue: 1.12,
           duration: 450,
           easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: supportsNativeDriver,
         }),
         Animated.timing(pulse, {
           toValue: 1,
           duration: 450,
           easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: supportsNativeDriver,
         }),
       ]),
     );

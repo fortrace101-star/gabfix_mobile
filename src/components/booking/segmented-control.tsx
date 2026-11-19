@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
+import { supportsNativeDriver } from '@/lib/animation';
 import { colors, duration, font, radius, shadow, text } from '@/theme';
 import { selectionHaptic } from '@/utils/haptics';
 
@@ -27,7 +28,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
     Animated.timing(progress, {
       toValue: index,
       duration: duration.fast,
-      useNativeDriver: true,
+      useNativeDriver: supportsNativeDriver,
     }).start();
   }, [index, progress]);
 

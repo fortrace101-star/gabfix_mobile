@@ -7,6 +7,7 @@ import { slotLabel } from '@/components/booking/slot-chips';
 import { Button } from '@/components/ui/button';
 import { cleanerById } from '@/config/cleaners';
 import { serviceBySlug } from '@/config/services';
+import { supportsNativeDriver } from '@/lib/animation';
 import { price } from '@/lib/pricing';
 import { getBookingDraft, resetDraft } from '@/store/booking';
 import { addBooking } from '@/store/bookings';
@@ -88,7 +89,7 @@ export default function ConfirmedScreen() {
     }
     resetDraft();
     successHaptic();
-    Animated.spring(tick, { toValue: 1, useNativeDriver: true }).start();
+    Animated.spring(tick, { toValue: 1, useNativeDriver: supportsNativeDriver }).start();
   }, [balance, bookingId, location?.area, location?.contactName, location?.propertyType, location?.street, paid, preferredCleaner?.id, preferredCleaner?.name, schedule?.dateISO, schedule?.startTime, service?.name, service?.slug, slug, snapshot, snapshot?.details.cleaners, snapshot?.details.hours, snapshot?.payment?.method, snapshot?.payment?.payerPhone, snapshot?.payment?.plan, snapshot?.serviceSlug, tick, total]);
 
   const when = schedule

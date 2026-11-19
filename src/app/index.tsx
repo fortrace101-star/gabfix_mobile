@@ -5,6 +5,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 
 import { LogoBadge } from '@/components/brand/logo-badge';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
+import { supportsNativeDriver } from '@/lib/animation';
 import { useSessionStatus } from '@/store/session';
 import { auth, font } from '@/theme';
 
@@ -24,7 +25,7 @@ export default function SplashScreen() {
         toValue: 1,
         duration: 500,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: supportsNativeDriver,
       }).start();
     }
   }, [progress, reducedMotion]);
