@@ -16,15 +16,6 @@ export type ServiceContent = {
   reviewCount: number;
 };
 
-export type Review = {
-  id: string;
-  name: string;
-  initials: string;
-  date: string;
-  stars: number;
-  comment: string;
-};
-
 const sharedFaqs: FaqItem[] = [
   {
     question: 'Do I need to buy cleaning products?',
@@ -135,35 +126,6 @@ export const serviceContent: Record<string, ServiceContent> = {
     reviewCount: 141,
   },
 };
-
-export const reviews: readonly Review[] = [
-  {
-    id: 'r1',
-    name: 'Nuray L.',
-    initials: 'NL',
-    date: '12 Nov 2026',
-    stars: 5,
-    comment:
-      'Booked the night before and the cleaner arrived early. The kitchen looked brand new and she left a checklist of what was done.',
-  },
-  {
-    id: 'r2',
-    name: 'Brian O.',
-    initials: 'BO',
-    date: '4 Nov 2026',
-    stars: 5,
-    comment: 'Clear pricing, no surprises at the end. We now book the same cleaner every two weeks.',
-  },
-  {
-    id: 'r3',
-    name: 'Sarah K.',
-    initials: 'SK',
-    date: '28 Oct 2026',
-    stars: 4,
-    comment:
-      'Thorough deep clean and friendly team. Took slightly longer than planned, but they stayed until it was finished.',
-  },
-];
 
 export const relatedServices = (slug: string): readonly Service[] =>
   services.filter((service) => service.slug !== slug).slice(0, 3);

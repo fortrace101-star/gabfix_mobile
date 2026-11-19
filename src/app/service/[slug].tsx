@@ -1,10 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ArrowLeft,
   CalendarCheck,
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Clock,
   Share2,
@@ -20,8 +21,11 @@ import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { ReviewCard } from '@/components/reviews/review-card';
+import { Stars } from '@/components/reviews/stars';
 import { addOns } from '@/config/add-ons';
-import { relatedServices, reviews } from '@/config/service-content';
+import { reviewsForService } from '@/config/reviews';
+import { relatedServices } from '@/config/service-content';
 import { hourlyRate, pricing } from '@/config/pricing';
 import { fromHourly, serviceBySlug } from '@/config/services';
 import { useServiceContent } from '@/hooks/use-service-content';
@@ -43,22 +47,6 @@ const steps = [
   { icon: ShieldCheck, title: 'We match a cleaner', caption: 'A vetted cleaner confirms before the visit.' },
   { icon: Sparkles, title: 'Your clean happens', caption: 'Pay after the service, or in full at checkout.' },
 ];
-
-function Stars({ value, size = 16 }: { value: number; size?: number }) {
-  return (
-    <View style={styles.stars} accessibilityLabel={`${value} out of 5 stars`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <Star
-          key={index}
-          size={size}
-          color={colors.yellow600}
-          fill={index < Math.round(value) ? colors.yellow500 : 'transparent'}
-          strokeWidth={1.5}
-        />
-      ))}
-    </View>
-  );
-}
 
 function TrustItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
@@ -312,40 +300,35 @@ export default function ServiceLandingScreen() {
           </View>
 
           <View style={styles.section}>
-            <View style={styles.reviewSummary}>
-              <Text style={styles.ratingBig} maxFontSizeMultiplier={1.2}>
-                {content.rating}
-              </Text>
-              <View style={styles.reviewSummaryBody}>
-                <Stars value={content.rating} />
-                <Text style={styles.reviewCount} maxFontSizeMultiplier={1.3}>
-                  {content.reviewCount} verified reviews
+            <View style={styles.reviewSectionHeader}>
+              <View style={styles.reviewSummary}>
+                <Text style={styles.ratingBig} maxFontSizeMultiplier={1.2}>
+                  {content.rating}
                 </Text>
-              </View>
-            </View>
-            {reviews.map((review) => (
-              <View key={review.id} style={styles.reviewCard}>
-                <View style={styles.reviewHeader}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>
-                      {review.initials}
-                    </Text>
-                  </View>
-                  <View style={styles.reviewWho}>
-                    <Text style={styles.reviewName} maxFontSizeMultiplier={1.3}>
-                      {review.name}
-                    </Text>
-                    <Stars value={review.stars} size={14} />
-                  </View>
-                  <Text style={styles.reviewDate} maxFontSizeMultiplier={1.2}>
-                    {review.date}
+                <View style={styles.reviewSummaryBody}>
+                  <Stars value={content.rating} />
+                  <Text style={styles.reviewCount} maxFontSizeMultiplier={1.3}>
+                    {content.reviewCount} verified reviews
                   </Text>
                 </View>
-                <Text style={styles.reviewComment} maxFontSizeMultiplier={1.3}>
-                  {review.comment}
-                </Text>
               </View>
-            ))}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Read all reviews"
+                hitSlop={8}
+                onPress={() => router.push(`/service/${slug}/reviews` as Href)}
+                style={styles.readAll}>
+                <Text style={styles.readAllText} maxFontSizeMultiplier={1.2}>
+                  Read all reviews
+                </Text>
+                <ChevronRight size={14} color={colors.green700} strokeWidth={2} />
+              </Pressable>
+            </View>
+            {reviewsForService(slug)
+              .slice(0, 3)
+              .map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
           </View>
 
           <View style={styles.section}>
@@ -577,7 +560,19 @@ const styles = StyleSheet.create({
   timelineBody: { flex: 1, gap: 2, paddingBottom: space[4] },
   timelineTitle: { ...text.bodyM, fontFamily: font.bodySemi },
   timelineCaption: { ...text.caption },
-  reviewSummary: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  reviewSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+  },
+  reviewSummary: { flexDirection: 'row', alignItems: 'center', gap: space[3], flex: 1 },
+  readAll: { flexDirection: 'row', alignItems: 'center', gap: 1 },
+  readAllText: {
+    ...text.caption,
+    color: colors.green700,
+    fontFamily: font.bodySemi,
+  },
   ratingBig: {
     fontFamily: font.poppinsBold,
     fontSize: 40,
