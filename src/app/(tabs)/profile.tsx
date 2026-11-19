@@ -1,12 +1,15 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
 import {
   BookOpenText,
   ChevronDown,
   ChevronRight,
   CreditCard,
+  Gift,
   LogOut,
   MapPin,
   ShieldCheck,
+  Tag,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -14,12 +17,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
+import { REFERRAL_REWARD } from '@/lib/referral';
 import { useOnboardingArea } from '@/store/onboarding';
 import { endSession, useAuthUser } from '@/store/session';
 import { base, colors, font, radius, space, text } from '@/theme';
-import { phoneUG } from '@/utils/format';
+import { phoneUG, ugx } from '@/utils/format';
 
-/** P20 shell: account summary, area shortcut and sign out. */
+/** P27e profile shell: account summary, P20 rewards and sign out. */
 export default function ProfileTab() {
   const insets = useSafeAreaInsets();
   useStatusBarStyle('dark');
@@ -62,6 +66,31 @@ export default function ProfileTab() {
 
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Refer and earn"
+          onPress={() => router.push('/refer' as Href)}
+          style={styles.referPressable}>
+          <LinearGradient
+            colors={[colors.yellow500, colors.yellow600]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.referCard}>
+            <View style={styles.referIcon}>
+              <Gift size={22} color={colors.green900} strokeWidth={2} />
+            </View>
+            <View style={styles.referBody}>
+              <Text style={styles.referKicker} maxFontSizeMultiplier={1.2}>
+                Refer and earn
+              </Text>
+              <Text style={styles.referTitle} maxFontSizeMultiplier={1.3}>
+                Give {ugx(REFERRAL_REWARD)}, get {ugx(REFERRAL_REWARD)}
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.green900} strokeWidth={2} />
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel={area ? `Area: ${area.name}. Change area` : 'Choose your area'}
           onPress={() => router.push('/area-select')}
           style={[base.card, styles.row]}>
@@ -77,6 +106,25 @@ export default function ProfileTab() {
             </Text>
           </View>
           <ChevronDown size={18} color={colors.textMuted} strokeWidth={2} />
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Offers and promo codes"
+          onPress={() => router.push('/offers' as Href)}
+          style={[base.card, styles.row]}>
+          <View style={styles.iconTile}>
+            <Tag size={20} color={colors.green500} strokeWidth={2} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
+              Offers and promo codes
+            </Text>
+            <Text style={styles.rowValue} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+              Save on your next clean
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
         </Pressable>
 
         <Pressable
@@ -186,6 +234,38 @@ const styles = StyleSheet.create({
   identityBody: { flex: 1, gap: 2 },
   name: { ...text.h3 },
   meta: { ...text.caption },
+  referPressable: { borderRadius: radius.card, overflow: 'hidden' },
+  referCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+    padding: space[4],
+    borderRadius: radius.card,
+  },
+  referIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referBody: { flex: 1, gap: 1 },
+  referKicker: {
+    fontFamily: font.bodySemi,
+    fontSize: 11,
+    lineHeight: 15,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    color: colors.green900,
+    opacity: 0.75,
+  },
+  referTitle: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.green900,
+  },
   row: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   iconTile: {
     width: 40,
