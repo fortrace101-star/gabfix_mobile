@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import {
   Bell,
   ChevronDown,
@@ -13,13 +13,14 @@ import {
   Star,
   Timer,
 } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
   RefreshControl,
   ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   Text,
   View,
@@ -82,6 +83,11 @@ const trust = [
   { icon: Timer, label: 'Free cancellation' },
   { icon: Sparkles, label: 'Satisfaction promise' },
 ] as const;
+
+/** How long each promo stays on screen before the carousel advances. */
+const OFFER_INTERVAL_MS = 4_500;
+/** Keep autoplay out of the way for a moment after the customer swipes. */
+const OFFER_RESUME_DELAY_MS = 6_000;
 
 /** P4 Home tab shell. Discovery data is still local; `GET /home` replaces it in Phase 3. */
 export default function HomeTab() {
@@ -146,10 +152,36 @@ export default function HomeTab() {
   const cardWidth = (width - space[4] * 2 - space[3]) / 2;
   const offerWidth = width - space[4] * 2;
   const offerStep = offerWidth + space[3];
+  const offerCarousel = useRef<ScrollViewInstance>(null);
+  const activeOfferRef = useRef(0);
+  const offerPauseUntil = useRef(0);
+
+  const goToOffer = useCallback(
+    (index: number) => {
+      const clamped = Math.max(0, Math.min(offers.length - 1, index));
+      activeOfferRef.current = clamped;
+      setActiveOffer(clamped);
+      offerCarousel.current?.scrollTo({ x: clamped * offerStep, animated: true });
+    },
+    [offerStep],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (offers.length < 2) return undefined;
+      const timer = setInterval(() => {
+        if (Date.now() < offerPauseUntil.current) return;
+        const next = (activeOfferRef.current + 1) % offers.length;
+        goToOffer(next);
+      }, OFFER_INTERVAL_MS);
+      return () => clearInterval(timer);
+    }, [goToOffer]),
+  );
 
   const onOfferScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = Math.round(event.nativeEvent.contentOffset.x / offerStep);
     const clamped = Math.max(0, Math.min(offers.length - 1, next));
+    activeOfferRef.current = clamped;
     if (clamped !== activeOffer) setActiveOffer(clamped);
   };
 
@@ -254,7 +286,7 @@ export default function HomeTab() {
                 <Text style={styles.resumeText} maxFontSizeMultiplier={1.3}>
                   Resume
                 </Text>
-                <ChevronRight size={16} color={colors.green500} strokeWidth={2} />
+                <ChevronRight size={14} color={colors.green700} strokeWidth={2} />
               </View>
             </Pressable>
           ) : null}
@@ -262,6 +294,7 @@ export default function HomeTab() {
           {offers.length > 0 ? (
             <View style={styles.offerBlock}>
               <ScrollView
+                ref={offerCarousel}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 decelerationRate="fast"
@@ -269,6 +302,9 @@ export default function HomeTab() {
                 snapToAlignment="start"
                 snapToInterval={offerStep}
                 onScroll={onOfferScroll}
+                onScrollBeginDrag={() => {
+                  offerPauseUntil.current = Date.now() + OFFER_RESUME_DELAY_MS;
+                }}
                 scrollEventThrottle={16}
                 style={styles.offerScroll}
                 contentContainerStyle={styles.offerRow}>
@@ -765,19 +801,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
-    backgroundColor: colors.surface,
+    backgroundColor: colors.warningBg,
     borderRadius: radius.card,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.yellow500,
     padding: space[4],
     ...shadow.card,
   },
   draftBody: { flex: 1, gap: 2 },
-  draftKicker: { ...text.caption, color: colors.textMuted },
+  draftKicker: {
+    ...text.caption,
+    color: colors.yellow800,
+    fontFamily: font.bodySemi,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   draftTitle: { ...text.h3 },
   draftMeta: { ...text.caption },
-  resume: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  resumeText: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green500 },
+  resume: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    height: 36,
+    paddingHorizontal: space[3],
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+  },
+  resumeText: { ...text.caption, fontFamily: font.bodySemi, color: colors.green700 },
   offerBlock: { gap: space[2] },
   offerScroll: { marginHorizontal: -space[4] },
   offerRow: { paddingHorizontal: space[4], gap: space[3] },
