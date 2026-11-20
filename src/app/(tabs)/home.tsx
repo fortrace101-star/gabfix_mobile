@@ -556,7 +556,7 @@ export default function HomeTab() {
           {lastRebookable ? (
             <View style={styles.rebookCard}>
               <View style={styles.rebookAvatar}>
-                <Repeat size={20} color={colors.green700} strokeWidth={2} />
+                <Repeat size={20} color={colors.yellow800} strokeWidth={2} />
               </View>
               <View style={styles.rebookBody}>
                 <Text style={styles.draftKicker} maxFontSizeMultiplier={1.3}>
@@ -811,8 +811,6 @@ const styles = StyleSheet.create({
     ...text.caption,
     color: colors.yellow800,
     fontFamily: font.bodySemi,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   draftTitle: { ...text.h3 },
   draftMeta: { ...text.caption },
@@ -937,7 +935,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
-    backgroundColor: colors.surface,
+    backgroundColor: colors.warningBg,
     borderRadius: radius.card,
     padding: space[4],
     ...shadow.card,
@@ -946,7 +944,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radius.pill,
-    backgroundColor: colors.green50,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -955,15 +953,14 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingHorizontal: space[3],
     borderRadius: radius.pill,
-    backgroundColor: colors.green500,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rebookActionText: {
+    ...text.caption,
     fontFamily: font.bodySemi,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.surface,
+    color: colors.green700,
   },
   upcomingCard: {
     backgroundColor: colors.surface,

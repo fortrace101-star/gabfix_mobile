@@ -151,53 +151,52 @@ function MenuRow({
 
 function AddressCard({ address, onMenu }: { address: SavedAddress; onMenu: () => void }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Edit ${address.label} address, ${address.street}`}
-      onPress={() => router.push({ pathname: '/addresses/[id]', params: { id: address.id } })}
-      style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={styles.labelPill}>
-          <Home size={14} color={colors.green700} strokeWidth={2} />
-          <Text style={styles.labelText} maxFontSizeMultiplier={1.2}>
-            {address.label}
-          </Text>
-        </View>
-        {address.isDefault ? (
-          <View style={styles.defaultPill}>
-            <View style={styles.defaultDot} />
-            <Text style={styles.defaultText} maxFontSizeMultiplier={1.2}>
-              Default
+    <View style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${address.label} address, ${address.street}`}
+        onPress={() => router.push({ pathname: '/addresses/[id]', params: { id: address.id } })}
+        style={styles.cardPress}>
+        <View style={styles.cardTop}>
+          <View style={styles.labelPill}>
+            <Home size={14} color={colors.green700} strokeWidth={2} />
+            <Text style={styles.labelText} maxFontSizeMultiplier={1.2}>
+              {address.label}
             </Text>
           </View>
+          {address.isDefault ? (
+            <View style={styles.defaultPill}>
+              <View style={styles.defaultDot} />
+              <Text style={styles.defaultText} maxFontSizeMultiplier={1.2}>
+                Default
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.street} maxFontSizeMultiplier={1.3}>
+          {address.street}
+        </Text>
+        {address.landmark ? (
+          <Text style={styles.landmark} maxFontSizeMultiplier={1.3} numberOfLines={2}>
+            {address.landmark}
+          </Text>
         ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Manage ${address.label} address`}
-          hitSlop={8}
-          onPress={(event) => {
-            event.stopPropagation();
-            onMenu();
-          }}
-          style={styles.more}>
-          <MoreHorizontal size={22} color={colors.textMuted} strokeWidth={2} />
-        </Pressable>
-      </View>
-      <Text style={styles.street} maxFontSizeMultiplier={1.3}>
-        {address.street}
-      </Text>
-      {address.landmark ? (
-        <Text style={styles.landmark} maxFontSizeMultiplier={1.3} numberOfLines={2}>
-          {address.landmark}
-        </Text>
-      ) : null}
-      <View style={styles.areaRow}>
-        <MapPin size={14} color={colors.textMuted} strokeWidth={2} />
-        <Text style={styles.area} maxFontSizeMultiplier={1.2}>
-          {address.area} · {address.propertyType}
-        </Text>
-      </View>
-    </Pressable>
+        <View style={styles.areaRow}>
+          <MapPin size={14} color={colors.textMuted} strokeWidth={2} />
+          <Text style={styles.area} maxFontSizeMultiplier={1.2}>
+            {address.area} · {address.propertyType}
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Manage ${address.label} address`}
+        hitSlop={8}
+        onPress={onMenu}
+        style={styles.more}>
+        <MoreHorizontal size={22} color={colors.textMuted} strokeWidth={2} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -275,11 +274,15 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.card,
-    padding: space[4],
-    gap: space[2],
     ...shadow.card,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  cardPress: { padding: space[4], gap: space[2], borderRadius: radius.card },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingRight: 44,
+  },
   labelPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -301,7 +304,15 @@ const styles = StyleSheet.create({
   },
   defaultDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.yellow600 },
   defaultText: { ...text.caption, fontSize: 11, color: colors.yellow800 },
-  more: { marginLeft: 'auto', width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  more: {
+    position: 'absolute',
+    top: space[2],
+    right: space[2],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   street: { ...text.bodyL, color: colors.text, fontFamily: font.bodyMedium },
   landmark: { ...text.caption, color: colors.textMuted },
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
