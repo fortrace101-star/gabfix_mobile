@@ -116,6 +116,19 @@ const paths = {
     </>
   ),
   spark: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" />,
+  camera: (
+    <>
+      <path d="M3 8a2 2 0 0 1 2-2h2.2l1.4-2h6.8l1.4 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" />
+      <circle cx="12" cy="12.5" r="3.2" />
+    </>
+  ),
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9" r="1.5" />
+      <path d="M21 16l-5-5-4 4-2-2-5 5" />
+    </>
+  ),
   dot: <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />,
 } satisfies Record<string, ReactNode>;
 

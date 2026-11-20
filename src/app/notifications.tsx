@@ -4,7 +4,10 @@ import {
   BellOff,
   CalendarCheck2,
   Check,
+  Settings,
+  ShieldAlert,
   Sparkles,
+  Tag,
   WalletCards,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -32,6 +35,8 @@ const iconFor: Record<NotificationKind, LucideIcon> = {
   reminder: Sparkles,
   payment: WalletCards,
   system: Bell,
+  security: ShieldAlert,
+  promo: Tag,
 };
 
 const isSameDay = (left: Date, right: Date): boolean =>
@@ -53,7 +58,7 @@ const timeLabel = (iso: string): string => {
 };
 
 function NotificationRow({ notification }: { notification: AppNotification }) {
-  const Icon = iconFor[notification.kind];
+  const Icon = iconFor[notification.kind] ?? Bell;
 
   const open = () => {
     if (!notification.read) markNotificationRead(notification.id);
@@ -139,21 +144,31 @@ export default function NotificationsScreen() {
       <TopBar
         title="Notifications"
         right={
-          unread > 0 ? (
+          <View style={styles.headerRight}>
+            {unread > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Mark all notifications as read"
+                hitSlop={8}
+                onPress={() => {
+                  selectionHaptic();
+                  markAllNotificationsRead();
+                }}
+                style={styles.markAll}>
+                <Text style={styles.markAllText} maxFontSizeMultiplier={1.2}>
+                  Mark all read
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Mark all notifications as read"
+              accessibilityLabel="Notification settings"
               hitSlop={8}
-              onPress={() => {
-                selectionHaptic();
-                markAllNotificationsRead();
-              }}
-              style={styles.markAll}>
-              <Text style={styles.markAllText} maxFontSizeMultiplier={1.2}>
-                Mark all read
-              </Text>
+              onPress={() => router.push('/profile/notification-preferences' as Href)}
+              style={styles.gear}>
+              <Settings size={20} color={colors.text} strokeWidth={2} />
             </Pressable>
-          ) : null
+          </View>
         }
       />
 
@@ -185,13 +200,23 @@ export default function NotificationsScreen() {
             </View>
           )}
           ListEmptyComponent={
-            <EmptyState
-              icon={BellOff}
-              title="You're all caught up"
-              body="Booking updates, reminders and payment receipts will appear here."
-              actionLabel="Back to Home"
-              onAction={() => router.replace('/(tabs)/home')}
-            />
+            <View style={styles.emptyWrap}>
+              <EmptyState
+                icon={BellOff}
+                title="You're all caught up"
+                body="Booking updates, reminders and payment receipts will appear here."
+                actionLabel="Back to Home"
+                onAction={() => router.replace('/(tabs)/home')}
+              />
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/profile/notification-preferences' as Href)}
+                style={styles.emptyLink}>
+                <Text style={styles.emptyLinkText} maxFontSizeMultiplier={1.2}>
+                  Notification settings
+                </Text>
+              </Pressable>
+            </View>
           }
         />
       )}
@@ -201,8 +226,13 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  gear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: space[4], paddingTop: space[2] },
   emptyContent: { flexGrow: 1, justifyContent: 'center' },
+  emptyWrap: { gap: space[2], alignItems: 'center' },
+  emptyLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space[3] },
+  emptyLinkText: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green700 },
   skeletonWrap: { padding: space[4], gap: space[3] },
   skeletonRow: { height: 82, borderRadius: radius.card },
   sectionTitle: {

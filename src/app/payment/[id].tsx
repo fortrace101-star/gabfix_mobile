@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { AlertTriangle, CreditCard, Heart, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import { AlertTriangle, CreditCard, Heart, Lock, Phone, ShieldCheck, Smartphone, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Alert,
   Animated,
   Easing,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/ui/top-bar';
 import { demoNewCard } from '@/config/payments';
+import { support } from '@/config/support';
 import { supportsNativeDriver } from '@/lib/animation';
 import { addBookingTip, markPaymentFailed } from '@/store/bookings';
 import { addCard } from '@/store/payment-methods';
@@ -218,6 +221,36 @@ export default function PaymentScreen() {
               label={isTip ? 'Back to review' : 'Use another method'}
               variant="secondary"
               onPress={() => router.back()}
+            />
+            {support.phone ? (
+              <Button
+                label={`Call us on ${support.phone.display}`}
+                variant="secondary"
+                icon={Phone}
+                onPress={async () => {
+                  try {
+                    await Linking.openURL(support.phone!.href);
+                  } catch {
+                    Alert.alert("Couldn't open your phone app", 'Copy the number instead?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Copy number',
+                        onPress: () => void Clipboard.setStringAsync(support.phone!.display),
+                      },
+                    ]);
+                  }
+                }}
+              />
+            ) : null}
+            <Button
+              label="Contact support"
+              variant="ghost"
+              onPress={() =>
+                router.push({
+                  pathname: '/help/contact',
+                  params: bookingId ? { bookingId } : undefined,
+                } as never)
+              }
             />
             <Text style={styles.helper} maxFontSizeMultiplier={1.3}>
               {isTip ? `Tip for booking ${bookingId}.` : `Booking ${bookingId}.`}

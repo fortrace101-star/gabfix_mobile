@@ -1,7 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
-import { emptyDraft, type BookingDetails, type BookingDraft } from '@/lib/pricing';
+import {
+  emptyDraft,
+  type BookingDetails,
+  type BookingDraft,
+  type BookingMedia,
+  type BookingMediaItem,
+  type BookingScope,
+} from '@/lib/pricing';
 
 /**
  * Order-flow draft (Gabfix_App_Ui_2.md, Section 6.0). Each P8–P12 screen reads and writes
@@ -30,10 +37,40 @@ const persist = (draft: BookingDraft | null) => {
   void write.catch(() => undefined);
 };
 
+/** Drafts saved before P8b used different scope values; map them onto the Stage 1 model. */
+const legacySizeBands: Record<string, BookingScope['sizeBand']> = {
+  studio: 'small',
+  one_two_bed: 'medium',
+  three_four_bed: 'large',
+  five_plus_bed: 'large',
+};
+
+const normaliseScope = (base: BookingScope, saved?: BookingScope): BookingScope => {
+  const merged = { ...base, ...(saved ?? {}) } as BookingScope & { condition?: string };
+  if ((merged.condition as string | undefined) === 'moderate') merged.condition = 'typical';
+  const legacyBand = merged.sizeBand ? legacySizeBands[merged.sizeBand] : undefined;
+  if (legacyBand) merged.sizeBand = legacyBand;
+  if (merged.sizeBand === undefined) delete merged.sizeBand;
+  merged.focusAreas = Array.isArray(merged.focusAreas) ? merged.focusAreas : [];
+  return merged;
+};
+
+const withScopeDefaults = (draft: BookingDraft): BookingDraft => {
+  const base = emptyDraft(draft.serviceSlug);
+  return {
+    ...base,
+    ...draft,
+    details: { ...base.details, ...draft.details },
+    addOns: Array.isArray(draft.addOns) ? draft.addOns : [],
+    scope: normaliseScope(base.scope as BookingScope, draft.scope),
+    media: { items: draft.media?.items ?? [], uploaded: draft.media?.uploaded ?? false },
+  };
+};
+
 const setDraft = (draft: BookingDraft | null) => {
-  state = { ...state, draft };
+  state = { ...state, draft: draft ? withScopeDefaults(draft) : null };
   listeners.forEach((listener) => listener());
-  persist(draft);
+  persist(state.draft);
 };
 
 /** Called once at boot from the root layout, before the first screen renders. */
@@ -42,7 +79,7 @@ export async function hydrateBookingDraft(): Promise<void> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     const parsed = raw ? (JSON.parse(raw) as BookingDraft) : null;
-    if (parsed?.serviceSlug && parsed.details) draft = parsed;
+    if (parsed?.serviceSlug && parsed.details) draft = withScopeDefaults(parsed);
   } catch {
     draft = null;
   }
@@ -70,6 +107,29 @@ export function patchDraft(changes: Partial<Omit<BookingDraft, 'serviceSlug'>>):
 export function patchDetails(changes: Partial<BookingDetails>): void {
   if (!state.draft) return;
   setDraft({ ...state.draft, details: { ...state.draft.details, ...changes } });
+}
+
+export function patchScope(changes: Partial<BookingScope>): void {
+  if (!state.draft) return;
+  setDraft({ ...state.draft, scope: { ...(state.draft.scope as BookingScope), ...changes } });
+}
+
+export function setMedia(media: BookingMedia): void {
+  if (!state.draft) return;
+  setDraft({ ...state.draft, media });
+}
+
+/** P8b: append picked photos/videos and clear the “uploaded” marker. */
+export function addMedia(items: BookingMediaItem[]): void {
+  if (!state.draft || items.length === 0) return;
+  const existing = state.draft.media?.items ?? [];
+  setMedia({ items: [...existing, ...items], uploaded: false });
+}
+
+export function removeMedia(id: string): void {
+  if (!state.draft) return;
+  const items = state.draft.media?.items ?? [];
+  setMedia({ items: items.filter((item) => item.id !== id), uploaded: false });
 }
 
 export function toggleAddOn(id: string): void {

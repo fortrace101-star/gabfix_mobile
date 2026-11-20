@@ -292,7 +292,7 @@ export default function LocationScreen() {
           </Pressable>
         }
       />
-      <StepperHeader current={2} />
+      <StepperHeader current={3} />
 
       <ScrollView
         keyboardShouldPersistTaps="handled"

@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
-import type { BookingDetails, BookingLocation, BookingPayment } from '@/lib/pricing';
+import type {
+  BookingDetails,
+  BookingLocation,
+  BookingMediaItem,
+  BookingPayment,
+  BookingScope,
+} from '@/lib/pricing';
 
 const STORAGE_KEY = 'gabfix.bookings.v1';
 
@@ -32,10 +38,16 @@ export type SavedBooking = {
   /** Assigned cleaner, once assignment exists (P18 “Book same cleaner”). */
   cleanerId?: string;
   cleanerName?: string;
+  /** Job scope facts captured at booking time (Phase 2). */
+  scope?: BookingScope;
+  /** Local/finalized media attached to the job (Phase 2). */
+  media?: BookingMediaItem[];
   /** P18: the choices needed to prefill a fresh draft from this booking. */
   rebook?: {
     details: BookingDetails;
     addOns: string[];
+    scope?: BookingScope;
+    media?: BookingMediaItem[];
     location?: BookingLocation;
     payment?: BookingPayment;
     promoCode?: string;

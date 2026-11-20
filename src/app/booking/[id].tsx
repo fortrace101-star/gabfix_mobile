@@ -6,12 +6,16 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CancelSheet } from '@/components/booking/cancel-sheet';
 import { RescheduleSheet } from '@/components/booking/reschedule-sheet';
+import { ScopeSummary } from '@/components/booking/scope-summary';
 import { slotLabel } from '@/components/booking/slot-chips';
+import { UploadStatus } from '@/components/booking/upload-status';
 import { Button } from '@/components/ui/button';
 import { paymentMethodLabel } from '@/lib/booking-policy';
+import { retryBookingUploads } from '@/lib/media-upload';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
 import { type BookingStatus, getBookingById, useBookings } from '@/store/bookings';
+import { retryFailedUploads, useMediaUploads } from '@/store/media-uploads';
 import { useReviews } from '@/store/reviews';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { hoursLabel, ugx } from '@/utils/format';
@@ -93,6 +97,7 @@ export default function BookingDetailScreen() {
   const reviews = useReviews();
   const booking = id ? getBookingById(id) : undefined;
   const review = reviews.find((item) => item.bookingId === booking?.id);
+  const uploads = useMediaUploads(booking?.id);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
@@ -240,6 +245,24 @@ export default function BookingDetailScreen() {
           )}
         </View>
 
+        {booking.scope || (booking.media?.length ?? 0) > 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle} maxFontSizeMultiplier={1.3}>
+              Job scope
+            </Text>
+            <ScopeSummary scope={booking.scope} media={booking.media ?? []} compact />
+            {uploads.length > 0 ? (
+              <UploadStatus
+                items={uploads}
+                onRetry={() => {
+                  retryFailedUploads(booking.id);
+                  void retryBookingUploads(booking.id, booking.media ?? []);
+                }}
+              />
+            ) : null}
+          </View>
+        ) : null}
+
         <View style={styles.card}>
           <Text style={styles.cardTitle} maxFontSizeMultiplier={1.3}>
             Payment summary
@@ -382,7 +405,9 @@ export default function BookingDetailScreen() {
               label="Contact support"
               variant="secondary"
               icon={Phone}
-              onPress={() => router.push('/help/contact' as Href)}
+              onPress={() =>
+                router.push({ pathname: '/help/contact', params: { bookingId: booking.id } } as Href)
+              }
             />
           </View>
         </View>

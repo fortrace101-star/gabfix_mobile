@@ -46,7 +46,16 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Gabfix Home Solutions uses your photos to add a profile picture and attach photos to a service review."
+          "photosPermission": "Gabfix Home Solutions uses your photos so you can show your cleaner the space, set a profile picture and attach photos to a review.",
+          "cameraPermission": "Gabfix Home Solutions uses your camera to take photos and videos of the space to be cleaned.",
+          "microphonePermission": "Gabfix Home Solutions uses your microphone to record sound when you film a short walkthrough video."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#118E45",
+          "defaultChannel": "routine"
         }
       ],
       "expo-web-browser",

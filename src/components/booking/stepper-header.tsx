@@ -3,14 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, font, radius, space, text } from '@/theme';
 
-const stages = ['Details', 'Schedule', 'Location', 'Confirm'] as const;
+const stages = ['Details', 'Job scope', 'Schedule', 'Address', 'Summary', 'Payment'] as const;
 
 type Props = {
   /** Zero-based index of the active stage. */
   current: number;
 };
 
-/** Details · Schedule · Location · Confirm (Gabfix_App_Ui_2.md, 6.0). Add-ons belong to Details. */
+/** Phase 2 Workstream B: 6-stage booking flow. Add-ons remain part of Details. */
 export function StepperHeader({ current }: Props) {
   return (
     <View style={styles.header}>

@@ -37,6 +37,7 @@ import {
 } from '@/config/payments';
 import { hourlyRate, pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
+import { ScopeSummary } from '@/components/booking/scope-summary';
 import { createBooking } from '@/lib/api/bookings';
 import {
   price,
@@ -126,6 +127,7 @@ const frequencyLabel = (frequency: string): string =>
 const editRoutes = {
   details: '/book/[slug]/details',
   'add-ons': '/book/[slug]/add-ons',
+  scope: '/book/[slug]/scope',
   schedule: '/book/[slug]/schedule',
   location: '/book/[slug]/location',
 } as const;
@@ -538,7 +540,7 @@ export default function ReviewScreen() {
           </Pressable>
         }
       />
-      <StepperHeader current={3} />
+      <StepperHeader current={5} />
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -618,6 +620,30 @@ export default function ReviewScreen() {
             editLabel="Edit extras"
             onEdit={() => edit('add-ons')}
           />
+          <View style={styles.scopeBlock}>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryBody}>
+                <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
+                  Job scope
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit job scope"
+                hitSlop={8}
+                onPress={() => edit('scope')}
+                style={styles.editButton}>
+                <Text style={styles.editText} maxFontSizeMultiplier={1.3}>
+                  Edit
+                </Text>
+              </Pressable>
+            </View>
+            <ScopeSummary
+              scope={active.scope}
+              media={active.media?.items ?? []}
+              compact
+            />
+          </View>
         </View>
 
         <Section title="Promo code">
@@ -1045,6 +1071,7 @@ const styles = StyleSheet.create({
   rowLabel: { ...text.caption },
   rowValue: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 14 },
   editButton: { minHeight: 32, minWidth: 48, alignItems: 'flex-end', justifyContent: 'center' },
+  scopeBlock: { gap: space[2] },
   editText: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   promoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space[2] },

@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
+import { decideInApp } from '@/lib/notify-policy';
+import { getProfileSettings } from '@/store/profile-settings';
+
 const STORAGE_KEY = 'gabfix.notifications.v1';
 
-export type NotificationKind = 'booking' | 'reminder' | 'payment' | 'system';
+export type NotificationKind = 'booking' | 'reminder' | 'payment' | 'system' | 'security' | 'promo';
 
 export type AppNotification = {
   id: string;
@@ -40,7 +43,7 @@ const seedNotifications = (): AppNotification[] => [
     body: 'Add your details and a saved payment method before your next booking.',
     createdAtISO: hoursAgo(26),
     read: true,
-    href: '/profile',
+    href: '/(tabs)/profile',
   },
   {
     id: 'clean-checklist',
@@ -76,6 +79,8 @@ const setNotifications = (notifications: AppNotification[]) => {
   persist(notifications);
 };
 
+const kinds: NotificationKind[] = ['booking', 'reminder', 'payment', 'system', 'security', 'promo'];
+
 const isNotification = (value: unknown): value is AppNotification => {
   const item = value as AppNotification | null;
   return Boolean(
@@ -84,10 +89,7 @@ const isNotification = (value: unknown): value is AppNotification => {
       item.title &&
       item.body &&
       item.createdAtISO &&
-      (item.kind === 'booking' ||
-        item.kind === 'reminder' ||
-        item.kind === 'payment' ||
-        item.kind === 'system') &&
+      kinds.includes(item.kind) &&
       typeof item.read === 'boolean',
   );
 };
@@ -111,6 +113,7 @@ export async function hydrateNotifications(): Promise<void> {
 /** Adds one notification, replacing an existing entry with the same id. */
 export function addNotification(notification: Omit<AppNotification, 'read'> & { read?: boolean }): void {
   const next: AppNotification = { read: false, ...notification };
+  if (decideInApp(next.kind, getProfileSettings().notifications) === 'skip') return;
   const exists = state.notifications.some((item) => item.id === next.id);
   const notifications = exists
     ? state.notifications.map((item) => (item.id === next.id ? next : item))

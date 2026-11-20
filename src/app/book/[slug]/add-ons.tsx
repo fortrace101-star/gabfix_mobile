@@ -81,7 +81,7 @@ export default function AddOnsScreen() {
   const canAddCleaner = details.cleaners < maximumCleaners;
 
   const onNext = () => {
-    router.push({ pathname: '/book/[slug]/schedule', params: { slug } });
+    router.push({ pathname: '/book/[slug]/scope', params: { slug } });
   };
 
   return (

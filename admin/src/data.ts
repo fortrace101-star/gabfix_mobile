@@ -46,6 +46,20 @@ export const initialBookings: Booking[] = [
     payment: 'Deposit paid',
     total: 112_000,
     paid: 33_600,
+    scope: {
+      summary: 'Medium · 3 bed · 2 bath · Typical condition',
+      facts: [
+        { label: 'Size', value: 'Medium' },
+        { label: 'Rooms', value: '3 bed · 2 bath · 1 living' },
+        { label: 'Condition', value: 'Typical' },
+        { label: 'Focus', value: 'Kitchen, windows' },
+      ],
+    },
+    media: [
+      { id: 'm1', kind: 'image', label: 'Living room' },
+      { id: 'm2', kind: 'image', label: 'Kitchen' },
+      { id: 'm3', kind: 'video', label: 'Walkthrough', durationSec: 18 },
+    ],
   },
   {
     id: 'GBX-27103',
@@ -92,6 +106,18 @@ export const initialBookings: Booking[] = [
     payment: 'Balance due',
     total: 228_000,
     paid: 0,
+    scope: {
+      summary: 'Large · 4 bed · 3 bath · Heavy condition',
+      facts: [
+        { label: 'Size', value: 'Large' },
+        { label: 'Rooms', value: '4 bed · 3 bath · 2 living' },
+        { label: 'Condition', value: 'Heavy' },
+      ],
+    },
+    media: [
+      { id: 'm4', kind: 'image', label: 'Master bedroom' },
+      { id: 'm5', kind: 'image', label: 'Bathroom' },
+    ],
   },
   {
     id: 'GBX-27100',

@@ -200,6 +200,11 @@ export function BookingsPage({
                       <td>
                         <span className="cell-main">{booking.service}</span>
                         <small className="cell-sub">{booking.hours} hours</small>
+                        {booking.media?.length ? (
+                          <small className="cell-sub media-indicator" title={`${booking.media.length} media item${booking.media.length === 1 ? '' : 's'}`}>
+                            <Icon name="camera" size={12} /> {booking.media.length}
+                          </small>
+                        ) : null}
                       </td>
                       <td>
                         <span className="cell-main">{formatShortDate(booking.dateISO)}</span>

@@ -1,4 +1,4 @@
-import { MapPinOff } from 'lucide-react-native';
+import { MapPinOff, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, space, text } from '@/theme';
@@ -9,15 +9,24 @@ type Props = {
   title: string;
   body: string;
   onOpenSettings: () => void;
+  /** Camera, photos or notifications replace the default location icon. */
+  icon?: LucideIcon;
+  actionLabel?: string;
 };
 
 /** P26 permission denial: benefit copy, Open settings and the manual alternative. */
-export function PermissionCard({ title, body, onOpenSettings }: Props) {
+export function PermissionCard({
+  title,
+  body,
+  onOpenSettings,
+  icon: Icon = MapPinOff,
+  actionLabel = 'Open settings',
+}: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.header}>
         <View style={styles.icon}>
-          <MapPinOff size={22} color={colors.warning} strokeWidth={2} />
+          <Icon size={22} color={colors.warning} strokeWidth={2} />
         </View>
         <View style={styles.copy}>
           <Text style={styles.title} maxFontSizeMultiplier={1.3}>
@@ -28,7 +37,7 @@ export function PermissionCard({ title, body, onOpenSettings }: Props) {
           </Text>
         </View>
       </View>
-      <Button label="Open settings" variant="secondary" small onPress={onOpenSettings} />
+      <Button label={actionLabel} variant="secondary" small onPress={onOpenSettings} />
     </View>
   );
 }

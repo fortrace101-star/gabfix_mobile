@@ -1,7 +1,49 @@
 import { hourlyRate, pricing, type Frequency } from '@/config/pricing';
+import type { PropertySizeBand } from '@/config/size-bands';
 
 /** Booking model from Gabfix_App_Ui_2.md, Section 3.5. Persisted by `src/store/booking.ts`. */
 export type BookingFrequency = Frequency;
+
+export type BookingCondition = 'light' | 'typical' | 'heavy';
+export type BookingFocusArea = string;
+export type BookingWorkstations = '1-5' | '6-15' | '16-40' | '40+';
+
+export type BookingScope = {
+  /** Unset until the customer picks a size band. */
+  sizeBand?: PropertySizeBand;
+  /** Exact size when the customer taps “I know the exact size”. */
+  areaSqm?: number;
+  bedrooms: number;
+  bathrooms: number;
+  livingAreas: number;
+  /** Office-only counters. */
+  workstations?: BookingWorkstations;
+  meetingRooms?: number;
+  toilets?: number;
+  floors?: number;
+  /** Unset for services that do not ask about condition. */
+  condition?: BookingCondition;
+  focusAreas: BookingFocusArea[];
+};
+
+export type BookingMediaItem = {
+  id: string;
+  uri: string;
+  kind: 'image' | 'video';
+  mimeType?: string;
+  fileName?: string;
+  durationSec?: number;
+  sizeBytes?: number;
+  /** Picker asset id, used to skip a duplicate pick. */
+  assetId?: string;
+  width?: number;
+  height?: number;
+};
+
+export type BookingMedia = {
+  items: BookingMediaItem[];
+  uploaded?: boolean;
+};
 
 export type BookingDetails = {
   cleaners: number;
@@ -47,6 +89,10 @@ export type BookingDraft = {
   serviceSlug: string;
   details: BookingDetails;
   addOns: string[];
+  /** P8b Job scope (Phase 2 Workstream B). */
+  scope?: BookingScope;
+  /** P8b scope media (Phase 2 Workstream B). */
+  media?: BookingMedia;
   schedule?: { dateISO: string; startTime: string; repeatUntil?: string };
   location?: BookingLocation;
   promoCode?: string;
@@ -120,4 +166,14 @@ export const emptyDraft = (serviceSlug: string): BookingDraft => ({
     materials: false,
   },
   addOns: [],
+  scope: {
+    bedrooms: 2,
+    bathrooms: 1,
+    livingAreas: 1,
+    meetingRooms: 1,
+    toilets: 2,
+    floors: 1,
+    focusAreas: [],
+  },
+  media: { items: [], uploaded: false },
 });

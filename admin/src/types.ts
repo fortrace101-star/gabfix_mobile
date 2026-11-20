@@ -14,6 +14,19 @@ export type BookingStatus = 'Pending' | 'Confirmed' | 'In progress' | 'Completed
 
 export type PaymentState = 'Paid' | 'Deposit paid' | 'Balance due' | 'Refunded' | 'Failed';
 
+export type BookingScopeFact = {
+  label: string;
+  value: string;
+};
+
+export type BookingMedia = {
+  id: string;
+  kind: 'image' | 'video';
+  url?: string;
+  label?: string;
+  durationSec?: number;
+};
+
 export type Booking = {
   id: string;
   customerId: string;
@@ -29,6 +42,11 @@ export type Booking = {
   payment: PaymentState;
   total: number;
   paid: number;
+  scope?: {
+    summary: string;
+    facts?: BookingScopeFact[];
+  };
+  media?: BookingMedia[];
 };
 
 export type Cleaner = {

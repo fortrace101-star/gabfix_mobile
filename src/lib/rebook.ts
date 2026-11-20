@@ -78,6 +78,8 @@ export function buildRebookDraft(
       materials: false,
     },
     addOns: source?.addOns ?? [],
+    // The previous scope carries over; the old job's local photos never do.
+    scope: source?.scope,
     location: source?.location ?? fallbackLocation(booking),
     payment: rebookPayment(booking),
     rebookedFrom: booking.id,

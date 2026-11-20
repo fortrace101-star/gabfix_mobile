@@ -189,7 +189,10 @@ export default function LiveTrackingScreen() {
   };
 
   const openSupport = () => {
-    router.push({ pathname: '/chat/[threadId]', params: { threadId: 'support' } } as never);
+    router.push({
+      pathname: '/help/contact',
+      params: booking?.id ? { bookingId: booking.id } : undefined,
+    } as never);
   };
 
   if (!booking || (booking.status === 'cancelled' && tracking.state.eta === 'Tracking unavailable')) {

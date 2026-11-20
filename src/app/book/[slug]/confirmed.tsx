@@ -3,14 +3,19 @@ import { CalendarDays, Check, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ScopeSummary } from '@/components/booking/scope-summary';
 import { slotLabel } from '@/components/booking/slot-chips';
+import { UploadStatus } from '@/components/booking/upload-status';
 import { Button } from '@/components/ui/button';
 import { cleanerById } from '@/config/cleaners';
 import { serviceBySlug } from '@/config/services';
 import { supportsNativeDriver } from '@/lib/animation';
+import { prepareBookingUploads, retryBookingUploads, startBookingUploads } from '@/lib/media-upload';
+import { finalizeDraftMedia } from '@/lib/media';
 import { price } from '@/lib/pricing';
 import { getBookingDraft, resetDraft } from '@/store/booking';
 import { addBooking } from '@/store/bookings';
+import { retryFailedUploads, useMediaUploads } from '@/store/media-uploads';
 import { addNotification } from '@/store/notifications';
 import { colors, font, radius, space, text } from '@/theme';
 import { successHaptic } from '@/utils/haptics';
@@ -21,7 +26,7 @@ const parseISODate = (iso: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-/** P14 Booking Confirmed. Clears the draft once the snapshot has been captured. */
+/** P14 Booking Confirmed. Finalizes draft media, saves the local record and starts uploads. */
 export default function ConfirmedScreen() {
   const params = useLocalSearchParams<{
     slug?: string;
@@ -34,6 +39,7 @@ export default function ConfirmedScreen() {
   const [snapshot] = useState(() => getBookingDraft());
   const [tick] = useState(() => new Animated.Value(0));
   const savedRef = useRef(false);
+  const uploads = useMediaUploads(bookingId);
 
   const service = serviceBySlug(slug || snapshot?.serviceSlug || '');
   const total = snapshot ? price(snapshot).total : Number(params.total) || 0;
@@ -44,8 +50,13 @@ export default function ConfirmedScreen() {
   const preferredCleaner = cleanerById(snapshot?.preferredCleanerId);
 
   useEffect(() => {
-    if (!savedRef.current) {
-      savedRef.current = true;
+    if (savedRef.current) return;
+    savedRef.current = true;
+
+    void (async () => {
+      const draftMedia = snapshot?.media?.items ?? [];
+      const finalizedMedia = await finalizeDraftMedia(bookingId, draftMedia);
+
       addBooking({
         id: bookingId,
         serviceSlug: service?.slug ?? snapshot?.serviceSlug ?? slug ?? 'service',
@@ -68,16 +79,21 @@ export default function ConfirmedScreen() {
         contactName: location?.contactName,
         cleanerId: preferredCleaner?.id,
         cleanerName: preferredCleaner?.name,
+        scope: snapshot?.scope,
+        media: finalizedMedia.length > 0 ? finalizedMedia : undefined,
         rebook: snapshot
           ? {
               details: snapshot.details,
               addOns: snapshot.addOns,
+              scope: snapshot.scope,
+              media: finalizedMedia.length > 0 ? finalizedMedia : undefined,
               location: snapshot.location,
               payment: snapshot.payment,
               promoCode: snapshot.promoCode,
             }
           : undefined,
       });
+
       addNotification({
         id: `booking-confirmed-${bookingId}`,
         kind: 'booking',
@@ -86,10 +102,16 @@ export default function ConfirmedScreen() {
         createdAtISO: new Date().toISOString(),
         href: `/booking/${bookingId}`,
       });
-    }
-    resetDraft();
-    successHaptic();
-    Animated.spring(tick, { toValue: 1, useNativeDriver: supportsNativeDriver }).start();
+
+      if (finalizedMedia.length > 0) {
+        prepareBookingUploads(bookingId, finalizedMedia);
+        void startBookingUploads(bookingId, finalizedMedia);
+      }
+
+      resetDraft();
+      successHaptic();
+      Animated.spring(tick, { toValue: 1, useNativeDriver: supportsNativeDriver }).start();
+    })();
   }, [balance, bookingId, location?.area, location?.contactName, location?.propertyType, location?.street, paid, preferredCleaner?.id, preferredCleaner?.name, schedule?.dateISO, schedule?.startTime, service?.name, service?.slug, slug, snapshot, snapshot?.details.cleaners, snapshot?.details.hours, snapshot?.payment?.method, snapshot?.payment?.payerPhone, snapshot?.payment?.plan, snapshot?.serviceSlug, tick, total]);
 
   const when = schedule
@@ -191,6 +213,24 @@ export default function ConfirmedScreen() {
             </View>
           ) : null}
         </View>
+
+        {snapshot?.scope ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+              Job details
+            </Text>
+            <ScopeSummary scope={snapshot.scope} media={snapshot.media?.items ?? []} compact />
+            {uploads.length > 0 ? (
+              <UploadStatus
+                items={uploads}
+                onRetry={() => {
+                  retryFailedUploads(bookingId);
+                  void retryBookingUploads(bookingId, snapshot.media?.items ?? []);
+                }}
+              />
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.nextCard}>
           <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>

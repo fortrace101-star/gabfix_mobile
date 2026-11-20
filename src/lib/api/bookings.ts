@@ -3,9 +3,22 @@ import { hasApiBaseUrl } from '@/lib/config';
 
 import { apiRequest } from './client';
 
+export type UploadTarget = {
+  /** BookingMedia.id from the draft. */
+  clientId: string;
+  /** Server id used when the upload completes. */
+  mediaId: string;
+  /** Pre-signed one-file URL; the URL itself is the credential. */
+  uploadUrl: string;
+  headers?: Record<string, string>;
+  expiresAtISO: string;
+};
+
 export type BookingResult = {
   bookingId: string;
   priceBreakdown: PriceBreakdown;
+  /** Present when the backend accepted media metadata and issued targets. */
+  uploads?: UploadTarget[];
 };
 
 const localBookingId = (): string => {
@@ -34,6 +47,16 @@ export async function createBooking(draft: BookingDraft, total: number): Promise
       location: draft.location,
       payment: draft.payment,
       promoCode: draft.promoCode,
+      scope: draft.scope,
+      media: (draft.media?.items ?? []).map(({ id, kind, mimeType, sizeBytes, width, height, durationSec }) => ({
+        clientId: id,
+        kind,
+        mimeType,
+        bytes: sizeBytes,
+        width,
+        height,
+        durationMs: durationSec ? durationSec * 1000 : undefined,
+      })),
       clientTotal: total,
     },
   });

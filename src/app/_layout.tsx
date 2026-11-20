@@ -21,6 +21,9 @@ import { isUpdateRequired } from '@/config/release';
 import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
+import { refreshDeviceSessions } from '@/store/device-sessions';
+import { hydrateLoginActivity } from '@/store/login-activity';
+import { hydrateMediaUploads } from '@/store/media-uploads';
 import { hydrateMessages } from '@/store/messages';
 import { hydrateNotifications } from '@/store/notifications';
 import { hydratePaymentMethods } from '@/store/payment-methods';
@@ -28,6 +31,7 @@ import { hydratePlans } from '@/store/plans';
 import { hydrateProfileSettings } from '@/store/profile-settings';
 import { hydrateQuotes } from '@/store/quotes';
 import { hydrateReviews } from '@/store/reviews';
+import { hydrateSecurity } from '@/store/security';
 import { restoreSession } from '@/store/session';
 import { auth } from '@/theme';
 
@@ -61,6 +65,10 @@ export default function RootLayout() {
       hydrateNotifications(),
       hydrateProfileSettings(),
       hydrateReviews(),
+      hydrateSecurity(),
+      hydrateLoginActivity(),
+      hydrateMediaUploads(),
+      refreshDeviceSessions(),
     ]).finally(() => setSessionRestored(true));
   }, []);
 
@@ -104,6 +112,13 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="book/[slug]/add-ons"
+            options={{
+              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="book/[slug]/scope"
             options={{
               presentation: Platform.OS === 'ios' ? 'modal' : 'card',
               animation: 'slide_from_right',
@@ -161,6 +176,11 @@ export default function RootLayout() {
           <Stack.Screen name="notifications" />
           <Stack.Screen name="booking/[id]/rate" />
           <Stack.Screen name="profile/edit" />
+          <Stack.Screen name="profile/notification-preferences" />
+          <Stack.Screen name="profile/security/index" />
+          <Stack.Screen name="profile/security/password" />
+          <Stack.Screen name="profile/security/activity" />
+          <Stack.Screen name="profile/devices" />
           <Stack.Screen name="search" />
           <Stack.Screen name="service/[slug]/reviews" />
           <Stack.Screen name="service/[slug]" />

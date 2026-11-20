@@ -240,7 +240,7 @@ export default function ScheduleScreen() {
           </Pressable>
         }
       />
-      <StepperHeader current={1} />
+      <StepperHeader current={2} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.intro}>

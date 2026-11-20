@@ -242,7 +242,9 @@ export default function ReceiptScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Report a problem with this receipt"
-            onPress={() => router.push('/help/contact' as Href)}
+            onPress={() =>
+              router.push({ pathname: '/help/contact', params: { bookingId: booking.id } } as Href)
+            }
             style={styles.action}>
             <Flag size={18} color={colors.green700} strokeWidth={2} />
             <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>
