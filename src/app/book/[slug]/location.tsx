@@ -19,6 +19,7 @@ import { AddressSearch } from '@/components/booking/address-search';
 import { ChipSelector } from '@/components/booking/chip-selector';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { SummarySheet } from '@/components/booking/summary-sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { PermissionCard } from '@/components/ui/permission-card';
@@ -98,6 +99,7 @@ export default function LocationScreen() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [locating, setLocating] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -531,6 +533,15 @@ export default function LocationScreen() {
         actionLabel="Next"
         onPress={onNext}
         disabled={!complete}
+        onDetailsPress={() => setSummaryOpen(true)}
+      />
+
+      <SummarySheet
+        draft={active}
+        locationLabel={form.street ? `${areaName || 'Area'} · ${form.street}` : undefined}
+        onClose={() => setSummaryOpen(false)}
+        serviceName={service?.name}
+        visible={summaryOpen}
       />
     </KeyboardAvoidingView>
   );

@@ -15,6 +15,7 @@ import { DateStrip, toISODate } from '@/components/booking/date-strip';
 import { SlotChips, slotLabel } from '@/components/booking/slot-chips';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { SummarySheet } from '@/components/booking/summary-sheet';
 import { EmptyState } from '@/components/ui/empty-state';
 import { RetryHint } from '@/components/ui/retry-hint';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -110,6 +111,7 @@ export default function ScheduleScreen() {
     () => getBookingDraft()?.schedule?.startTime ?? null,
   );
   const [findingNext, setFindingNext] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const { slots, loading, error, refresh } = useAvailability(
     slug,
@@ -390,6 +392,15 @@ export default function ScheduleScreen() {
         actionLabel="Next"
         onPress={onNext}
         disabled={!selectedTime}
+        onDetailsPress={() => setSummaryOpen(true)}
+      />
+
+      <SummarySheet
+        draft={active}
+        onClose={() => setSummaryOpen(false)}
+        scheduleLabel={summary ?? undefined}
+        serviceName={service?.name}
+        visible={summaryOpen}
       />
     </View>
   );

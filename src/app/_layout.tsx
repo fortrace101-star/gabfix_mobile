@@ -142,6 +142,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="booking/plans" />
           <Stack.Screen name="booking/[id]" />
+          <Stack.Screen name="booking/[id]/track" />
           <Stack.Screen name="quote/[slug]" />
           <Stack.Screen name="offers" />
           <Stack.Screen name="refer" />

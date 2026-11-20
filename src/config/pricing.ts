@@ -40,6 +40,14 @@ export const pricing = {
 
 export type Frequency = keyof typeof pricing.frequencyDiscounts;
 
+/** Customer-facing names for the order-flow summary sheet. */
+export const frequencyLabels: Record<Frequency, string> = {
+  once: 'One time',
+  weekly: 'Weekly',
+  severalPerWeek: 'Several times a week',
+  monthly: 'Monthly',
+};
+
 export const hourlyRate = (hours: number): number => {
   const match = pricing.hourlyRates.find((tier) => hours >= tier.minHours);
   return match ? match.rate : pricing.hourlyRates[pricing.hourlyRates.length - 1].rate;

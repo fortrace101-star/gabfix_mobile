@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowLeft, Clock3, Search, Sparkles, X } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, Clock3, Search, Sparkles, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Pressable,
@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Stars } from '@/components/reviews/stars';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cleaners } from '@/config/cleaners';
 import { fromHourly } from '@/config/services';
 import { useServiceSearch } from '@/hooks/use-service-search';
 import {
@@ -63,6 +65,15 @@ export default function SearchScreen() {
   const [recent, setRecent] = useState<string[]>([]);
   const { services, loading, error } = useServiceSearch(query, area?.id);
   const term = query.trim();
+  const cleanMatches = term
+    ? cleaners.filter((cleaner) =>
+        [cleaner.name, ...cleaner.skills, ...cleaner.languages]
+          .join(' ')
+          .toLowerCase()
+          .includes(term.toLowerCase()),
+      )
+    : [];
+  const totalResults = services.length + cleanMatches.length;
 
   useEffect(() => {
     let active = true;
@@ -209,7 +220,7 @@ export default function SearchScreen() {
                   <Skeleton key={index} style={styles.skeletonRow} />
                 ))}
               </View>
-            ) : services.length === 0 ? (
+            ) : totalResults === 0 ? (
               <View style={styles.emptyCard}>
                 <EmptyState
                   icon={Search}
@@ -230,10 +241,11 @@ export default function SearchScreen() {
             ) : (
               <>
                 <Text style={styles.count} maxFontSizeMultiplier={1.3}>
-                  {services.length} result{services.length === 1 ? '' : 's'} for “{term}”
+                  {totalResults} result{totalResults === 1 ? '' : 's'} for “{term}”
                 </Text>
-                <View style={styles.list}>
-                  {services.map((service) => (
+                {services.length > 0 ? (
+                  <View style={styles.list}>
+                    {services.map((service) => (
                     <Pressable
                       key={service.slug}
                       accessibilityRole="button"
@@ -257,7 +269,57 @@ export default function SearchScreen() {
                       </View>
                     </Pressable>
                   ))}
-                </View>
+                  </View>
+                ) : null}
+
+                {cleanMatches.length > 0 ? (
+                  <View style={styles.group}>
+                    <Text style={styles.groupTitle} maxFontSizeMultiplier={1.3}>
+                      Cleaners
+                    </Text>
+                    <View style={styles.list}>
+                      {cleanMatches.map((cleaner) => (
+                        <Pressable
+                          key={cleaner.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${cleaner.name}, rated ${cleaner.rating.toFixed(1)} from ${cleaner.jobsDone} jobs`}
+                          onPress={() => {
+                            remember(term);
+                            router.push({
+                              pathname: '/cleaner/[id]',
+                              params: { id: cleaner.id },
+                            });
+                          }}
+                          style={({ pressed }) => [
+                            styles.row,
+                            pressed && styles.rowPressed,
+                          ]}>
+                          <View style={styles.cleanerAvatar}>
+                            <Text style={styles.cleanerInitials} maxFontSizeMultiplier={1.2}>
+                              {cleaner.initials}
+                            </Text>
+                          </View>
+                          <View style={styles.rowBody}>
+                            <Highlight value={cleaner.name} term={term} style={styles.name} />
+                            <Text
+                              style={styles.tagline}
+                              maxFontSizeMultiplier={1.3}
+                              numberOfLines={1}>
+                              {cleaner.skills.slice(0, 2).join(' · ')}
+                            </Text>
+                            <View style={styles.ratingRow}>
+                              <Stars value={cleaner.rating} size={12} />
+                              <Text style={styles.price} maxFontSizeMultiplier={1.3}>
+                                {cleaner.rating.toFixed(1)} · {cleaner.jobsDone} jobs
+                              </Text>
+                            </View>
+                          </View>
+                          <ChevronRight size={20} color={colors.disabledText} strokeWidth={2} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
               </>
             )}
           </View>
@@ -343,6 +405,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  cleanerAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cleanerInitials: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.green900,
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   iconTile: {
     width: 52,
     height: 52,

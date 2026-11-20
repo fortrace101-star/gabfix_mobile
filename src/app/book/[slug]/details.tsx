@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Info, Repeat, X } from 'lucide-react-native';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   BackHandler,
@@ -17,6 +17,7 @@ import { SegmentedControl } from '@/components/booking/segmented-control';
 import { SelectableCard } from '@/components/booking/selectable-card';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { SummarySheet } from '@/components/booking/summary-sheet';
 import { TopBar } from '@/components/ui/top-bar';
 import { pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
@@ -86,6 +87,7 @@ export default function JobDetailsScreen() {
   const draft = useBookingDraft();
   const service = serviceBySlug(slug);
   const active = draft && draft.serviceSlug === slug ? draft : null;
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // A new service starts a fresh draft; returning to the same service keeps the edits.
   useEffect(() => {
@@ -256,6 +258,14 @@ export default function JobDetailsScreen() {
         total={quote.total}
         actionLabel="Next"
         onPress={onNext}
+        onDetailsPress={() => setSummaryOpen(true)}
+      />
+
+      <SummarySheet
+        draft={active}
+        onClose={() => setSummaryOpen(false)}
+        serviceName={service?.name}
+        visible={summaryOpen}
       />
     </View>
   );

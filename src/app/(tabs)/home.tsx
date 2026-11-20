@@ -5,28 +5,77 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
+  Building2,
   MapPin,
+  Navigation,
+  Repeat,
   Search,
   ShieldCheck,
   Sparkles,
   Star,
   Timer,
 } from 'lucide-react-native';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Blob } from '@/components/auth/blob';
+import { slotLabel } from '@/components/booking/slot-chips';
+import { Stars } from '@/components/reviews/stars';
 import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
+import { buildRebookDraft } from '@/lib/rebook';
 import { price } from '@/lib/pricing';
 import { cleaners } from '@/config/cleaners';
-import { fromHourly, serviceBySlug } from '@/config/services';
-import { useBookingDraft } from '@/store/booking';
+import { offers } from '@/config/offers';
+import { reviewsForService } from '@/config/reviews';
+import { fromHourly, serviceBySlug, serviceCategories } from '@/config/services';
+import { startRebookDraft, useBookingDraft } from '@/store/booking';
+import {
+  type SavedBooking,
+  hydrateBookings,
+  useBookings,
+  useBookingsHydrated,
+} from '@/store/bookings';
 import { useNotificationsHydrated, useUnreadNotificationCount } from '@/store/notifications';
 import { useOnboardingArea, useOnboardingUserName } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { auth, base, colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
+
+const bookingStart = (booking: SavedBooking): number => {
+  if (!booking.dateISO) return Number.MAX_SAFE_INTEGER;
+  const [year, month, day] = booking.dateISO.split('-').map(Number);
+  const [hour, minute] = (booking.startTime ?? '00:00').split(':').map(Number);
+  return new Date(year, month - 1, day, hour, minute).getTime();
+};
+
+const bookingWhen = (booking: SavedBooking): string => {
+  if (!booking.dateISO) return 'Time to confirm';
+  const date = new Date(bookingStart(booking)).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  return booking.startTime ? `${date} · ${slotLabel(booking.startTime)}` : date;
+};
+
+const bookingDay = (booking: SavedBooking): string => {
+  if (!booking.dateISO) return 'Recent clean';
+  return new Date(bookingStart(booking)).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+};
 
 const trust = [
   { icon: ShieldCheck, label: 'Vetted cleaners' },
@@ -46,7 +95,36 @@ export default function HomeTab() {
   const draft = useBookingDraft();
   const notificationsReady = useNotificationsHydrated();
   const unreadNotifications = useUnreadNotificationCount();
-  const { services } = useServices(area?.id);
+  const { services, refresh: refreshServices } = useServices(area?.id);
+  const bookings = useBookings();
+  const bookingsReady = useBookingsHydrated();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    refreshServices();
+    try {
+      await hydrateBookings();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshServices]);
+
+  const isNewCustomer = bookingsReady && bookings.length === 0;
+  const nextBooking = useMemo(() => {
+    const upcoming = bookings.filter((booking) => booking.status === 'upcoming');
+    return upcoming.sort((a, b) => bookingStart(a) - bookingStart(b))[0];
+  }, [bookings]);
+  const lastRebookable = useMemo(
+    () =>
+      bookings
+        .filter((booking) => booking.status !== 'upcoming')
+        .slice()
+        .sort((a, b) => b.createdAtISO.localeCompare(a.createdAtISO))[0],
+    [bookings],
+  );
+  const homeReviews = reviewsForService('home-clean').slice(0, 4);
+  const welcomeOffer = offers[0];
 
   const displayName = userName?.trim() || user?.name?.trim() || 'there';
   const initials =
@@ -57,13 +135,31 @@ export default function HomeTab() {
       .map((part) => part[0]?.toUpperCase())
       .join('') || 'G';
 
+  const rebook = (booking: SavedBooking) => {
+    startRebookDraft(buildRebookDraft(booking));
+    router.push({
+      pathname: '/book/[slug]/schedule',
+      params: { slug: booking.serviceSlug },
+    });
+  };
+
   const draftService = serviceBySlug(draft?.serviceSlug);
   const draftTotal = draft ? price(draft).total : 0;
   const cardWidth = (width - space[4] * 2 - space[3]) / 2;
 
   return (
     <View style={styles.screen}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            colors={[colors.green500]}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+            tintColor={colors.green500}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}>
         <LinearGradient
           colors={[auth.bgTop, auth.bgBottom]}
           start={{ x: 0.2, y: 0 }}
@@ -154,6 +250,28 @@ export default function HomeTab() {
                 </Text>
                 <ChevronRight size={16} color={colors.green500} strokeWidth={2} />
               </View>
+            </Pressable>
+          ) : null}
+
+          {isNewCustomer && welcomeOffer ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${welcomeOffer.title}. Open offers`}
+              onPress={() => router.push('/offers')}
+              style={styles.offer}>
+              <LinearGradient
+                colors={[colors.yellow500, colors.yellow600]}
+                end={{ x: 1, y: 1 }}
+                start={{ x: 0, y: 0 }}
+                style={styles.offerInner}>
+                <View style={styles.offerCircle} />
+                <Text style={styles.offerTitle} maxFontSizeMultiplier={1.3}>
+                  {welcomeOffer.title}
+                </Text>
+                <Text style={styles.offerCaption} maxFontSizeMultiplier={1.3}>
+                  {welcomeOffer.caption} · Code {welcomeOffer.code}
+                </Text>
+              </LinearGradient>
             </Pressable>
           ) : null}
 
@@ -266,6 +384,156 @@ export default function HomeTab() {
             ))}
           </View>
 
+          {serviceCategories.map((category) => {
+            const categoryServices = services.filter(
+              (service) => service.category === category.id,
+            );
+            if (categoryServices.length === 0) return null;
+
+            return (
+              <View key={category.id} style={styles.sectionBlock}>
+                <View style={base.between}>
+                  <View style={styles.categoryHeading}>
+                    <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                      {category.label}
+                    </Text>
+                    <Text style={styles.sectionCaption} maxFontSizeMultiplier={1.2}>
+                      {category.caption}
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`See all ${category.label}`}
+                    hitSlop={8}
+                    onPress={() => router.push('/(tabs)/services')}>
+                    <Text style={styles.seeAll} maxFontSizeMultiplier={1.3}>
+                      See all
+                    </Text>
+                  </Pressable>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.categoryScroll}
+                  contentContainerStyle={styles.categoryRow}>
+                  {categoryServices.map((service) => (
+                    <Pressable
+                      key={service.slug}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${service.name}. From ${ugx(fromHourly)} per hour`}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/service/[slug]',
+                          params: { slug: service.slug },
+                        })
+                      }
+                      style={({ pressed }) => [
+                        styles.categoryCard,
+                        pressed && styles.cleanerPressed,
+                      ]}>
+                      <View style={styles.categoryIcon}>
+                        {category.id === 'property' ? (
+                          <Building2 size={24} color={colors.green500} strokeWidth={2} />
+                        ) : (
+                          <Sparkles size={24} color={colors.green500} strokeWidth={2} />
+                        )}
+                      </View>
+                      <Text
+                        style={styles.categoryName}
+                        maxFontSizeMultiplier={1.3}
+                        numberOfLines={2}>
+                        {service.name}
+                      </Text>
+                      <Text style={styles.categoryPrice} maxFontSizeMultiplier={1.3}>
+                        From {ugx(fromHourly)}/hr
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            );
+          })}
+
+          {lastRebookable ? (
+            <View style={styles.rebookCard}>
+              <View style={styles.rebookAvatar}>
+                <Repeat size={20} color={colors.green700} strokeWidth={2} />
+              </View>
+              <View style={styles.rebookBody}>
+                <Text style={styles.draftKicker} maxFontSizeMultiplier={1.3}>
+                  Book again
+                </Text>
+                <Text style={styles.draftTitle} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+                  {lastRebookable.serviceName}
+                </Text>
+                <Text style={styles.draftMeta} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+                  {lastRebookable.cleanerName
+                    ? `${lastRebookable.cleanerName} · `
+                    : ''}
+                  {bookingDay(lastRebookable)}
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Book ${lastRebookable.serviceName} again`}
+                onPress={() => rebook(lastRebookable)}
+                style={styles.rebookAction}>
+                <Text style={styles.rebookActionText} maxFontSizeMultiplier={1.2}>
+                  Book again
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {nextBooking ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Next booking: ${nextBooking.serviceName}. View details`}
+              onPress={() => router.push(`/booking/${nextBooking.id}` as never)}
+              style={styles.upcomingCard}>
+              <View style={styles.upcomingTop}>
+                <View style={styles.rebookBody}>
+                  <Text style={styles.draftKicker} maxFontSizeMultiplier={1.3}>
+                    Next clean
+                  </Text>
+                  <Text style={styles.draftTitle} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+                    {nextBooking.serviceName}
+                  </Text>
+                  <Text style={styles.draftMeta} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+                    {bookingWhen(nextBooking)}
+                    {nextBooking.area ? ` · ${nextBooking.area}` : ''}
+                  </Text>
+                </View>
+                <View style={styles.confirmedPill}>
+                  <Text style={styles.confirmedText} maxFontSizeMultiplier={1.2}>
+                    Confirmed
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.upcomingActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Track booking ${nextBooking.id}`}
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    router.push(`/booking/${nextBooking.id}/track` as never);
+                  }}
+                  style={styles.trackButton}>
+                  <Navigation size={14} color={colors.surface} strokeWidth={2.2} />
+                  <Text style={styles.trackText} maxFontSizeMultiplier={1.2}>
+                    Track
+                  </Text>
+                </Pressable>
+                <View style={styles.detailsRow}>
+                  <Text style={styles.detailsText} maxFontSizeMultiplier={1.2}>
+                    View details
+                  </Text>
+                  <ChevronRight size={18} color={colors.green700} strokeWidth={2} />
+                </View>
+              </View>
+            </Pressable>
+          ) : null}
+
           <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
             How it works
           </Text>
@@ -282,12 +550,69 @@ export default function HomeTab() {
                 <Text style={styles.stepTitle} maxFontSizeMultiplier={1.3}>
                   {item.title}
                 </Text>
-                <Text style={styles.stepCopy} maxFontSizeMultiplier={1.3} numberOfLines={2}>
+                <Text style={styles.stepCopy} maxFontSizeMultiplier={1.3} numberOfLines={3}>
                   {item.copy}
                 </Text>
               </View>
             ))}
           </View>
+
+          {homeReviews.length > 0 ? (
+            <View style={styles.sectionBlock}>
+              <View style={base.between}>
+                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                  Loved by customers
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Read all home cleaning reviews"
+                  hitSlop={8}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/service/[slug]/reviews',
+                      params: { slug: 'home-clean' },
+                    })
+                  }>
+                  <Text style={styles.seeAll} maxFontSizeMultiplier={1.3}>
+                    All reviews
+                  </Text>
+                </Pressable>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.reviewScroll}
+                contentContainerStyle={styles.reviewRow}>
+                {homeReviews.map((review) => (
+                  <View key={review.id} style={[styles.reviewCard, { width: width * 0.78 }]}>
+                    <View style={styles.reviewHeader}>
+                      <View style={styles.reviewAvatar}>
+                        <Text style={styles.reviewInitials} maxFontSizeMultiplier={1.2}>
+                          {review.initials}
+                        </Text>
+                      </View>
+                      <Text
+                        style={styles.reviewName}
+                        maxFontSizeMultiplier={1.3}
+                        numberOfLines={1}>
+                        {review.name}
+                      </Text>
+                      <Text style={styles.reviewDate} maxFontSizeMultiplier={1.2}>
+                        {review.date}
+                      </Text>
+                    </View>
+                    <Stars value={review.stars} size={14} />
+                    <Text
+                      style={styles.reviewComment}
+                      maxFontSizeMultiplier={1.3}
+                      numberOfLines={3}>
+                      {review.comment || 'Rated the clean without a comment.'}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -390,6 +715,170 @@ const styles = StyleSheet.create({
   draftMeta: { ...text.caption },
   resume: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   resumeText: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green500 },
+  offer: { borderRadius: radius.card, overflow: 'hidden' },
+  offerInner: {
+    minHeight: 104,
+    borderRadius: radius.card,
+    padding: space[4],
+    gap: space[1],
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  offerCircle: {
+    position: 'absolute',
+    right: -24,
+    top: -12,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+  },
+  offerTitle: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 17,
+    lineHeight: 23,
+    color: colors.green900,
+    maxWidth: '78%',
+  },
+  offerCaption: {
+    ...text.caption,
+    color: colors.green900,
+    maxWidth: '78%',
+  },
+  categoryHeading: { flex: 1, gap: 2 },
+  categoryScroll: { marginHorizontal: -space[4] },
+  categoryRow: { paddingHorizontal: space[4], gap: space[3] },
+  categoryCard: {
+    width: 160,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    padding: space[3],
+    gap: space[2],
+    ...shadow.card,
+  },
+  categoryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.tile,
+    backgroundColor: colors.green50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryName: {
+    fontFamily: font.bodySemi,
+    fontSize: 14,
+    lineHeight: 19,
+    color: colors.text,
+  },
+  categoryPrice: { ...text.caption, color: colors.green700 },
+  rebookCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    padding: space[4],
+    ...shadow.card,
+  },
+  rebookAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rebookBody: { flex: 1, gap: 2 },
+  rebookAction: {
+    minHeight: 40,
+    paddingHorizontal: space[3],
+    borderRadius: radius.pill,
+    backgroundColor: colors.green500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rebookActionText: {
+    fontFamily: font.bodySemi,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.surface,
+  },
+  upcomingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    padding: space[4],
+    gap: space[3],
+    borderWidth: 1,
+    borderColor: colors.green100,
+    ...shadow.card,
+  },
+  upcomingTop: { flexDirection: 'row', alignItems: 'flex-start', gap: space[3] },
+  confirmedPill: {
+    height: 24,
+    paddingHorizontal: space[2],
+    borderRadius: radius.pill,
+    backgroundColor: colors.green50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmedText: {
+    fontFamily: font.bodySemi,
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.green700,
+  },
+  upcomingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: space[2],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  trackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 36,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green500,
+    paddingHorizontal: space[3],
+  },
+  trackText: {
+    fontFamily: font.bodySemi,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.surface,
+  },
+  detailsRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  detailsText: { ...text.bodyM, color: colors.green700, fontFamily: font.bodySemi },
+  reviewScroll: { marginHorizontal: -space[4] },
+  reviewRow: { paddingHorizontal: space[4], gap: space[3] },
+  reviewCard: {
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    padding: space[4],
+    gap: space[2],
+    ...shadow.card,
+  },
+  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  reviewAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewInitials: {
+    fontFamily: font.poppinsSemi,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.green900,
+  },
+  reviewName: { ...text.bodyM, fontFamily: font.bodySemi, flex: 1 },
+  reviewDate: { ...text.caption, fontSize: 11, lineHeight: 15 },
+  reviewComment: { ...text.caption, lineHeight: 19 },
   trustScroll: { marginHorizontal: -space[4] },
   trustRow: { paddingHorizontal: space[4], gap: space[2] },
   trustPill: {

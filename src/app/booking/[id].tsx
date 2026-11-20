@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { ArrowLeft, CalendarDays, CircleHelp, Clock3, FileText, MapPin, Phone, Star, Users, Wallet, XCircle } from 'lucide-react-native';
+import { ArrowLeft, CalendarDays, CircleHelp, Clock3, FileText, MapPin, Navigation, Phone, Star, Users, Wallet, XCircle } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -328,8 +328,8 @@ export default function BookingDetailScreen() {
             Manage booking
           </Text>
           <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
-            Reschedule and cancel here. Live tracking, extras changes and balance payment will
-            connect once their backend is available.
+            Reschedule and cancel here. Extras changes and balance payment will connect once their
+            backend is available.
           </Text>
           <View style={styles.actions}>
             {booking.balance > 0 && booking.status === 'upcoming' ? (
@@ -346,7 +346,8 @@ export default function BookingDetailScreen() {
               <Button
                 label="Track booking"
                 variant="secondary"
-                onPress={soon('Tracking', 'Live cleaner tracking (P15c) is not available yet.')}
+                icon={Navigation}
+                onPress={() => router.push(`/booking/${booking.id}/track` as never)}
               />
             ) : null}
             {booking.status === 'upcoming' ? (

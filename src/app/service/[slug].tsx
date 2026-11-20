@@ -17,7 +17,15 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SummaryBar } from '@/components/booking/summary-bar';
@@ -33,6 +41,7 @@ import { relatedServices } from '@/config/service-content';
 import { hourlyRate, pricing } from '@/config/pricing';
 import { fromHourly, serviceBySlug } from '@/config/services';
 import { useServiceContent } from '@/hooks/use-service-content';
+import { supportsNativeDriver } from '@/lib/animation';
 import { useOnboardingArea } from '@/store/onboarding';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
@@ -103,6 +112,12 @@ export default function ServiceLandingScreen() {
   const service = serviceBySlug(slug);
   const { content, loading, error, refresh } = useServiceContent(slug, area?.id);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [scrollY] = useState(() => new Animated.Value(0));
+  const heroShift = scrollY.interpolate({
+    inputRange: [0, 360],
+    outputRange: [0, 110],
+    extrapolate: 'clamp',
+  });
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -148,10 +163,17 @@ export default function ServiceLandingScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <LinearGradient
-          colors={[colors.green700, colors.green500]}
-          style={[styles.hero, { paddingTop: insets.top + space[2] }]}>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scroll, { paddingBottom: 96 + insets.bottom }]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: supportsNativeDriver,
+        })}>
+        <Animated.View style={{ transform: [{ translateY: heroShift }] }}>
+          <LinearGradient
+            colors={[colors.green700, colors.green500]}
+            style={[styles.hero, { paddingTop: insets.top + space[2] }]}>
           <View style={styles.heroBar}>
             <Pressable
               accessibilityRole="button"
@@ -185,7 +207,8 @@ export default function ServiceLandingScreen() {
               </Text>
             </View>
           </View>
-        </LinearGradient>
+          </LinearGradient>
+        </Animated.View>
 
         <View style={styles.sheet}>
           <View style={styles.stamp} pointerEvents="none">
@@ -462,7 +485,7 @@ export default function ServiceLandingScreen() {
             </ScrollView>
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <SummaryBar
         caption="From, per hour"

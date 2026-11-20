@@ -7,6 +7,7 @@ import { AddOnCard } from '@/components/booking/add-on-card';
 import { AddOnSheet } from '@/components/booking/add-on-sheet';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { SummarySheet } from '@/components/booking/summary-sheet';
 import { TopBar } from '@/components/ui/top-bar';
 import { addOns, type AddOnId } from '@/config/add-ons';
 import { pricing } from '@/config/pricing';
@@ -41,6 +42,7 @@ export default function AddOnsScreen() {
   const service = serviceBySlug(slug);
   const active = draft && draft.serviceSlug === slug ? draft : null;
   const [openId, setOpenId] = useState<AddOnId | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -163,8 +165,15 @@ export default function AddOnsScreen() {
         total={quote.total}
         actionLabel="Next"
         onPress={onNext}
+        onDetailsPress={() => setSummaryOpen(true)}
       />
 
+      <SummarySheet
+        draft={active}
+        onClose={() => setSummaryOpen(false)}
+        serviceName={service?.name}
+        visible={summaryOpen}
+      />
       <AddOnSheet definition={sheetDefinition} onClose={() => setOpenId(null)} />
     </View>
   );

@@ -6,13 +6,15 @@ import {
   ChevronRight,
   ClipboardList,
   MapPin,
+  Navigation,
   Repeat,
 } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   type GestureResponderEvent,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -26,8 +28,14 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
-import { type BookingStatus, type SavedBooking, useBookings, useBookingsHydrated } from '@/store/bookings';
-import { useQuoteRequests, useQuotesHydrated } from '@/store/quotes';
+import {
+  type BookingStatus,
+  type SavedBooking,
+  hydrateBookings,
+  useBookings,
+  useBookingsHydrated,
+} from '@/store/bookings';
+import { hydrateQuotes, useQuoteRequests, useQuotesHydrated } from '@/store/quotes';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
@@ -88,6 +96,10 @@ function BookingCard({ booking }: { booking: SavedBooking }) {
     startRebookDraft(buildRebookDraft(booking));
     router.push({ pathname: '/book/[slug]/schedule', params: { slug: booking.serviceSlug } });
   };
+  const track = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    router.push(`/booking/${booking.id}/track` as never);
+  };
   return (
     <Pressable
       accessibilityRole="button"
@@ -129,6 +141,19 @@ function BookingCard({ booking }: { booking: SavedBooking }) {
           </Text>
         </View>
         <View style={styles.cardActions}>
+          {booking.status === 'upcoming' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Track booking ${booking.id}`}
+              hitSlop={8}
+              onPress={track}
+              style={styles.trackButton}>
+              <Navigation size={14} color={colors.surface} strokeWidth={2.2} />
+              <Text style={styles.trackText} maxFontSizeMultiplier={1.2}>
+                Track
+              </Text>
+            </Pressable>
+          ) : null}
           {booking.status !== 'upcoming' ? (
             <Pressable
               accessibilityRole="button"
@@ -219,6 +244,25 @@ export default function BookingsScreen() {
   const requests = useQuoteRequests();
   const requestsHydrated = useQuotesHydrated();
   const [tab, setTab] = useState<BookingsTab>('upcoming');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([hydrateBookings(), hydrateQuotes()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  const refreshControl = (
+    <RefreshControl
+      colors={[colors.green500]}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
+      tintColor={colors.green500}
+    />
+  );
 
   const filtered = useMemo(
     () =>
@@ -258,6 +302,7 @@ export default function BookingsScreen() {
             styles.listContent,
             requests.length === 0 && styles.listEmpty,
           ]}
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={requestsHydrated ? <RequestsEmpty /> : <BookingsSkeleton />}
         />
@@ -267,6 +312,7 @@ export default function BookingsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <BookingCard booking={item} />}
           contentContainerStyle={[styles.listContent, filtered.length === 0 && styles.listEmpty]}
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={hydrated ? <BookingsEmpty tab={tab} /> : <BookingsSkeleton />}
         />
@@ -318,6 +364,21 @@ const styles = StyleSheet.create({
   amountLabel: { ...text.caption, color: colors.textMuted },
   amountValue: { ...text.h3, color: colors.text },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  trackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 32,
+    borderRadius: radius.pill,
+    backgroundColor: colors.green500,
+    paddingHorizontal: 10,
+  },
+  trackText: {
+    ...text.caption,
+    fontSize: 12,
+    color: colors.surface,
+    fontFamily: font.bodySemi,
+  },
   rebookButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   rebookText: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ChevronUp } from 'lucide-react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -11,22 +12,46 @@ type Props = {
   actionLabel: string;
   onPress: () => void;
   disabled?: boolean;
+  /** Opens the shared price breakdown sheet (P8–P11). */
+  onDetailsPress?: () => void;
 };
 
 /** Sticky summary bar (Gabfix_App_Ui_2.md, 2.2): caption plus live total on the left, CTA right. */
-export function SummaryBar({ caption, total, actionLabel, onPress, disabled = false }: Props) {
+export function SummaryBar({
+  caption,
+  total,
+  actionLabel,
+  onPress,
+  disabled = false,
+  onDetailsPress,
+}: Props) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, space[3]) }]}>
-      <View style={styles.info}>
-        <Text style={styles.caption} maxFontSizeMultiplier={1.3} numberOfLines={1}>
-          {caption}
-        </Text>
+      <Pressable
+        accessibilityLabel={onDetailsPress ? 'View price breakdown' : undefined}
+        accessibilityRole={onDetailsPress ? 'button' : undefined}
+        disabled={!onDetailsPress}
+        onPress={onDetailsPress}
+        style={styles.info}>
+        <View style={styles.captionRow}>
+          <Text style={styles.caption} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+            {caption}
+          </Text>
+          {onDetailsPress ? (
+            <View style={styles.details}>
+              <Text style={styles.detailsText} maxFontSizeMultiplier={1.2}>
+                Details
+              </Text>
+              <ChevronUp size={14} color={colors.green700} strokeWidth={2} />
+            </View>
+          ) : null}
+        </View>
         <Text style={styles.total} maxFontSizeMultiplier={1.2} numberOfLines={1}>
           {ugx(total)}
         </Text>
-      </View>
+      </Pressable>
       <Button label={actionLabel} onPress={onPress} disabled={disabled} style={styles.action} />
     </View>
   );
@@ -46,6 +71,14 @@ const styles = StyleSheet.create({
     ...shadow.floating,
   },
   info: { flex: 1, gap: 2 },
+  captionRow: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  details: { flexDirection: 'row', alignItems: 'center', gap: 1 },
+  detailsText: {
+    fontFamily: font.bodySemi,
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.green700,
+  },
   caption: { ...text.caption },
   total: {
     fontFamily: font.poppinsBold,
