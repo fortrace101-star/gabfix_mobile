@@ -33,4 +33,14 @@ if (process.platform === 'win32') {
   config.maxWorkers = Math.min(config.maxWorkers ?? 4, 4);
 }
 
+// Local QA artifacts live under `.expo/qa` (headless-Chrome profiles, logs, screenshots).
+// Chrome's profile `LOCK` files are ACL-locked on Windows, so watching them makes the dev
+// server crash with `EPERM: operation not permitted, lstat`. Keep the whole folder out of Metro.
+const existingBlockList = config.resolver.blockList
+  ? Array.isArray(config.resolver.blockList)
+    ? config.resolver.blockList
+    : [config.resolver.blockList]
+  : [];
+config.resolver.blockList = [...existingBlockList, /\.expo[\\/]qa[\\/]/];
+
 module.exports = config;

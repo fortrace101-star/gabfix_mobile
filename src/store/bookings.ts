@@ -42,6 +42,8 @@ export type SavedBooking = {
   };
   /** Set when the customer moved the booking to a new date/time. */
   rescheduledAtISO?: string;
+  /** P13: an authorisation attempt failed; an unpaid hold is released after 30 minutes. */
+  paymentFailedAtISO?: string;
   /** Why the customer cancelled, captured on P16. */
   cancelReason?: string;
   cancelledAtISO?: string;
@@ -105,6 +107,7 @@ export async function hydrateBookings(): Promise<void> {
   }
   state = { bookings, hydrated: true };
   listeners.forEach((listener) => listener());
+  expireUnpaidBookings();
 }
 
 export function addBooking(booking: SavedBooking): void {
@@ -163,6 +166,47 @@ export function settleLateFees(ids: string[], method: string): void {
         : item,
     ),
   );
+}
+
+/** P13: records a failed authorisation so an unpaid booking can be released. */
+export function markPaymentFailed(id: string): void {
+  updateBooking(id, { paymentFailedAtISO: new Date().toISOString() });
+}
+
+/** How long an unpaid booking is held after a failed authorisation (Open item 25). */
+export const PAYMENT_HOLD_MS = 30 * 60_000;
+
+/**
+ * P13 auto-cancel: an unpaid booking whose authorisation failed more than 30 minutes
+ * ago is released, matching the provider callback rule. Called at boot and whenever
+ * the bookings list is opened, so a hold cannot outlive the window.
+ */
+export function expireUnpaidBookings(now: number = Date.now()): number {
+  const expired = state.bookings.filter(
+    (booking) =>
+      booking.status === 'upcoming' &&
+      booking.paid === 0 &&
+      booking.paymentFailedAtISO !== undefined &&
+      now - Date.parse(booking.paymentFailedAtISO) >= PAYMENT_HOLD_MS,
+  );
+  if (expired.length === 0) return 0;
+
+  const atISO = new Date(now).toISOString();
+  setBookings(
+    state.bookings.map((booking) =>
+      expired.some((item) => item.id === booking.id)
+        ? {
+            ...booking,
+            status: 'cancelled',
+            cancelledAtISO: atISO,
+            cancelReason: 'Payment not completed',
+            refundAmount: 0,
+            lateFee: 0,
+          }
+        : booking,
+    ),
+  );
+  return expired.length;
 }
 
 /** P16 cancel. Records the reason and the local refund/late-fee outcome. */

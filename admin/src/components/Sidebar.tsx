@@ -1,3 +1,4 @@
+import { canViewPage, roleLabel, type AdminRole, type AdminUser } from '../lib/auth';
 import { cx } from '../lib/format';
 import type { PageId } from '../types';
 import { Icon, type IconName } from './Icon';
@@ -42,11 +43,17 @@ export function Sidebar({
   mobileOpen,
   onNavigate,
   onCloseMobile,
+  user,
+  role,
+  onSignOut,
 }: {
   active: PageId;
   mobileOpen: boolean;
   onNavigate: (page: PageId) => void;
   onCloseMobile: () => void;
+  user: AdminUser;
+  role: AdminRole;
+  onSignOut: () => void;
 }) {
   return (
     <>
@@ -78,10 +85,13 @@ export function Sidebar({
         </div>
 
         <nav className="nav">
-          {groups.map((group) => (
+          {groups.map((group) => {
+            const items = group.items.filter((item) => canViewPage(item.id, role));
+            if (items.length === 0) return null;
+            return (
             <div className="nav-group" key={group.label}>
               <p className="nav-label">{group.label}</p>
-              {group.items.map((item) => (
+              {items.map((item) => (
                 <button
                   type="button"
                   key={item.id}
@@ -99,8 +109,22 @@ export function Sidebar({
                 </button>
               ))}
             </div>
-          ))}
+            );
+          })}
         </nav>
+
+        <div className="sidebar-user">
+          <span className="sidebar-avatar" aria-hidden="true">
+            {user.initials}
+          </span>
+          <span className="sidebar-user-copy">
+            <strong>{user.name}</strong>
+            <span>{roleLabel(role)}</span>
+          </span>
+          <button type="button" className="sidebar-signout" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
 
         <div className="sidebar-foot">
           <span className="status-dot" />

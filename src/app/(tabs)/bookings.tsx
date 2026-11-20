@@ -9,7 +9,7 @@ import {
   Navigation,
   Repeat,
 } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   type GestureResponderEvent,
   FlatList,
@@ -31,6 +31,7 @@ import { startRebookDraft } from '@/store/booking';
 import {
   type BookingStatus,
   type SavedBooking,
+  expireUnpaidBookings,
   hydrateBookings,
   useBookings,
   useBookingsHydrated,
@@ -245,6 +246,11 @@ export default function BookingsScreen() {
   const requestsHydrated = useQuotesHydrated();
   const [tab, setTab] = useState<BookingsTab>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
+
+  // P13: release any unpaid hold that has passed its 30-minute window.
+  useEffect(() => {
+    expireUnpaidBookings();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

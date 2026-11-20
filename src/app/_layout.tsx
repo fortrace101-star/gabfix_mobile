@@ -14,8 +14,10 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ForceUpdateScreen } from '@/components/ui/force-update';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { SessionExpiredModal } from '@/components/ui/session-expired-modal';
+import { isUpdateRequired } from '@/config/release';
 import { hydrateAddresses } from '@/store/addresses';
 import { hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
@@ -73,6 +75,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        {isUpdateRequired() ? (
+          <ForceUpdateScreen />
+        ) : (
+          <>
         <StatusBar style="dark" />
         <Stack
           screenOptions={{
@@ -160,8 +166,10 @@ export default function RootLayout() {
           <Stack.Screen name="service/[slug]" />
           <Stack.Screen name="profile/payments" />
         </Stack>
-        <OfflineBanner />
-        <SessionExpiredModal />
+            <OfflineBanner />
+            <SessionExpiredModal />
+          </>
+        )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

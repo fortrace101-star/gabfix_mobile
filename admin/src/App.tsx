@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Login } from './components/Login';
 import { Sidebar } from './components/Sidebar';
 import { Topbar, type DateRange } from './components/Topbar';
 import { Toast } from './components/ui';
@@ -13,6 +14,7 @@ import {
   initialSettings,
   notificationsSeed,
 } from './data';
+import { canViewPage, readSession, signOut, type AdminUser } from './lib/auth';
 import { BookingsPage } from './pages/Bookings';
 import { CashPage } from './pages/Cash';
 import { CleanersPage } from './pages/Cleaners';
@@ -67,6 +69,7 @@ const pageFromHash = (): PageId => {
 };
 
 export default function App() {
+  const [user, setUser] = useState<AdminUser | null>(() => readSession());
   const [page, setPage] = useState<PageId>(pageFromHash);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>('Last 7 days');
@@ -210,6 +213,13 @@ export default function App() {
     notify('Operations settings updated for this session.');
   };
 
+  const handleSignOut = () => {
+    signOut();
+    setUser(null);
+  };
+
+  if (!user) return <Login onSignedIn={setUser} />;
+
   return (
     <div className="app">
       <Sidebar
@@ -217,6 +227,9 @@ export default function App() {
         mobileOpen={mobileOpen}
         onNavigate={navigate}
         onCloseMobile={() => setMobileOpen(false)}
+        user={user}
+        role={user.role}
+        onSignOut={handleSignOut}
       />
       <div className="main">
         <Topbar
@@ -305,7 +318,17 @@ export default function App() {
             />
           ) : null}
           {page === 'settings' ? (
-            <SettingsPage settings={settings} onSave={saveSettings} />
+            canViewPage('settings', user.role) ? (
+              <SettingsPage settings={settings} onSave={saveSettings} />
+            ) : (
+              <section className="card restricted" role="alert">
+                <h2>Settings is owner-only</h2>
+                <p>
+                  Ask an owner to change operations settings. Bookings, payments and the
+                  catalogue are still available to your role.
+                </p>
+              </section>
+            )
           ) : null}
         </main>
         <Toast message={toast} />

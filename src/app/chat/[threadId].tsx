@@ -1,7 +1,10 @@
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, CheckCheck, SendHorizontal } from 'lucide-react-native';
+import { ArrowLeft, CheckCheck, Paperclip, SendHorizontal } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -51,11 +54,21 @@ function MessageBubble({ message, initials }: { message: DecoratedMessage; initi
       ) : null}
       <View style={[styles.messageColumn, mine && styles.messageColumnMine]}>
         <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-          <Text
-            style={[styles.bubbleText, mine && styles.bubbleTextMine]}
-            maxFontSizeMultiplier={1.3}>
-            {message.text}
-          </Text>
+          {message.imageUri ? (
+            <Image
+              source={{ uri: message.imageUri }}
+              style={styles.bubbleImage}
+              contentFit="cover"
+              accessibilityLabel="Attached photo"
+            />
+          ) : null}
+          {message.text ? (
+            <Text
+              style={[styles.bubbleText, mine && styles.bubbleTextMine]}
+              maxFontSizeMultiplier={1.3}>
+              {message.text}
+            </Text>
+          ) : null}
         </View>
         {message.showTime ? (
           <View style={[styles.metaRow, mine && styles.metaRowMine]}>
@@ -91,6 +104,7 @@ export default function ChatThreadScreen() {
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
   const [inputHeight, setInputHeight] = useState(44);
+  const [picking, setPicking] = useState(false);
   const listRef = useRef<FlatList<DecoratedMessage>>(null);
 
   const threadId = thread?.id;
@@ -144,6 +158,37 @@ export default function ChatThreadScreen() {
     sendMessage(thread.id, draft);
     setDraft('');
     setInputHeight(44);
+  };
+
+  const attach = async () => {
+    if (picking) return;
+    setPicking(true);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Photo access needed',
+          'Allow photo access in your device settings to attach a photo to this conversation.',
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.5,
+        base64: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset) return;
+      const uri = asset.base64
+        ? `data:${asset.mimeType ?? 'image/jpeg'};base64,${asset.base64}`
+        : asset.uri;
+      sendMessage(thread.id, draft, uri);
+      setDraft('');
+      setInputHeight(44);
+    } finally {
+      setPicking(false);
+    }
   };
 
   return (
@@ -217,6 +262,16 @@ export default function ChatThreadScreen() {
         ) : null}
 
         <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, space[2]) }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Attach a photo"
+            accessibilityState={{ busy: picking, disabled: picking }}
+            disabled={picking}
+            hitSlop={6}
+            onPress={() => void attach()}
+            style={[styles.attach, picking && styles.attachBusy]}>
+            <Paperclip size={20} color={colors.green700} strokeWidth={2} />
+          </Pressable>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -330,8 +385,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderBottomLeftRadius: 4,
   },
+  bubbleImage: { width: 200, height: 150, borderRadius: 12, marginBottom: 4 },
   bubbleText: { ...text.body, lineHeight: 20 },
   bubbleTextMine: { color: colors.surface },
+  attach: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.green50,
+  },
+  attachBusy: { opacity: 0.5 },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',

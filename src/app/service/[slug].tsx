@@ -30,6 +30,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { ReviewCard } from '@/components/reviews/review-card';
+import { ServiceHeroArt } from '@/components/service/service-hero-art';
+import { ServicePhoto } from '@/components/service/service-photo';
 import { Stars } from '@/components/reviews/stars';
 import { ErrorState } from '@/components/ui/error-state';
 import { RetryHint } from '@/components/ui/retry-hint';
@@ -118,6 +120,17 @@ export default function ServiceLandingScreen() {
     outputRange: [0, 110],
     extrapolate: 'clamp',
   });
+  // The compact bar fades in once the hero title has scrolled away.
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [120, 220],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+  const headerShift = scrollY.interpolate({
+    inputRange: [120, 220],
+    outputRange: [-8, 0],
+    extrapolate: 'clamp',
+  });
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -174,6 +187,21 @@ export default function ServiceLandingScreen() {
           <LinearGradient
             colors={[colors.green700, colors.green500]}
             style={[styles.hero, { paddingTop: insets.top + space[2] }]}>
+          <ServiceHeroArt />
+          <ServicePhoto
+            slug={slug}
+            uri={content.heroImage}
+            areaUri={content.areaImage}
+            cardUri={content.cardImage}
+            style={styles.heroImage}
+            transition={200}
+            priority="high"
+          />
+          <LinearGradient
+            colors={['rgba(22,34,26,0.05)', 'rgba(20,60,29,0.72)']}
+            style={styles.heroScrim}
+            pointerEvents="none"
+          />
           <View style={styles.heroBar}>
             <Pressable
               accessibilityRole="button"
@@ -474,18 +502,54 @@ export default function ServiceLandingScreen() {
                     router.push({ pathname: '/service/[slug]', params: { slug: related.slug } })
                   }
                   style={({ pressed }) => [styles.relatedCard, pressed && styles.relatedPressed]}>
-                  <Text style={styles.relatedName} maxFontSizeMultiplier={1.3}>
-                    {related.name}
-                  </Text>
-                  <Text style={styles.relatedPrice} maxFontSizeMultiplier={1.2}>
-                    From {ugx(fromHourly)}/hr
-                  </Text>
+                  <ServicePhoto slug={related.slug} style={styles.relatedPhoto} />
+                  <View style={styles.relatedBody}>
+                    <Text style={styles.relatedName} maxFontSizeMultiplier={1.3}>
+                      {related.name}
+                    </Text>
+                    <Text style={styles.relatedPrice} maxFontSizeMultiplier={1.2}>
+                      From {ugx(fromHourly)}/hr
+                    </Text>
+                  </View>
                 </Pressable>
               ))}
             </ScrollView>
           </View>
         </View>
       </Animated.ScrollView>
+
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          styles.fadeHeader,
+          {
+            paddingTop: insets.top,
+            opacity: headerOpacity,
+            transform: [{ translateY: headerShift }],
+          },
+        ]}>
+        <View style={styles.fadeBar}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={6}
+            onPress={goBack}
+            style={styles.fadeButton}>
+            <ArrowLeft size={22} color={colors.text} strokeWidth={2} />
+          </Pressable>
+          <Text style={styles.fadeTitle} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+            {service?.name ?? content.slug}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Share this service"
+            hitSlop={6}
+            onPress={share}
+            style={styles.fadeButton}>
+            <Share2 size={20} color={colors.text} strokeWidth={2} />
+          </Pressable>
+        </View>
+      </Animated.View>
 
       <SummaryBar
         caption="From, per hour"
@@ -505,7 +569,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[4],
     paddingBottom: space[6],
   },
+  heroImage: { ...StyleSheet.absoluteFill },
+  heroScrim: { ...StyleSheet.absoluteFill },
   heroBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  fadeHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  fadeBar: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingHorizontal: space[2],
+  },
+  fadeButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fadeTitle: { ...text.h3, flex: 1, fontSize: 16 },
   heroButton: {
     width: 40,
     height: 40,
@@ -548,6 +638,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
+    overflow: 'visible',
+    zIndex: 1,
   },
   stamp: {
     position: 'absolute',
@@ -562,6 +654,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     transform: [{ rotate: stampRotation }],
+    zIndex: 2,
+    elevation: 12,
     ...shadow.card,
   },
   stampTop: { fontFamily: font.heading, fontSize: 14, color: colors.green900 },
@@ -728,13 +822,14 @@ const styles = StyleSheet.create({
   cleanerLink: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   relatedCard: {
     width: 200,
-    gap: space[2],
-    padding: space[4],
     borderRadius: radius.card,
     backgroundColor: colors.surface,
+    overflow: 'hidden',
     ...shadow.card,
   },
-  relatedPressed: { backgroundColor: colors.green50 },
+  relatedPressed: { opacity: 0.85 },
+  relatedPhoto: { width: '100%', height: 88, backgroundColor: colors.green50 },
+  relatedBody: { padding: space[3], gap: space[1] },
   relatedName: { ...text.bodyM, fontFamily: font.bodySemi },
   relatedPrice: { ...text.caption, color: colors.green700 },
   emptyBack: { position: 'absolute', left: space[4], zIndex: 1, width: 44, height: 44 },

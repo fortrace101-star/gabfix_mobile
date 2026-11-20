@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowLeft, ChevronRight, Clock3, Search, Sparkles, X } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, Clock3, Search, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Pressable,
@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Stars } from '@/components/reviews/stars';
+import { ServicePhoto } from '@/components/service/service-photo';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cleaners } from '@/config/cleaners';
@@ -252,9 +253,12 @@ export default function SearchScreen() {
                       accessibilityLabel={`${service.name}. From ${ugx(fromHourly)} per hour`}
                       onPress={() => openService(service.slug)}
                       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
-                      <View style={styles.iconTile}>
-                        <Sparkles size={24} color={colors.green500} strokeWidth={2} />
-                      </View>
+                      <ServicePhoto
+                        slug={service.slug}
+                        cardUri={service.cardImage}
+                        areaUri={service.areaImage}
+                        style={styles.thumb}
+                      />
                       <View style={styles.rowBody}>
                         <Highlight value={service.name} term={term} style={styles.name} />
                         <Text
@@ -420,13 +424,11 @@ const styles = StyleSheet.create({
     color: colors.green900,
   },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  iconTile: {
-    width: 52,
-    height: 52,
+  thumb: {
+    width: 64,
+    height: 64,
     borderRadius: radius.tile,
     backgroundColor: colors.green50,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rowBody: { flex: 1, gap: 2 },
   name: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 15 },

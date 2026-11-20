@@ -39,6 +39,7 @@ export const inboxTimeLabel = (iso: string): string => {
 export const messagePreview = (message: ChatMessage | undefined): string => {
   if (!message) return 'No messages yet';
   const prefix = message.from === 'me' ? 'You: ' : '';
-  if (message.status === 'sending') return `${prefix}${message.text} · Sending…`;
-  return `${prefix}${message.text}`;
+  const body = message.text || (message.imageUri ? 'Photo' : '');
+  if (message.status === 'sending') return `${prefix}${body} · Sending…`;
+  return `${prefix}${body}`;
 };

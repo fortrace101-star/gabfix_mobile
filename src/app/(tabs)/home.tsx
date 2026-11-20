@@ -2,10 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import {
   Bell,
-  CalendarDays,
   ChevronDown,
   ChevronRight,
-  Building2,
   MapPin,
   Navigation,
   Repeat,
@@ -17,6 +15,8 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -29,6 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Blob } from '@/components/auth/blob';
 import { slotLabel } from '@/components/booking/slot-chips';
+import { ServicePhoto } from '@/components/service/service-photo';
 import { Stars } from '@/components/reviews/stars';
 import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
@@ -43,7 +44,6 @@ import {
   type SavedBooking,
   hydrateBookings,
   useBookings,
-  useBookingsHydrated,
 } from '@/store/bookings';
 import { useNotificationsHydrated, useUnreadNotificationCount } from '@/store/notifications';
 import { useOnboardingArea, useOnboardingUserName } from '@/store/onboarding';
@@ -97,8 +97,8 @@ export default function HomeTab() {
   const unreadNotifications = useUnreadNotificationCount();
   const { services, refresh: refreshServices } = useServices(area?.id);
   const bookings = useBookings();
-  const bookingsReady = useBookingsHydrated();
   const [refreshing, setRefreshing] = useState(false);
+  const [activeOffer, setActiveOffer] = useState(0);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -110,7 +110,6 @@ export default function HomeTab() {
     }
   }, [refreshServices]);
 
-  const isNewCustomer = bookingsReady && bookings.length === 0;
   const nextBooking = useMemo(() => {
     const upcoming = bookings.filter((booking) => booking.status === 'upcoming');
     return upcoming.sort((a, b) => bookingStart(a) - bookingStart(b))[0];
@@ -124,7 +123,6 @@ export default function HomeTab() {
     [bookings],
   );
   const homeReviews = reviewsForService('home-clean').slice(0, 4);
-  const welcomeOffer = offers[0];
 
   const displayName = userName?.trim() || user?.name?.trim() || 'there';
   const initials =
@@ -146,6 +144,14 @@ export default function HomeTab() {
   const draftService = serviceBySlug(draft?.serviceSlug);
   const draftTotal = draft ? price(draft).total : 0;
   const cardWidth = (width - space[4] * 2 - space[3]) / 2;
+  const offerWidth = width - space[4] * 2;
+  const offerStep = offerWidth + space[3];
+
+  const onOfferScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const next = Math.round(event.nativeEvent.contentOffset.x / offerStep);
+    const clamped = Math.max(0, Math.min(offers.length - 1, next));
+    if (clamped !== activeOffer) setActiveOffer(clamped);
+  };
 
   return (
     <View style={styles.screen}>
@@ -253,26 +259,77 @@ export default function HomeTab() {
             </Pressable>
           ) : null}
 
-          {isNewCustomer && welcomeOffer ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${welcomeOffer.title}. Open offers`}
-              onPress={() => router.push('/offers')}
-              style={styles.offer}>
-              <LinearGradient
-                colors={[colors.yellow500, colors.yellow600]}
-                end={{ x: 1, y: 1 }}
-                start={{ x: 0, y: 0 }}
-                style={styles.offerInner}>
-                <View style={styles.offerCircle} />
-                <Text style={styles.offerTitle} maxFontSizeMultiplier={1.3}>
-                  {welcomeOffer.title}
-                </Text>
-                <Text style={styles.offerCaption} maxFontSizeMultiplier={1.3}>
-                  {welcomeOffer.caption} · Code {welcomeOffer.code}
-                </Text>
-              </LinearGradient>
-            </Pressable>
+          {offers.length > 0 ? (
+            <View style={styles.offerBlock}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                disableIntervalMomentum
+                snapToAlignment="start"
+                snapToInterval={offerStep}
+                onScroll={onOfferScroll}
+                scrollEventThrottle={16}
+                style={styles.offerScroll}
+                contentContainerStyle={styles.offerRow}>
+                {offers.map((offer) => (
+                  <Pressable
+                    key={offer.code}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${offer.title}. ${offer.discountLabel} off. Code ${offer.code}. Open offers`}
+                    onPress={() => router.push('/offers')}
+                    style={[styles.offer, { width: offerWidth }]}>
+                    <LinearGradient
+                      colors={[colors.yellow500, colors.yellow600]}
+                      end={{ x: 1, y: 1 }}
+                      start={{ x: 0, y: 0 }}
+                      style={styles.offerInner}>
+                      <View style={styles.offerCircle} />
+                      <View style={styles.offerCopy}>
+                        <Text
+                          style={styles.offerTitle}
+                          maxFontSizeMultiplier={1.3}
+                          numberOfLines={2}>
+                          {offer.title}
+                        </Text>
+                        <Text style={styles.offerCaption} maxFontSizeMultiplier={1.2}>
+                          {offer.caption}
+                        </Text>
+                        <View style={styles.offerCode}>
+                          <Text style={styles.offerCodeLabel} maxFontSizeMultiplier={1.2}>
+                            CODE
+                          </Text>
+                          <Text style={styles.offerCodeText} maxFontSizeMultiplier={1.2}>
+                            {offer.code}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.offerBadge}>
+                        <Text style={styles.offerDiscount} maxFontSizeMultiplier={1.2}>
+                          {offer.discountLabel}
+                        </Text>
+                        <Text style={styles.offerOff} maxFontSizeMultiplier={1.2}>
+                          OFF
+                        </Text>
+                      </View>
+                    </LinearGradient>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              {offers.length > 1 ? (
+                <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={styles.offerDots}>
+                  {offers.map((offer, index) => (
+                    <View
+                      key={offer.code}
+                      style={[styles.offerDot, index === activeOffer && styles.offerDotActive]}
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </View>
           ) : null}
 
           <ScrollView
@@ -350,7 +407,7 @@ export default function HomeTab() {
           </View>
 
           <View style={styles.grid}>
-            {services.map((service, index) => (
+            {services.map((service) => (
               <Pressable
                 key={service.slug}
                 accessibilityRole="button"
@@ -362,18 +419,23 @@ export default function HomeTab() {
                   })
                 }
                 style={[styles.serviceCard, { width: cardWidth }]}>
+                <ServicePhoto
+                  slug={service.slug}
+                  cardUri={service.cardImage}
+                  areaUri={service.areaImage}
+                  style={styles.servicePhoto}
+                />
+                <LinearGradient
+                  colors={['rgba(11,28,17,0.02)', 'rgba(11,28,17,0.32)', 'rgba(11,28,17,0.82)']}
+                  locations={[0, 0.45, 1]}
+                  style={styles.serviceScrim}
+                  pointerEvents="none"
+                />
                 {service.tag ? (
                   <View style={styles.tag}>
                     <Text style={styles.tagText}>{service.tag}</Text>
                   </View>
                 ) : null}
-                <View style={styles.serviceIcon}>
-                  {index % 2 === 0 ? (
-                    <Sparkles size={26} color={colors.green500} strokeWidth={2} />
-                  ) : (
-                    <CalendarDays size={26} color={colors.green500} strokeWidth={2} />
-                  )}
-                </View>
                 <Text style={styles.serviceName} maxFontSizeMultiplier={1.3} numberOfLines={2}>
                   {service.name}
                 </Text>
@@ -431,22 +493,23 @@ export default function HomeTab() {
                         styles.categoryCard,
                         pressed && styles.cleanerPressed,
                       ]}>
-                      <View style={styles.categoryIcon}>
-                        {category.id === 'property' ? (
-                          <Building2 size={24} color={colors.green500} strokeWidth={2} />
-                        ) : (
-                          <Sparkles size={24} color={colors.green500} strokeWidth={2} />
-                        )}
+                      <ServicePhoto
+                        slug={service.slug}
+                        cardUri={service.cardImage}
+                        areaUri={service.areaImage}
+                        style={styles.categoryPhoto}
+                      />
+                      <View style={styles.categoryBody}>
+                        <Text
+                          style={styles.categoryName}
+                          maxFontSizeMultiplier={1.3}
+                          numberOfLines={2}>
+                          {service.name}
+                        </Text>
+                        <Text style={styles.categoryPrice} maxFontSizeMultiplier={1.3}>
+                          From {ugx(fromHourly)}/hr
+                        </Text>
                       </View>
-                      <Text
-                        style={styles.categoryName}
-                        maxFontSizeMultiplier={1.3}
-                        numberOfLines={2}>
-                        {service.name}
-                      </Text>
-                      <Text style={styles.categoryPrice} maxFontSizeMultiplier={1.3}>
-                        From {ugx(fromHourly)}/hr
-                      </Text>
                     </Pressable>
                   ))}
                 </ScrollView>
@@ -715,13 +778,17 @@ const styles = StyleSheet.create({
   draftMeta: { ...text.caption },
   resume: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   resumeText: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green500 },
+  offerBlock: { gap: space[2] },
+  offerScroll: { marginHorizontal: -space[4] },
+  offerRow: { paddingHorizontal: space[4], gap: space[3] },
   offer: { borderRadius: radius.card, overflow: 'hidden' },
   offerInner: {
-    minHeight: 104,
+    minHeight: 116,
     borderRadius: radius.card,
     padding: space[4],
-    gap: space[1],
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
     overflow: 'hidden',
   },
   offerCircle: {
@@ -733,18 +800,72 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: 'rgba(255,255,255,0.28)',
   },
+  offerCopy: { flex: 1, gap: 3 },
   offerTitle: {
     fontFamily: font.poppinsSemi,
     fontSize: 17,
     lineHeight: 23,
     color: colors.green900,
-    maxWidth: '78%',
   },
   offerCaption: {
     ...text.caption,
     color: colors.green900,
-    maxWidth: '78%',
   },
+  offerCode: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: space[1],
+    height: 24,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(17,60,29,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.32)',
+  },
+  offerCodeLabel: {
+    fontFamily: font.bodySemi,
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 0.8,
+    color: colors.green900,
+    opacity: 0.7,
+  },
+  offerCodeText: {
+    fontFamily: font.bodySemi,
+    fontSize: 11,
+    lineHeight: 15,
+    letterSpacing: 0.5,
+    color: colors.green900,
+  },
+  offerBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    flexShrink: 0,
+    backgroundColor: colors.green700,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  offerDiscount: {
+    fontFamily: font.poppinsBold,
+    fontSize: 19,
+    lineHeight: 23,
+    color: colors.surface,
+  },
+  offerOff: {
+    fontFamily: font.bodySemi,
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 1,
+    color: colors.surface,
+  },
+  offerDots: { flexDirection: 'row', alignSelf: 'center', gap: 6, marginTop: 2 },
+  offerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.green100 },
+  offerDotActive: { width: 18, backgroundColor: colors.green500 },
   categoryHeading: { flex: 1, gap: 2 },
   categoryScroll: { marginHorizontal: -space[4] },
   categoryRow: { paddingHorizontal: space[4], gap: space[3] },
@@ -752,18 +873,11 @@ const styles = StyleSheet.create({
     width: 160,
     borderRadius: radius.card,
     backgroundColor: colors.surface,
-    padding: space[3],
-    gap: space[2],
+    overflow: 'hidden',
     ...shadow.card,
   },
-  categoryIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.tile,
-    backgroundColor: colors.green50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  categoryPhoto: { width: '100%', height: 92, backgroundColor: colors.green50 },
+  categoryBody: { padding: space[3], gap: space[1] },
   categoryName: {
     fontFamily: font.bodySemi,
     fontSize: 14,
@@ -937,13 +1051,15 @@ const styles = StyleSheet.create({
   serviceCard: {
     aspectRatio: 1.05,
     borderRadius: radius.card,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.green700,
     padding: space[3],
     gap: space[2],
     justifyContent: 'flex-end',
     overflow: 'hidden',
     ...shadow.card,
   },
+  servicePhoto: { ...StyleSheet.absoluteFill },
+  serviceScrim: { ...StyleSheet.absoluteFill },
   tag: {
     position: 'absolute',
     top: space[2],
@@ -961,12 +1077,8 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     color: colors.green900,
   },
-  serviceIcon: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  serviceName: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: colors.text },
-  servicePrice: { ...text.caption, color: colors.green700 },
+  serviceName: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: colors.surface },
+  servicePrice: { ...text.caption, color: colors.surface, opacity: 0.85 },
   howCard: { flexDirection: 'row', gap: space[3] },
   howStep: { flex: 1, alignItems: 'center', gap: space[1] },
   stepCircle: {

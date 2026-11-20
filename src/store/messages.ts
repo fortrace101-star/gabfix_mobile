@@ -13,6 +13,8 @@ export type ChatMessage = {
   from: ChatSender;
   /** Only used on outgoing messages. */
   status?: ChatMessageStatus;
+  /** Local image attachment (data URI) sent with the message. */
+  imageUri?: string;
 };
 
 export type ChatThread = {
@@ -268,10 +270,10 @@ const markMessageSent = (threadId: string, messageId: string) => {
 };
 
 /** Optimistic send; the demo confirms locally and support replies after a short delay. */
-export function sendMessage(threadId: string, rawText: string): void {
+export function sendMessage(threadId: string, rawText: string, imageUri?: string): void {
   const text = rawText.trim();
   const thread = state.threads.find((item) => item.id === threadId);
-  if (!text || !thread) return;
+  if ((!text && !imageUri) || !thread) return;
 
   const atISO = new Date().toISOString();
   const message: ChatMessage = {
@@ -280,13 +282,14 @@ export function sendMessage(threadId: string, rawText: string): void {
     atISO,
     from: 'me',
     status: 'sending',
+    ...(imageUri ? { imageUri } : {}),
   };
   appendMessage(threadId, message, 0);
 
   setTimeout(() => markMessageSent(threadId, message.id), 550);
 
   if (thread.kind === 'support') {
-    const reply = supportReply(text);
+    const reply = supportReply(text || 'photo attached');
     setTimeout(() => {
       appendMessage(
         threadId,

@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { Building2, ChevronRight, Search, Sparkles, Truck } from 'lucide-react-native';
+import { ChevronRight, Search } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ServicePhoto } from '@/components/service/service-photo';
 import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
 import { fromHourly, serviceCategories, type Service, type ServiceCategoryId } from '@/config/services';
@@ -18,10 +19,7 @@ const filters: readonly { value: CategoryFilter; label: string }[] = [
   ...serviceCategories.map((category) => ({ value: category.id, label: category.label })),
 ];
 
-const icons = [Sparkles, Sparkles, Building2, Truck] as const;
-
-function ServiceRow({ service, index }: { service: Service; index: number }) {
-  const Icon = icons[index % icons.length];
+function ServiceRow({ service }: { service: Service }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -33,9 +31,12 @@ function ServiceRow({ service, index }: { service: Service; index: number }) {
         })
       }
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
-      <View style={styles.iconTile}>
-        <Icon size={26} color={colors.green500} strokeWidth={2} />
-      </View>
+      <ServicePhoto
+        slug={service.slug}
+        cardUri={service.cardImage}
+        areaUri={service.areaImage}
+        style={styles.thumb}
+      />
       <View style={styles.rowBody}>
         <Text style={styles.name} maxFontSizeMultiplier={1.3}>
           {service.name}
@@ -158,11 +159,7 @@ export default function ServicesTab() {
             </View>
             <View style={styles.list}>
               {group.services.map((service) => (
-                <ServiceRow
-                  key={service.slug}
-                  index={services.findIndex((item) => item.slug === service.slug)}
-                  service={service}
-                />
+                <ServiceRow key={service.slug} service={service} />
               ))}
             </View>
           </View>
@@ -238,13 +235,11 @@ const styles = StyleSheet.create({
   },
   errorText: { ...text.caption, color: colors.text, flex: 1 },
   errorLink: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green700, fontSize: 13 },
-  iconTile: {
-    width: 52,
-    height: 52,
+  thumb: {
+    width: 64,
+    height: 64,
     borderRadius: radius.tile,
     backgroundColor: colors.green50,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rowBody: { flex: 1, gap: 2 },
   name: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 15 },

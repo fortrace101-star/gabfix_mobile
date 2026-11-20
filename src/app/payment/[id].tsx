@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CreditCard, Heart, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native';
+import { AlertTriangle, CreditCard, Heart, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -15,13 +15,14 @@ import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/ui/top-bar';
 import { demoNewCard } from '@/config/payments';
 import { supportsNativeDriver } from '@/lib/animation';
-import { addBookingTip } from '@/store/bookings';
+import { addBookingTip, markPaymentFailed } from '@/store/bookings';
 import { addCard } from '@/store/payment-methods';
 import { colors, font, radius, space, text } from '@/theme';
 import { successHaptic } from '@/utils/haptics';
 import { ugx } from '@/utils/format';
 
 const DEMO_APPROVAL_MS = 6_000;
+const PROMPT_TIMEOUT_MS = 120_000;
 
 const maskedPhone = (digits: string): string => {
   if (digits.length < 5) return `+256 ${digits}`;
@@ -55,8 +56,8 @@ export default function PaymentScreen() {
   const isTip = params.kind === 'tip';
   const saveNewCard = !isTip && isCard && params.saveCard === '1';
 
-  const [approved, setApproved] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(120);
+  const [status, setStatus] = useState<'pending' | 'approved' | 'failed'>('pending');
+  const [secondsLeft, setSecondsLeft] = useState(PROMPT_TIMEOUT_MS / 1000);
   const [pulse] = useState(() => new Animated.Value(0));
   const [tick] = useState(() => new Animated.Value(0));
 
@@ -74,22 +75,30 @@ export default function PaymentScreen() {
   }, [pulse]);
 
   useEffect(() => {
+    if (status !== 'pending') return;
     const countdown = setInterval(() => {
       setSecondsLeft((current) => Math.max(current - 1, 0));
     }, 1000);
     const approval = setTimeout(() => {
-      setApproved(true);
+      setStatus('approved');
       successHaptic();
     }, isCard ? DEMO_APPROVAL_MS - 2_000 : DEMO_APPROVAL_MS);
+    // The provider prompt expires after two minutes without an approval. The booking is
+    // then held for 30 minutes before the auto-cancel sweep releases it.
+    const expiry = setTimeout(() => {
+      setStatus('failed');
+      if (!isTip) markPaymentFailed(bookingId);
+    }, PROMPT_TIMEOUT_MS);
 
     return () => {
       clearInterval(countdown);
       clearTimeout(approval);
+      clearTimeout(expiry);
     };
-  }, [isCard]);
+  }, [bookingId, isCard, isTip, status]);
 
   useEffect(() => {
-    if (!approved) return;
+    if (status !== 'approved') return;
     Animated.spring(tick, { toValue: 1, useNativeDriver: supportsNativeDriver }).start();
     if (isTip) {
       addBookingTip(bookingId, amount, method);
@@ -107,10 +116,10 @@ export default function PaymentScreen() {
       });
     }, 1600);
     return () => clearTimeout(next);
-  }, [approved, amount, bookingId, isTip, method, saveNewCard, slug, tick]);
+  }, [amount, bookingId, isTip, method, saveNewCard, slug, status, tick]);
 
   const stop = () => {
-    if (approved) return;
+    if (status === 'approved') return;
     Alert.alert(
       isTip ? 'Cancel this tip?' : 'Stop this payment?',
       isTip
@@ -125,6 +134,16 @@ export default function PaymentScreen() {
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = String(secondsLeft % 60).padStart(2, '0');
+
+  const decline = () => {
+    setStatus('failed');
+    if (!isTip) markPaymentFailed(bookingId);
+  };
+
+  const retry = () => {
+    setSecondsLeft(PROMPT_TIMEOUT_MS / 1000);
+    setStatus('pending');
+  };
 
   const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.25] });
   const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] });
@@ -147,7 +166,7 @@ export default function PaymentScreen() {
       />
 
       <View style={styles.content}>
-        {approved ? (
+        {status === 'approved' ? (
           <>
             <View style={styles.successRing}>
               <Animated.View style={{ transform: [{ scale: tick }] }}>
@@ -169,6 +188,39 @@ export default function PaymentScreen() {
                 : `${ugx(amount)} paid${
                     saveNewCard ? ` · Visa ending ${demoNewCard.last4} saved` : ''
                   }. Taking you to your confirmation…`}
+            </Text>
+          </>
+        ) : status === 'failed' ? (
+          <>
+            <View style={styles.failureCircle}>
+              <AlertTriangle size={48} color={colors.error} strokeWidth={2} />
+            </View>
+            <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+              Payment not completed
+            </Text>
+            <Text style={styles.body} maxFontSizeMultiplier={1.3}>
+              {isTip
+                ? 'Your tip was not sent. No money left your account and your review is still saved.'
+                : `No money left your account. Booking ${bookingId} is held for 30 minutes, then cancelled automatically.`}
+            </Text>
+
+            {isTip ? null : (
+              <View style={styles.holdNote}>
+                <Text style={styles.holdText} maxFontSizeMultiplier={1.3}>
+                  Try again now, or go back and choose another method. Your booking details are
+                  saved for the rest of the hold.
+                </Text>
+              </View>
+            )}
+
+            <Button label="Try again" onPress={retry} />
+            <Button
+              label={isTip ? 'Back to review' : 'Use another method'}
+              variant="secondary"
+              onPress={() => router.back()}
+            />
+            <Text style={styles.helper} maxFontSizeMultiplier={1.3}>
+              {isTip ? `Tip for booking ${bookingId}.` : `Booking ${bookingId}.`}
             </Text>
           </>
         ) : (
@@ -233,6 +285,15 @@ export default function PaymentScreen() {
               <Text style={styles.demoText} maxFontSizeMultiplier={1.3}>
                 Demo build: the provider approval is simulated after a few seconds.
               </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Simulate a failed payment"
+                hitSlop={8}
+                onPress={decline}>
+                <Text style={styles.demoLink} maxFontSizeMultiplier={1.3}>
+                  Simulate a failed payment
+                </Text>
+              </Pressable>
             </View>
 
             <Button
@@ -325,10 +386,32 @@ const styles = StyleSheet.create({
   step: { ...text.bodyM, fontSize: 14 },
   demo: {
     alignSelf: 'stretch',
+    gap: space[2],
     padding: space[3],
     borderRadius: radius.input,
     backgroundColor: colors.infoBg,
   },
   demoText: { ...text.caption, color: colors.text },
+  demoLink: {
+    ...text.caption,
+    color: colors.green700,
+    fontFamily: font.bodySemi,
+    textDecorationLine: 'underline',
+  },
+  failureCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.errorBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  holdNote: {
+    alignSelf: 'stretch',
+    padding: space[3],
+    borderRadius: radius.input,
+    backgroundColor: colors.warningBg,
+  },
+  holdText: { ...text.caption, color: colors.text },
   helper: { ...text.caption, textAlign: 'center' },
 });

@@ -1,7 +1,17 @@
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { CalendarDays, CheckCircle2, ClipboardList, Sparkles } from 'lucide-react-native';
+import {
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  ImagePlus,
+  Sparkles,
+  X,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -32,6 +42,8 @@ import { useOnboardingArea } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { chip, colors, font, radius, space, text } from '@/theme';
 import { phoneUG } from '@/utils/format';
+
+const MAX_PHOTOS = 5;
 
 const FREQUENCY_OPTIONS: { value: BookingFrequency; label: string }[] = [
   { value: 'once', label: 'One time' },
@@ -106,6 +118,7 @@ export default function QuoteRequestScreen() {
   );
   const [contactName, setContactName] = useState(user?.name ?? '');
   const [contactPhone, setContactPhone] = useState(() => phoneDigits(user?.phone));
+  const [photos, setPhotos] = useState<string[]>([]);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState<QuoteRequest | null>(null);
 
@@ -128,6 +141,37 @@ export default function QuoteRequestScreen() {
 
   const markTouched = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
 
+  const pickPhotos = async () => {
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Photo access needed',
+        'Allow photo access in your device settings to attach photos to this request.',
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.35,
+      base64: true,
+    });
+    if (result.canceled) return;
+
+    const additions = result.assets
+      .slice(0, remaining)
+      .map((asset) =>
+        asset.base64 ? `data:${asset.mimeType ?? 'image/jpeg'};base64,${asset.base64}` : asset.uri,
+      )
+      .filter(Boolean);
+    setPhotos((current) => [...current, ...additions].slice(0, MAX_PHOTOS));
+  };
+
   const submit = () => {
     if (!complete) {
       setTouched({ details: true, name: true, phone: true });
@@ -144,6 +188,7 @@ export default function QuoteRequestScreen() {
       areaName,
       contactName: contactName.trim(),
       contactPhone,
+      photos,
     });
     setSubmitted(request);
   };
@@ -266,6 +311,50 @@ export default function QuoteRequestScreen() {
             maxLength={500}
             autoCapitalize="sentences"
           />
+
+          <View style={styles.group}>
+            <View style={styles.photoHeader}>
+              <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+                Photos
+              </Text>
+              <Text style={styles.optional} maxFontSizeMultiplier={1.2}>
+                Optional · up to {MAX_PHOTOS}
+              </Text>
+            </View>
+            <View style={styles.photoGrid}>
+              {photos.map((photo, index) => (
+                <View key={`${photo.slice(0, 24)}-${index}`} style={styles.photoTile}>
+                  <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove photo ${index + 1}`}
+                    hitSlop={6}
+                    onPress={() =>
+                      setPhotos((current) => current.filter((_, item) => item !== index))
+                    }
+                    style={styles.photoRemove}>
+                    <X size={12} color={colors.surface} strokeWidth={3} />
+                  </Pressable>
+                </View>
+              ))}
+              {photos.length < MAX_PHOTOS ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Add photos to this request"
+                  onPress={() => void pickPhotos()}
+                  style={styles.photoAdd}>
+                  <ImagePlus size={22} color={colors.green500} strokeWidth={2} />
+                  <Text style={styles.photoAddText} maxFontSizeMultiplier={1.2}>
+                    Add
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+            <Text style={styles.photoHint} maxFontSizeMultiplier={1.2}>
+              Show us the rooms or items that need attention. Photos are stored with this
+              request on your device until it is sent to the team.
+            </Text>
+          </View>
 
           <View style={styles.group}>
             <Text style={styles.label} maxFontSizeMultiplier={1.3}>
@@ -456,6 +545,36 @@ const styles = StyleSheet.create({
   },
   quotePillText: { ...text.caption, fontSize: 11, color: colors.yellow800, fontFamily: font.bodySemi },
   multiline: { height: 96, paddingTop: space[3], textAlignVertical: 'top' },
+  photoHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  optional: { ...text.caption },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
+  photoTile: { width: 72, height: 72, borderRadius: 12, overflow: 'hidden' },
+  photo: { width: '100%', height: '100%' },
+  photoRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAdd: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.green300,
+    backgroundColor: colors.green50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  photoAddText: { ...text.caption, fontSize: 10, color: colors.green700 },
+  photoHint: { ...text.caption },
   group: { gap: space[3] },
   label: { ...text.h3 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },

@@ -1,44 +1,21 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Download, Flag, Share2 } from 'lucide-react-native';
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LogoBadge } from '@/components/brand/logo-badge';
 import { TopBar } from '@/components/ui/top-bar';
-import { paymentMethodLabel } from '@/lib/booking-policy';
-import { price } from '@/lib/pricing';
-import { type BookingStatus, getBookingById, useBookings } from '@/store/bookings';
+import { receiptModel, type BookingStatusLabel } from '@/lib/receipt';
+import { shareReceiptPdf } from '@/lib/receipt-export';
+import { getBookingById, useBookings } from '@/store/bookings';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
-const parseISODate = (iso: string): Date => {
-  const [year, month, day] = iso.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
-
-const dateLabel = (iso?: string): string =>
-  iso
-    ? parseISODate(iso).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      })
-    : 'Date to confirm';
-
-const issuedLabel = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-const statusMeta: Record<BookingStatus, { label: string; bg: string; fg: string }> = {
-  upcoming: { label: 'Confirmed', bg: '#E8F5EC', fg: colors.green700 },
-  completed: { label: 'Completed', bg: '#EEF2FF', fg: '#3730A3' },
-  cancelled: { label: 'Cancelled', bg: '#FEE2E2', fg: colors.error },
-};
-
-const paymentKind = (plan?: string): string => {
-  if (plan === 'full_now') return 'Full payment';
-  if (plan === 'deposit') return 'Deposit';
-  if (plan === 'after_service') return 'Payment after service';
-  return 'Payment';
+const statusMeta: Record<BookingStatusLabel, { bg: string; fg: string }> = {
+  Confirmed: { bg: '#E8F5EC', fg: colors.green700 },
+  Completed: { bg: '#EEF2FF', fg: '#3730A3' },
+  Cancelled: { bg: '#FEE2E2', fg: colors.error },
 };
 
 function LineItem({
@@ -68,13 +45,14 @@ function LineItem({
   );
 }
 
-/** P19 Receipt / invoice for one saved booking. */
+/** P19 Receipt / invoice for one saved booking, with a share sheet and PDF export. */
 export default function ReceiptScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const id = typeof params.id === 'string' ? params.id : '';
   // Subscribe so the receipt follows a booking that is rescheduled or cancelled.
   useBookings();
   const booking = id ? getBookingById(id) : undefined;
+  const [downloading, setDownloading] = useState(false);
 
   if (!booking) {
     return (
@@ -92,47 +70,37 @@ export default function ReceiptScreen() {
     );
   }
 
-  const source = booking.rebook;
-  const quote = source ? price(source) : null;
-  const status = statusMeta[booking.status];
-  const method = paymentMethodLabel(booking.paymentMethod);
-  const total = quote?.total ?? booking.total;
-  const rows = quote
-    ? [
-        {
-          label: `${booking.serviceName} (${booking.hours} h × ${booking.cleaners} cleaner${booking.cleaners === 1 ? '' : 's'})`,
-          value: ugx(quote.base),
-        },
-        ...(quote.materials > 0 ? [{ label: 'Materials', value: ugx(quote.materials) }] : []),
-        ...(quote.addOns > 0 ? [{ label: 'Extras', value: ugx(quote.addOns) }] : []),
-        ...(quote.frequencyDiscount > 0
-          ? [{ label: 'Frequency discount', value: `−${ugx(quote.frequencyDiscount)}` }]
-          : []),
-        ...(quote.promoDiscount > 0
-          ? [
-              {
-                label: `Promo${source?.promoCode ? ` (${source.promoCode})` : ''}`,
-                value: `−${ugx(quote.promoDiscount)}`,
-              },
-            ]
-          : []),
-        { label: 'VAT (18%)', value: ugx(quote.vat) },
-      ]
-    : [{ label: booking.serviceName, value: ugx(booking.total) }];
+  const receipt = receiptModel(booking);
+  const status = statusMeta[receipt.status];
 
   const share = () => {
     void Share.share({
       message: [
-        `Gabfix receipt ${booking.id}`,
-        `${booking.serviceName} · ${dateLabel(booking.dateISO)}`,
+        `Gabfix receipt ${receipt.id}`,
+        `${booking.serviceName} · ${receipt.serviceDate}`,
         booking.area ? `At ${booking.area}` : null,
-        `Total ${ugx(total)}`,
-        `Paid ${ugx(booking.paid)}`,
-        booking.balance > 0 ? `Outstanding ${ugx(booking.balance)}` : 'Paid in full',
+        `Total ${ugx(receipt.total)}`,
+        `Paid ${ugx(receipt.paid)}`,
+        receipt.balance > 0 ? `Outstanding ${ugx(receipt.balance)}` : 'Paid in full',
       ]
         .filter(Boolean)
         .join('\n'),
     }).catch(() => undefined);
+  };
+
+  const download = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await shareReceiptPdf(booking);
+    } catch (error) {
+      Alert.alert(
+        'Could not create the PDF',
+        error instanceof Error ? error.message : 'Try again in a moment.',
+      );
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -152,7 +120,7 @@ export default function ReceiptScreen() {
             </View>
             <View style={[styles.status, { backgroundColor: status.bg }]}>
               <Text style={[styles.statusText, { color: status.fg }]} maxFontSizeMultiplier={1.2}>
-                {status.label}
+                {receipt.status}
               </Text>
             </View>
           </View>
@@ -163,7 +131,7 @@ export default function ReceiptScreen() {
                 Receipt
               </Text>
               <Text style={styles.metaValue} maxFontSizeMultiplier={1.3}>
-                {booking.id}
+                {receipt.id}
               </Text>
             </View>
             <View style={styles.metaItem}>
@@ -171,7 +139,7 @@ export default function ReceiptScreen() {
                 Issued
               </Text>
               <Text style={styles.metaValue} maxFontSizeMultiplier={1.3}>
-                {issuedLabel(booking.createdAtISO)}
+                {receipt.issued}
               </Text>
             </View>
             <View style={styles.metaItem}>
@@ -179,7 +147,7 @@ export default function ReceiptScreen() {
                 Service date
               </Text>
               <Text style={styles.metaValue} maxFontSizeMultiplier={1.3}>
-                {dateLabel(booking.dateISO)}
+                {receipt.serviceDate}
               </Text>
             </View>
             <View style={styles.metaItem}>
@@ -187,7 +155,7 @@ export default function ReceiptScreen() {
                 Address
               </Text>
               <Text style={styles.metaValue} maxFontSizeMultiplier={1.3}>
-                {[booking.area, booking.street].filter(Boolean).join(', ') || 'To confirm'}
+                {receipt.address}
               </Text>
             </View>
           </View>
@@ -197,32 +165,32 @@ export default function ReceiptScreen() {
           <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
             Charges
           </Text>
-          {rows.map((row) => (
-            <LineItem key={row.label} label={row.label} value={row.value} />
+          {receipt.lines.map((line) => (
+            <LineItem key={line.label} label={line.label} value={line.value} />
           ))}
           <View style={styles.divider} />
-          <LineItem label="Total" value={ugx(total)} strong />
+          <LineItem label="Total" value={ugx(receipt.total)} strong />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
             Payments
           </Text>
-          {booking.paid > 0 ? (
+          {receipt.paid > 0 ? (
             <View style={styles.payment}>
               <View style={styles.paymentCopy}>
                 <Text style={styles.paymentKind} maxFontSizeMultiplier={1.3}>
-                  {paymentKind(booking.paymentPlan)}
+                  {receipt.paymentKind}
                 </Text>
                 <Text style={styles.paymentMeta} maxFontSizeMultiplier={1.3}>
-                  {method} · {issuedLabel(booking.createdAtISO)}
+                  {receipt.method} · {receipt.issued}
                 </Text>
                 <Text style={styles.paymentMeta} maxFontSizeMultiplier={1.2}>
-                  Reference {booking.id}
+                  Reference {receipt.id}
                 </Text>
               </View>
               <Text style={styles.paymentAmount} maxFontSizeMultiplier={1.3}>
-                {ugx(booking.paid)}
+                {ugx(receipt.paid)}
               </Text>
             </View>
           ) : (
@@ -231,18 +199,19 @@ export default function ReceiptScreen() {
             </Text>
           )}
 
-          {booking.lateFee ? (
-            <LineItem label="Late cancellation fee" value={ugx(booking.lateFee)} />
+          {receipt.tip ? <LineItem label="Digital tip" value={ugx(receipt.tip)} /> : null}
+          {receipt.lateFee ? (
+            <LineItem label="Late cancellation fee" value={ugx(receipt.lateFee)} />
           ) : null}
-          {booking.refundAmount ? (
-            <LineItem label="Refunded" value={`−${ugx(booking.refundAmount)}`} negative />
+          {receipt.refundAmount ? (
+            <LineItem label="Refunded" value={`−${ugx(receipt.refundAmount)}`} negative />
           ) : null}
 
           <View style={styles.divider} />
-          <LineItem label="Total paid" value={ugx(booking.paid)} strong />
+          <LineItem label="Total paid" value={ugx(receipt.paid)} strong />
           <LineItem
-            label={booking.balance > 0 ? 'Outstanding' : 'Outstanding balance'}
-            value={ugx(booking.balance)}
+            label={receipt.balance > 0 ? 'Outstanding' : 'Outstanding balance'}
+            value={ugx(receipt.balance)}
             strong
           />
         </View>
@@ -260,25 +229,20 @@ export default function ReceiptScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Download receipt"
-            onPress={() =>
-              Alert.alert(
-                'Download',
-                'PDF export needs expo-print and expo-sharing, which are not installed in this build yet.',
-              )
-            }
-            style={styles.action}>
+            accessibilityLabel="Download receipt as PDF"
+            accessibilityState={{ busy: downloading }}
+            disabled={downloading}
+            onPress={() => void download()}
+            style={[styles.action, downloading && styles.actionBusy]}>
             <Download size={18} color={colors.green700} strokeWidth={2} />
             <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>
-              Download PDF
+              {downloading ? 'Preparing PDF…' : 'Download PDF'}
             </Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Report a problem with this receipt"
-            onPress={() =>
-              Alert.alert('Report a problem', 'Support contact is not connected in this demo build yet.')
-            }
+            onPress={() => router.push('/help/contact' as Href)}
             style={styles.action}>
             <Flag size={18} color={colors.green700} strokeWidth={2} />
             <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>
@@ -288,7 +252,8 @@ export default function ReceiptScreen() {
         </View>
 
         <Text style={styles.footer} maxFontSizeMultiplier={1.2}>
-          This receipt reflects the booking record saved on this device for demo purposes.
+          The PDF is generated on this device from the booking record saved here. Share it or
+          save it to your files.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -343,6 +308,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  actionBusy: { opacity: 0.6 },
   actionText: { ...text.bodyM, color: colors.text },
   footer: { ...text.caption, color: colors.textMuted, textAlign: 'center' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[6], gap: space[2] },

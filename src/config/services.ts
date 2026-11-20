@@ -24,6 +24,10 @@ export type Service = {
   tagline: string;
   tag?: string;
   category: ServiceCategoryId;
+  /** Remote image for catalogue cards/search rows (`GET /services`, Open item 18). */
+  cardImage?: string;
+  /** Area-specific image override from an area-scoped catalogue request. */
+  areaImage?: string;
 };
 
 export const services: readonly Service[] = [

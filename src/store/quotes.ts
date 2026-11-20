@@ -26,6 +26,8 @@ export type QuoteRequestInput = {
   areaName: string;
   contactName: string;
   contactPhone: string;
+  /** Up to five local photo attachments (data URIs) for the job. */
+  photos?: string[];
 };
 
 export type QuoteRequest = QuoteRequestInput & {

@@ -8,6 +8,12 @@ export type FaqItem = { question: string; answer: string };
 
 export type ServiceContent = {
   slug: string;
+  /** Service photography URL from `GET /services/{slug}`; falls back to the bundled photo. */
+  heroImage?: string;
+  /** Remote catalogue/card image from `GET /services/{slug}`. */
+  cardImage?: string;
+  /** Area-specific image override from an area-scoped content request. */
+  areaImage?: string;
   intro: string;
   includes: string[];
   excludes: string[];
