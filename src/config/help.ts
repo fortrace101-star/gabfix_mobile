@@ -23,15 +23,7 @@ export type FaqItem = {
   top?: boolean;
 };
 
-/** Provisional support details until the contact centre numbers are confirmed. */
-export const support = {
-  phoneDisplay: '+256 700 000 000',
-  phoneHref: 'tel:+256700000000',
-  whatsappUrl: 'https://wa.me/256700000000',
-  email: 'support@gabfix.com',
-  emailHref: 'mailto:support@gabfix.com',
-  hours: 'Open 7 days · 7:00 am – 9:00 pm',
-} as const;
+export { support } from './support';
 
 export const helpTopics: readonly HelpTopic[] = [
   {

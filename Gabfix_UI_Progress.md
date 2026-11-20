@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-20 by engineering (Codebuff session, remaining screen-build gaps closed) |
+| **Last updated** | 2026-11-20 by engineering (Codebuff session, remaining screen-build gaps closed; Phase 2 Stage 1 UI plan/progress tracked separately below) |
 | **Expo SDK version** | 58.0.26 (Expo Router 58.0.32 · React Native 0.88.1 · React 19.3.0) |
 | **Guidelines versions** | Part 1 v1.3 · Part 2 v2.0 · Plan v1.0 · Page_refactor v1.0 |
 | **Current phase** | Phase 6 (Supporting and Account) in progress; Phase 7 web admin built alongside it; P4 to P14 built (P13/P14 simulated locally), P15a–P15c, P16–P27g built locally; all 40 page builds complete |
@@ -96,6 +96,46 @@ Ordered by how much each block unlocks. Tick items only when their evidence is i
 - [ ] 8.1 Accessibility pass · 8.3 performance (cold start < 3 s) · 8.4 network/3G/offline tests
 - [ ] 8.5 payments UAT in the aggregator sandbox · 8.6 security review (tokens, no card data, no PII logs)
 - [ ] 8.7 store assets, permission strings, privacy labels · 8.8 production EAS builds, TestFlight and Play internal testing · 8.9 final progress report
+
+---
+
+## Implementation Phase 2 - Stage 1 UI progress (separate)
+
+**Source:** `Implementation_Phase_2 - Stage 1.md` (explored 2026-11-20). This tracks UI implementation progress for Phase 2 Stage 1 as a **separate percentage**, **not added to and not summed with** the existing **66% overall/screen implementation progress** reported above.
+
+**Current progress (separate): 33%** of the **first UI implementation plan** below (1 of 3 steps complete).
+
+### First UI steps plan (drafted from the document)
+
+Priority is given to Workstream A (“Support contact single source of truth”) because it is UI-visible, local-only, and has clear acceptance criteria without new backend contracts. Later workstreams are sequenced after it.
+
+| Step | Scope (UI-first) | Key files/surfaces | Status |
+|---|---|---|---|
+| 1 | **Workstream A core — support source of truth + help surfaces:** create shared pure support config/helpers, replace provisional values, make contact options dynamic (real numbers/copy, hide invalid channels, booking-context prefill, copy/long-press, open-failure handling), and accept `bookingId` on the contact screen. | `src/lib/support.ts`, `src/config/support.ts`, `src/config/help.ts`, `src/components/help/contact-options.tsx`, `src/app/help/contact.tsx` | ✅ **Done** (2026-11-20) |
+| 2 | **Workstream A mobile touchpoints:** pass booking context from booking/help entry points and align remaining mobile UI copy/behaviour (e.g. booking detail/receipt contact links with `bookingId`, P13 failed-payment call fallback with copy, P15c tracking call fallback copy, and `src/config/policies.ts` footer using shared support values). | `src/app/booking/[id].tsx`, `src/app/booking/[id]/receipt.tsx` (if present), `src/app/payment/[id].tsx`, `src/app/booking/[id]/track.tsx`, `src/config/policies.ts`, related help/booking links | ⬜ Not started |
+| 3 | **Workstream A admin alignment + verification:** align admin support defaults/display with the shared config where safe (keeping Settings editable if intended), then run full checks and targeted UI QA for the slice. | `admin/src/data.ts`, `admin/src/pages/Settings.tsx` (and types as needed), mobile/admin verification | ⬜ Not started |
+
+### Follow-on UI steps from Phase 2 Stage 1 (after the first plan)
+
+These are identified from the document but **not counted** in the 33% above until planned/scoped as implementation steps:
+
+- **Workstream B (large):** P8b Job scope and media — new route/stepper stage, scope data model and config, counters/chips/banners, media sheet and pipeline, upload queue/status surfaces, and booking/admin/review integrations (camera/video permissions require a development/EAS build for native verification).
+- **Workstream C:** Profile additions — extract shared settings list components, P28 Notification preferences, P29 Security (+ password/2FA/activity routes), P30 Devices and sessions, local stores/migrations and profile/inbox wiring.
+- **Workstreams E–J (UI-relevant):** policy/legal/contact copy alignment (E), professional-search screen at `/search/professionals` and hand-off (F/G touches), additional safety/reporting and account/security UI items as specified, implemented incrementally with dependency and backend constraints noted.
+
+### Evidence (Step 1)
+
+- Implemented shared support config and helpers: `src/lib/support.ts` (`toUgE164`, `formatUgDisplay`, `buildSupport` with dev warning/fail-closed for invalid numbers) and `src/config/support.ts` with final values (`0703195401` call, `0752777774` WhatsApp, `gabfixuganda@gmail.com`, `Open 7 days · 7:00 am – 9:00 pm`).
+- `src/config/help.ts` now re-exports `support` from the single source of truth.
+- `src/components/help/contact-options.tsx` now builds rows from config (Call/WhatsApp hidden if invalid), supports `context.bookingId` (WhatsApp prefill and email subject/body context), adds long-press copy via `expo-clipboard`, and shows a copy fallback when a link cannot be opened. Chat remains available.
+- `src/app/help/contact.tsx` reads `bookingId` from route params and passes it to `ContactOptions`.
+- Checks: `npx tsc --noEmit` ✅ (exit 0), `npx expo lint` ✅ (no reported errors). No device/browser pass run for these specific UI changes yet.
+
+### Change log (Phase 2 Stage 1)
+
+| Date | Change | Evidence |
+|---|---|---|
+| 2026-11-20 | Explored `Implementation_Phase_2 - Stage 1.md` and drafted the first UI implementation plan (Workstream A prioritized) with a separate Phase 2 Stage 1 UI progress tracker. Implemented Step 1 (shared support config/lib, help/contact UI with real details, booking-context prefill, copy and open-failure handling). | This section; `tsc --noEmit` and `expo lint` pass |
 
 ---
 
@@ -498,6 +538,7 @@ Next: agree the admin API/auth contract, replace the local demo credentials in `
 | 2026-11-20 | Engineering (Codebuff) | Built the remaining unblocked Phase 3/4 UI: P4 offer, category, rebook, next-booking and reviews blocks with `RefreshControl`; P6 category chip bar and grouped sections via `Service.category`; P5 cleaner matches with ratings linking to P27a; shared `SummarySheet` price breakdown wired to P8–P11 through a new `SummaryBar` details area; P15a pull-to-refresh over the booking/quote stores. `npx tsc --noEmit`, `npx expo lint` and `npx expo export --platform web` pass; no device or browser interaction pass was run |
 | 2026-11-20 | Engineering (Codebuff) | Wired the P15c live tracking contract client-side: added `src/lib/api/tracking.ts` and `src/hooks/use-live-tracking.ts` (WS `/ws/bookings/{id}` with 10 s `GET /bookings/{id}/tracking` polling fallback), extended `src/lib/tracking.ts` with live payload merge/types, updated `/booking/[id]/track` to consume live/estimated state and dial a live cleaner phone when provided, and made `TrackingMap` render a native `react-native-maps` view only when `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` is set and live coordinates are available (schematic SVG fallback otherwise). `npx tsc --noEmit`, `npx expo lint` and `npx expo export --platform web` pass (`track-8fd2b6dc70eeb633dcf70229a91c44ac.js`, 29 KB). No backend, map key/package, browser/device pass or APK build (not requested) |
 | 2026-11-20 | Engineering (Codebuff) | Styled Home's “Book again” card to match the “Continue your booking” card: warning panel background, yellow kicker, shared title/meta typography, a white repeat-icon badge and a white pill action with green semibold text. Typecheck, lint and web export pass; a 390 × 844 browser pass confirms the card background `rgb(255, 244, 214)`, action `rgb(255, 255, 255)` with `rgb(26, 94, 47)` text, and 12 px Inter 600 kicker/action type |
+| 2026-11-20 | Engineering (Codebuff) | Explored `Implementation_Phase_2 - Stage 1.md`, drafted the first UI implementation plan (Workstream A prioritized), and added a separate Phase 2 Stage 1 UI progress tracker to `Gabfix_UI_Progress.md` (33%, 1/3 steps; not summed with the 66% overall screen implementation progress). Implemented Step 1: shared support source of truth (`src/lib/support.ts`, `src/config/support.ts`), `help.ts` re-export, dynamic/context-aware `ContactOptions` (real numbers, booking prefill, copy/long-press, open-failure fallback, hide invalid channels), and `help/contact` bookingId handling. `npx tsc --noEmit` and `npx expo lint` pass |
 | 2026-11-20 | Engineering (Codebuff) | Fixed the saved-addresses web error: each card was a `Pressable` with the “more” menu `Pressable` nested inside it, producing React's invalid `<button>`-inside-`<button>` warning. The card is now a plain `View` with the edit action and the absolutely-positioned menu as sibling buttons, so both remain tappable without nesting. Typecheck, lint, web export and a 390 × 844 DOM check pass (`nestedButton: false`) |
 | 2026-11-20 | Engineering (Codebuff) | Replaced Home's single new-customer-only welcome banner with a carousel of every promo, each showing its code and discount and paging with snap points and dots; it now auto-advances every 4.5 s and loops back to the first card, pausing for 6 s after a manual swipe. Recolored the draft-resume card to match the Payments & wallet balance-due card (warning panel, yellow kicker, white Resume chip), and lifted the P7 discount stamp above the content sheet so Android does not clip it. Typecheck, lint, web export and a 390 × 844 browser pass (existing booking and draft seeded) confirm the recolor and the 0 → 370 → 0 carousel cycle |
 | 2026-11-20 | Engineering (Codebuff) | Added the service-photography contract: four 1200 × 800 placeholder JPGs in `assets/images/services/`, `src/config/service-images.ts` and the reusable `ServicePhoto` (remote hero override with bundled fallback). Wired photos into the P7 hero and related cards, Home's popular grid and category rails, and the Services and Search rows. Typecheck, lint, web export and a 390 × 844 browser pass confirm every image loads at its intended crop |

@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, type Href, useLocalSearchParams } from 'expo-router';
 import { CheckCircle2, ClipboardList, MessageSquare } from 'lucide-react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +28,8 @@ const checklist = [
 
 /** P22 Contact support. Chat opens the local P27c support thread. */
 export default function ContactScreen() {
+  const { bookingId } = useLocalSearchParams<{ bookingId?: string }>();
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <TopBar title="Contact support" />
@@ -42,7 +44,10 @@ export default function ContactScreen() {
           </Text>
         </View>
 
-        <ContactOptions heading="Choose how to reach us" />
+        <ContactOptions
+          heading="Choose how to reach us"
+          context={bookingId ? { bookingId } : undefined}
+        />
 
         <View style={[base.card, styles.checklistCard]}>
           <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>

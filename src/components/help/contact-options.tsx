@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import {
   ChevronRight,
@@ -13,6 +14,8 @@ import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { support } from '@/config/help';
 import { base, colors, font, radius, space, text } from '@/theme';
 
+type ContactContext = { bookingId?: string };
+
 type ContactRow = {
   key: string;
   label: string;
@@ -20,49 +23,98 @@ type ContactRow = {
   icon: LucideIcon;
   href?: string;
   route?: string;
+  copyValue?: string;
+  copyLabel?: string;
 };
 
-const rows: readonly ContactRow[] = [
-  {
-    key: 'call',
-    label: 'Call',
-    caption: support.phoneDisplay,
-    icon: Phone,
-    href: support.phoneHref,
-  },
-  {
-    key: 'whatsapp',
-    label: 'WhatsApp',
-    caption: 'Message the support team',
-    icon: MessageCircle,
-    href: support.whatsappUrl,
-  },
-  {
+const copyText = async (value: string, label: string) => {
+  try {
+    await Clipboard.setStringAsync(value);
+    Alert.alert('Copied', `${label} copied.`);
+  } catch {
+    Alert.alert('Could not copy', 'Please try again.');
+  }
+};
+
+const openLink = async (url: string, copyValue?: string, copyLabel?: string) => {
+  try {
+    await Linking.openURL(url);
+  } catch {
+    if (copyValue && copyLabel) {
+      Alert.alert(`Couldn't open this`, `Copy ${copyLabel} instead?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: `Copy ${copyLabel}`, onPress: () => void copyText(copyValue, copyLabel) },
+      ]);
+      return;
+    }
+    Alert.alert('Could not open', 'Please try another contact option or try again.');
+  }
+};
+
+const buildRows = (context?: ContactContext): ContactRow[] => {
+  const bookingId = context?.bookingId?.trim();
+  const whatsappMessage = bookingId
+    ? `Hello Gabfix, I need help with booking ${bookingId}.`
+    : 'Hello Gabfix, I need help with my account.';
+  const emailSubject = bookingId ? `Help with booking ${bookingId}` : 'Gabfix support';
+
+  const rows: ContactRow[] = [];
+
+  if (support.phone) {
+    rows.push({
+      key: 'call',
+      label: 'Call',
+      caption: support.phone.display,
+      icon: Phone,
+      href: support.phone.href,
+      copyValue: support.phone.display,
+      copyLabel: 'the number',
+    });
+  }
+
+  if (support.whatsapp) {
+    rows.push({
+      key: 'whatsapp',
+      label: 'WhatsApp',
+      caption: 'Chat with us on WhatsApp',
+      icon: MessageCircle,
+      href: support.whatsapp.url(whatsappMessage),
+      copyValue: support.whatsapp.display,
+      copyLabel: 'the number',
+    });
+  }
+
+  rows.push({
     key: 'chat',
     label: 'Chat',
     caption: 'Message the support team',
     icon: MessagesSquare,
     route: '/chat/support',
-  },
-  {
+  });
+
+  rows.push({
     key: 'email',
     label: 'Email',
     caption: support.email,
     icon: Mail,
-    href: support.emailHref,
-  },
-];
+    href: support.mailto(emailSubject),
+    copyValue: support.email,
+    copyLabel: 'our email',
+  });
 
-const openLink = async (url: string) => {
-  try {
-    await Linking.openURL(url);
-  } catch {
-    Alert.alert('Could not open', 'Please try another contact option or try again.');
-  }
+  return rows;
 };
 
 /** P22 contact card, shared by the help centre and contact screens. */
-export function ContactOptions({ heading = 'Contact us' }: { heading?: string }) {
+export function ContactOptions({
+  heading = 'Contact us',
+  context,
+}: {
+  heading?: string;
+  context?: ContactContext;
+}) {
+  const rows = buildRows(context);
+
   return (
     <View style={[base.card, styles.card]}>
       <View style={styles.headingRow}>
@@ -84,15 +136,22 @@ export function ContactOptions({ heading = 'Contact us' }: { heading?: string })
               router.push(row.route as never);
               return;
             }
-            if (row.href) void openLink(row.href);
+            if (row.href) void openLink(row.href, row.copyValue, row.copyLabel);
           };
+          const onLongPress =
+            row.copyValue && row.copyLabel
+              ? () => void copyText(row.copyValue!, row.copyLabel!)
+              : undefined;
 
           return (
             <Pressable
               key={row.key}
               accessibilityRole={row.href ? 'link' : 'button'}
               accessibilityLabel={`${row.label}: ${row.caption}`}
+              accessibilityHint={row.copyValue ? 'Long press to copy' : undefined}
               onPress={onPress}
+              onLongPress={onLongPress}
+              delayLongPress={350}
               style={({ pressed }) => [
                 styles.row,
                 index > 0 && styles.divider,
