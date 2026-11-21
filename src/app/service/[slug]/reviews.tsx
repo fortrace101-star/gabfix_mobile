@@ -13,11 +13,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ReviewCard } from '@/components/reviews/review-card';
 import { Stars } from '@/components/reviews/stars';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { TopBar } from '@/components/ui/top-bar';
 import { breakdownForService, reviewsForService } from '@/config/reviews';
 import { serviceBySlug } from '@/config/services';
 import { useServiceContent } from '@/hooks/use-service-content';
-import { base, chip, colors, font, radius, space, text } from '@/theme';
+import { base, colors, font, radius, space, text } from '@/theme';
 import type { Href } from 'expo-router';
 
 type Filter = 'all' | 'five' | 'comments' | 'recent';
@@ -143,26 +144,16 @@ export default function ServiceReviewsScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={styles.chipScroll}
               contentContainerStyle={styles.filters}>
-              {filters.map((item) => {
-                const selected = filter === item.key;
-                return (
-                  <Pressable
-                    key={item.key}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    aria-checked={selected}
-                    accessibilityLabel={`Filter reviews: ${item.label}`}
-                    onPress={() => setFilter(item.key)}
-                    style={[chip.pill, styles.filter, selected && styles.filterSelected]}>
-                    <Text
-                      style={[styles.filterText, selected && styles.filterTextSelected]}
-                      maxFontSizeMultiplier={1.2}>
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              {filters.map((item) => (
+                <FilterChip
+                  key={item.key}
+                  label={item.label}
+                  selected={filter === item.key}
+                  onPress={() => setFilter(item.key)}
+                />
+              ))}
             </ScrollView>
 
             <Text style={styles.showing} maxFontSizeMultiplier={1.3}>
@@ -237,22 +228,8 @@ const styles = StyleSheet.create({
     color: colors.green700,
     fontFamily: font.bodySemi,
   },
-  filters: { gap: space[2] },
-  filter: {
-    height: 34,
-    borderColor: colors.border,
-    paddingHorizontal: space[3],
-  },
-  filterSelected: {
-    backgroundColor: colors.green500,
-    borderColor: colors.green500,
-  },
-  filterText: {
-    ...text.caption,
-    fontFamily: font.bodySemi,
-    color: colors.textMuted,
-  },
-  filterTextSelected: { color: colors.surface },
+  chipScroll: { flexGrow: 0 },
+  filters: { alignItems: 'center', gap: space[2] },
   showing: { ...text.caption },
   separator: { height: space[3] },
   noResults: { alignItems: 'center', gap: space[1] },

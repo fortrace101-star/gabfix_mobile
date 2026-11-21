@@ -1,23 +1,118 @@
 import { router, type Href } from 'expo-router';
-import { ChevronRight, CircleHelp, Search } from 'lucide-react-native';
+import { CheckCircle2, ChevronRight, CircleHelp, ImagePlus, Search, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ContactOptions } from '@/components/help/contact-options';
 import { FaqAccordion } from '@/components/help/faq-accordion';
+import { TicketRow } from '@/components/help/ticket-row';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { Input } from '@/components/ui/input';
 import { TopBar } from '@/components/ui/top-bar';
-import { helpTopics, searchFaqs, topFaqs } from '@/config/help';
+import {
+  searchFaqs,
+  support,
+  ticketCategories,
+  topFaqs,
+} from '@/config/help';
+import { pickTicketScreenshots, deleteTicketScreenshot } from '@/lib/ticket-media';
+import { useBookings } from '@/store/bookings';
+import {
+  createTicket,
+  TICKET_MAX_SCREENSHOTS,
+  TICKET_MESSAGE_MAX,
+  TICKET_SUBJECT_MAX,
+  useTickets,
+  validateTicket,
+  type TicketCategory,
+  type TicketScreenshot,
+} from '@/store/tickets';
 import { base, colors, font, radius, shadow, space, text } from '@/theme';
 
-/** P22 Help centre: FAQ search, top questions, topic grid and contact options. */
+/** P22 Help centre as a ticket centre: tiles, request form, recent tickets, FAQs (S1 16.3). */
 export default function HelpCentreScreen() {
   const [query, setQuery] = useState('');
   const trimmedQuery = query.trim();
   const results = searchFaqs(query);
   const showingSearch = trimmedQuery.length > 0;
+
+  const [category, setCategory] = useState<TicketCategory>('general');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [bookingCode, setBookingCode] = useState('');
+  const [screenshots, setScreenshots] = useState<TicketScreenshot[]>([]);
+  const [touched, setTouched] = useState<{ subject?: boolean; message?: boolean }>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [screenshotNote, setScreenshotNote] = useState('');
+
+  const tickets = useTickets();
+  const bookings = useBookings();
+  const recentBookingOptions = bookings.slice(0, 3);
+
+  const errors = validateTicket({ category, subject, message });
+  const showSubjectError = touched.subject ? errors.subject : undefined;
+  const showMessageError = touched.message ? errors.message : undefined;
+  const canSubmit = !errors.subject && !errors.message && !submitting;
+
+  const addScreenshots = async () => {
+    const remaining = TICKET_MAX_SCREENSHOTS - screenshots.length;
+    if (remaining <= 0) return;
+    const result = await pickTicketScreenshots(remaining);
+    if (result.permission === 'denied' || result.permission === 'blocked') {
+      setScreenshotNote('Allow photo access in your device settings to attach screenshots.');
+      return;
+    }
+    if (result.permission === 'unsupported') {
+      setScreenshotNote('Screenshots can be attached in the mobile app.');
+      return;
+    }
+    setScreenshotNote('');
+    setScreenshots((current) => [...current, ...result.shots].slice(0, TICKET_MAX_SCREENSHOTS));
+  };
+
+  const removeScreenshot = (shot: TicketScreenshot) => {
+    deleteTicketScreenshot(shot);
+    setScreenshots((current) => current.filter((item) => item.id !== shot.id));
+  };
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const ticket = createTicket({
+      category,
+      subject,
+      message,
+      bookingId: bookingCode.trim() || undefined,
+      screenshots,
+    });
+    setConfirmation(
+      `Ticket ${ticket.id} received. We reply within one business day.`,
+    );
+    setSubject('');
+    setMessage('');
+    setBookingCode('');
+    setScreenshots([]);
+    setTouched({});
+    setSubmitting(false);
+  };
+
+  const callSupport = () => {
+    if (support.phone) void Linking.openURL(support.phone.href);
+  };
+  const whatsappSupport = () => {
+    if (support.whatsapp) void Linking.openURL(support.whatsapp.url(`Hi Gabfix, I need help with ${bookingCode || 'a booking'}.`));
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -31,7 +126,7 @@ export default function HelpCentreScreen() {
             How can we help?
           </Text>
           <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
-            Search the answers customers ask for most, or talk to a person.
+            Search the answers customers ask for most, or send us a ticket.
           </Text>
         </View>
 
@@ -39,8 +134,8 @@ export default function HelpCentreScreen() {
           leftIcon={Search}
           value={query}
           onChangeText={setQuery}
-          placeholder="Search help and FAQs"
-          accessibilityLabel="Search help and FAQs"
+          placeholder="Search the FAQs"
+          accessibilityLabel="Search the FAQs"
           returnKeyType="search"
         />
 
@@ -70,23 +165,227 @@ export default function HelpCentreScreen() {
                   No answers for “{trimmedQuery}”
                 </Text>
                 <Text style={styles.noResultsCaption} maxFontSizeMultiplier={1.3}>
-                  Try a shorter word like “refund”, “price” or “cancel”, or ask the support team
-                  directly.
+                  Try a shorter word like “refund”, “price” or “cancel”, or send a ticket below.
                 </Text>
-                <Button
-                  label="Contact support"
-                  variant="secondary"
-                  onPress={() => router.push('/help/contact' as Href)}
-                />
               </View>
             )}
           </View>
         ) : (
           <>
             <View style={styles.section}>
+              <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                What do you need help with?
+              </Text>
+              <View style={styles.grid}>
+                {ticketCategories.map((item) => {
+                  const Icon = item.icon;
+                  const selected = category === item.value;
+                  return (
+                    <Pressable
+                      key={item.value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`${item.label}: ${item.blurb}`}
+                      onPress={() => setCategory(item.value)}
+                      style={[styles.tile, selected && styles.tileSelected]}>
+                      <Icon
+                        size={24}
+                        color={selected ? colors.green700 : colors.textMuted}
+                        strokeWidth={1.8}
+                      />
+                      <Text style={styles.tileLabel} maxFontSizeMultiplier={1.2}>
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                Submit a request
+              </Text>
+              {confirmation ? (
+                <View style={[base.card, styles.confirmation]}>
+                  <CheckCircle2 size={26} color={colors.green700} strokeWidth={2} />
+                  <Text style={styles.confirmationText} maxFontSizeMultiplier={1.3}>
+                    {confirmation}
+                  </Text>
+                  <Button
+                    label="Send another ticket"
+                    variant="secondary"
+                    onPress={() => setConfirmation(null)}
+                  />
+                </View>
+              ) : (
+                <View style={[base.card, styles.form]}>
+                  <Input
+                    label="Subject"
+                    value={subject}
+                    onChangeText={setSubject}
+                    onBlur={() => setTouched((current) => ({ ...current, subject: true }))}
+                    placeholder="Briefly describe the issue"
+                    maxLength={TICKET_SUBJECT_MAX}
+                    error={showSubjectError}
+                  />
+
+                  <View style={styles.field}>
+                    <Text style={styles.fieldLabel} maxFontSizeMultiplier={1.2}>
+                      Booking code (optional)
+                    </Text>
+                    {recentBookingOptions.length > 0 ? (
+                      <View style={styles.bookingChips}>
+                        {recentBookingOptions.map((booking) => (
+                          <FilterChip
+                            key={booking.id}
+                            label={`${booking.id} · ${booking.serviceName}`}
+                            selected={bookingCode === booking.id}
+                            onPress={() =>
+                              setBookingCode((current) => (current === booking.id ? '' : booking.id))
+                            }
+                          />
+                        ))}
+                      </View>
+                    ) : null}
+                    <Input
+                      value={bookingCode}
+                      onChangeText={setBookingCode}
+                      placeholder="Or type a booking code"
+                      autoCapitalize="characters"
+                      maxLength={20}
+                      accessibilityLabel="Booking code, optional"
+                    />
+                  </View>
+
+                  <Input
+                    label="Message"
+                    value={message}
+                    onChangeText={setMessage}
+                    onBlur={() => setTouched((current) => ({ ...current, message: true }))}
+                    placeholder="Share the details…"
+                    multiline
+                    numberOfLines={4}
+                    maxLength={TICKET_MESSAGE_MAX}
+                    inputStyle={styles.multiline}
+                    error={showMessageError}
+                    helper={
+                      message.length > 800
+                        ? `${message.length.toLocaleString('en-US')} / ${TICKET_MESSAGE_MAX.toLocaleString('en-US')} characters`
+                        : undefined
+                    }
+                  />
+
+                  <View style={styles.field}>
+                    <Text style={styles.fieldLabel} maxFontSizeMultiplier={1.2}>
+                      Add screenshots
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Add screenshots"
+                      onPress={addScreenshots}
+                      style={styles.addShots}>
+                      <ImagePlus size={20} color={colors.green700} strokeWidth={2} />
+                      <Text style={styles.addShotsText} maxFontSizeMultiplier={1.2}>
+                        Add up to {TICKET_MAX_SCREENSHOTS} images
+                      </Text>
+                    </Pressable>
+                    {screenshotNote ? (
+                      <Text style={styles.note} maxFontSizeMultiplier={1.3}>
+                        {screenshotNote}
+                      </Text>
+                    ) : null}
+                    {screenshots.length > 0 ? (
+                      <View style={styles.thumbs}>
+                        {screenshots.map((shot) => (
+                          <View key={shot.id} style={styles.thumbWrap}>
+                            <Image source={{ uri: shot.uri }} style={styles.thumb} />
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel="Remove screenshot"
+                              hitSlop={8}
+                              onPress={() => removeScreenshot(shot)}
+                              style={styles.thumbRemove}>
+                              <X size={12} color={colors.surface} strokeWidth={3} />
+                            </Pressable>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <Text style={styles.note} maxFontSizeMultiplier={1.3}>
+                    For urgent booking or payment issues, call support during business hours.{' '}
+                    {support.phone ? (
+                      <Text style={styles.noteLink} onPress={callSupport}>
+                        Call
+                      </Text>
+                    ) : null}
+                    {support.phone && support.whatsapp ? ' · ' : null}
+                    {support.whatsapp ? (
+                      <Text style={styles.noteLink} onPress={whatsappSupport}>
+                        WhatsApp
+                      </Text>
+                    ) : null}
+                  </Text>
+
+                  <Button
+                    label="Submit ticket"
+                    onPress={submit}
+                    loading={submitting}
+                    disabled={!canSubmit}
+                  />
+                </View>
+              )}
+            </View>
+
+            <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-                  Top questions
+                  Recent tickets
+                </Text>
+                {tickets.length > 0 ? (
+                  <Pressable
+                    accessibilityRole="link"
+                    accessibilityLabel="View all tickets"
+                    hitSlop={8}
+                    onPress={() => router.push('/help/tickets' as Href)}
+                    style={styles.link}>
+                    <Text style={styles.linkText} maxFontSizeMultiplier={1.2}>
+                      View all
+                    </Text>
+                    <ChevronRight size={14} color={colors.green700} strokeWidth={2} />
+                  </Pressable>
+                ) : null}
+              </View>
+              {tickets.length === 0 ? (
+                <Text style={styles.emptyTickets} maxFontSizeMultiplier={1.3}>
+                  No support tickets yet
+                </Text>
+              ) : (
+                <View style={[base.card, styles.ticketCard]}>
+                  {tickets.slice(0, 3).map((ticket, index) => (
+                    <View key={ticket.id}>
+                      {index > 0 ? <View style={styles.divider} /> : null}
+                      <TicketRow
+                        ticket={ticket}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/help/tickets/[id]',
+                            params: { id: ticket.id },
+                          } as Href)
+                        }
+                      />
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                  Common questions
                 </Text>
                 <Pressable
                   accessibilityRole="link"
@@ -101,44 +400,17 @@ export default function HelpCentreScreen() {
                 </Pressable>
               </View>
               <View style={styles.listCard}>
-                {topFaqs.map((faq, index) => (
-                  <FaqAccordion key={faq.id} faq={faq} last={index === topFaqs.length - 1} />
+                {topFaqs.slice(0, 3).map((faq, index) => (
+                  <FaqAccordion key={faq.id} faq={faq} last={index === 2} />
                 ))}
               </View>
             </View>
 
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-                  Browse by topic
-                </Text>
-              </View>
-              <View style={styles.grid}>
-                {helpTopics.map((topic) => {
-                  const Icon = topic.icon;
-                  return (
-                    <Pressable
-                      key={topic.slug}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${topic.label}: ${topic.blurb}`}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/help/faq',
-                          params: { topic: topic.slug },
-                        } as Href)
-                      }
-                      style={({ pressed }) => [styles.topicTile, pressed && styles.pressed]}>
-                      <Icon size={28} color={colors.green700} strokeWidth={1.8} />
-                      <Text style={styles.topicLabel} maxFontSizeMultiplier={1.3}>
-                        {topic.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-
-            <ContactOptions />
+            <Button
+              label="Contact us"
+              variant="secondary"
+              onPress={() => router.push('/help/contact' as Href)}
+            />
           </>
         )}
       </ScrollView>
@@ -172,20 +444,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: space[3],
+    gap: space[2],
   },
-  topicTile: {
-    width: '48%',
-    height: 96,
+  tile: {
+    width: '31.5%',
+    height: 88,
     borderRadius: radius.card,
     backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     ...shadow.card,
   },
-  pressed: { opacity: 0.65 },
-  topicLabel: { ...text.bodyM, fontFamily: font.bodySemi },
+  tileSelected: { borderColor: colors.green500, backgroundColor: colors.green50 },
+  tileLabel: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.text },
+  form: { gap: space[4] },
+  field: { gap: space[2] },
+  fieldLabel: { ...text.caption, fontFamily: font.bodySemi, color: colors.textMuted, fontSize: 13 },
+  bookingChips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
+  multiline: { minHeight: 104, textAlignVertical: 'top', paddingTop: space[3] },
+  addShots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[2],
+    minHeight: 52,
+    borderRadius: radius.button,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+  },
+  addShotsText: { ...text.caption, fontFamily: font.bodySemi, color: colors.green700 },
+  thumbs: { flexDirection: 'row', gap: space[2] },
+  thumbWrap: { width: 64, height: 64 },
+  thumb: { width: 64, height: 64, borderRadius: radius.button, backgroundColor: colors.disabledBg },
+  thumbRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.green900,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  note: { ...text.caption, lineHeight: 18 },
+  noteLink: { color: colors.green700, fontFamily: font.bodySemi },
+  confirmation: { alignItems: 'center', gap: space[2] },
+  confirmationText: { ...text.bodyM, textAlign: 'center', fontFamily: font.bodySemi },
+  ticketCard: { paddingVertical: space[1], paddingHorizontal: space[3] },
+  divider: { height: 1, backgroundColor: colors.border },
+  emptyTickets: { ...text.body, color: colors.textMuted },
   noResults: { alignItems: 'center', gap: space[2] },
   noResultsIcon: {
     width: 52,

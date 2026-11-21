@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { services as localServices, type Service } from '@/config/services';
+import { activeServices as localServices, type Service } from '@/config/services';
 import { getServices } from '@/lib/api/discovery';
 import { hasApiBaseUrl } from '@/lib/config';
 

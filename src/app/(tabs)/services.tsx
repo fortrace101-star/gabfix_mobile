@@ -5,24 +5,28 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ServicePhoto } from '@/components/service/service-photo';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
-import { fromHourly, serviceCategories, type Service, type ServiceCategoryId } from '@/config/services';
+import { fromHourly, serviceCategories, type Service } from '@/config/services';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
-type CategoryFilter = 'all' | ServiceCategoryId;
+type CategoryFilter = 'all' | string;
 
 const filters: readonly { value: CategoryFilter; label: string }[] = [
   { value: 'all', label: 'All' },
-  ...serviceCategories.map((category) => ({ value: category.id, label: category.label })),
+  ...serviceCategories.map((category) => ({ value: category.id, label: category.name })),
 ];
+
+const priceLabel = (service: Service) =>
+  service.pricingMode === 'quote' ? 'Get a quote' : `From ${ugx(fromHourly)}/hr`;
 
 function ServiceRow({ service }: { service: Service }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${service.name}. From ${ugx(fromHourly)} per hour`}
+      accessibilityLabel={`${service.name}. ${priceLabel(service)}`}
       onPress={() =>
         router.push({
           pathname: '/service/[slug]',
@@ -44,7 +48,7 @@ function ServiceRow({ service }: { service: Service }) {
           {service.tagline}
         </Text>
         <Text style={styles.price} maxFontSizeMultiplier={1.3}>
-          From {ugx(fromHourly)}/hr
+          {priceLabel(service)}
         </Text>
       </View>
       {service.tag ? (
@@ -65,18 +69,13 @@ export default function ServicesTab() {
   useStatusBarStyle('dark');
 
   const visible = services.filter(
-    (service) => category === 'all' || service.category === category,
+    (service) => service.active !== false && (category === 'all' || service.categoryId === category),
   );
   const groups = serviceCategories
-    .map((group) => {
-      const groupValue = category === 'all' || category === group.id;
-      return {
-        ...group,
-        services: groupValue
-          ? services.filter((service) => service.category === group.id)
-          : [],
-      };
-    })
+    .map((group) => ({
+      ...group,
+      services: visible.filter((service) => service.categoryId === group.id),
+    }))
     .filter((group) => group.services.length > 0);
 
   return (
@@ -108,24 +107,14 @@ export default function ServicesTab() {
           showsHorizontalScrollIndicator={false}
           style={styles.chipScroll}
           contentContainerStyle={styles.chipRow}>
-          {filters.map((filter) => {
-            const active = filter.value === category;
-            return (
-              <Pressable
-                key={filter.value}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={`${filter.label} services`}
-                onPress={() => setCategory(filter.value)}
-                style={[styles.chip, active && styles.chipActive]}>
-                <Text
-                  style={[styles.chipText, active && styles.chipTextActive]}
-                  maxFontSizeMultiplier={1.3}>
-                  {filter.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {filters.map((filter) => (
+            <FilterChip
+              key={filter.value}
+              label={filter.label}
+              selected={filter.value === category}
+              onPress={() => setCategory(filter.value)}
+            />
+          ))}
         </ScrollView>
 
         {error ? (
@@ -149,7 +138,7 @@ export default function ServicesTab() {
           <View key={group.id} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-                {group.label}
+                {group.name}
               </Text>
               <Text style={styles.sectionCaption} maxFontSizeMultiplier={1.2}>
                 {group.caption}
@@ -188,21 +177,8 @@ const styles = StyleSheet.create({
   },
   title: { ...text.h1 },
   subtitle: { ...text.body, color: colors.textMuted },
-  chipScroll: { marginHorizontal: -space[4], marginTop: -space[2] },
-  chipRow: { paddingHorizontal: space[4], gap: space[2] },
-  chip: {
-    height: 36,
-    paddingHorizontal: space[3],
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipActive: { backgroundColor: colors.green500, borderColor: colors.green500 },
-  chipText: { ...text.bodyM, fontSize: 13, color: colors.green700, fontFamily: font.bodySemi },
-  chipTextActive: { color: colors.surface },
+  chipScroll: { flexGrow: 0, marginHorizontal: -space[4], marginTop: -space[2] },
+  chipRow: { paddingHorizontal: space[4], alignItems: 'center', gap: space[2] },
   section: { gap: space[3] },
   sectionHeader: { gap: 2 },
   sectionTitle: { ...text.h3 },

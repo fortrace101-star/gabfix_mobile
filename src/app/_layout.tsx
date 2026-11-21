@@ -19,6 +19,7 @@ import { AppErrorBoundary } from '@/components/ui/error-boundary';
 import { ForceUpdateScreen } from '@/components/ui/force-update';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { SessionExpiredModal } from '@/components/ui/session-expired-modal';
+import { ToastHost } from '@/components/ui/toast';
 import { isUpdateRequired } from '@/config/release';
 import { cleanupDraftMedia } from '@/lib/media';
 import { hydrateAddresses } from '@/store/addresses';
@@ -35,6 +36,7 @@ import { hydrateProfileSettings } from '@/store/profile-settings';
 import { hydrateQuotes } from '@/store/quotes';
 import { hydrateReviews } from '@/store/reviews';
 import { hydrateSecurity } from '@/store/security';
+import { hydrateTickets } from '@/store/tickets';
 import { restoreSession } from '@/store/session';
 import { auth } from '@/theme';
 
@@ -65,6 +67,7 @@ export default function RootLayout() {
       hydratePlans(),
       hydrateAddresses(),
       hydrateQuotes(),
+      hydrateTickets(),
       hydratePaymentMethods(),
       hydrateMessages(),
       hydrateNotifications(),
@@ -169,14 +172,21 @@ export default function RootLayout() {
                 <Stack.Screen name="booking/plans" />
                 <Stack.Screen name="booking/[id]" />
                 <Stack.Screen name="booking/[id]/track" />
+                <Stack.Screen name="booking/[id]/receipt" />
+                <Stack.Screen name="cleaner/[id]" />
+                <Stack.Screen name="policies/[doc]" />
                 <Stack.Screen name="quote/[slug]" />
                 <Stack.Screen name="offers" />
                 <Stack.Screen name="refer" />
+                <Stack.Screen name="refer/[stage]" />
                 <Stack.Screen name="addresses/index" />
                 <Stack.Screen name="addresses/[id]" />
                 <Stack.Screen name="help/index" />
                 <Stack.Screen name="help/faq" />
                 <Stack.Screen name="help/contact" />
+                <Stack.Screen name="dev/index" />
+                <Stack.Screen name="help/tickets" />
+                <Stack.Screen name="help/tickets/[id]" />
                 <Stack.Screen name="chat/[threadId]" />
                 <Stack.Screen name="notifications" />
                 <Stack.Screen name="booking/[id]/rate" />
@@ -194,6 +204,7 @@ export default function RootLayout() {
               </Stack>
               <OfflineBanner />
               <SessionExpiredModal />
+              <ToastHost />
               <AppLockGate />
             </>
           )}

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Check, Info, Minus, Plus, TriangleAlert, X } from 'lucide-react-native';
+import { Check, Info, Plus, TriangleAlert, X } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
@@ -16,6 +16,7 @@ import { MediaPreview } from '@/components/booking/media-preview';
 import { MediaSheet } from '@/components/booking/media-sheet';
 import { MediaTile } from '@/components/booking/media-tile';
 import { StepperHeader } from '@/components/booking/stepper-header';
+import { CounterStepper } from '@/components/ui/counter-stepper';
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { SummarySheet } from '@/components/booking/summary-sheet';
 import { SelectableCard } from '@/components/booking/selectable-card';
@@ -48,75 +49,6 @@ import {
 import { chip, colors, font, radius, shadow, space, text } from '@/theme';
 import { selectionHaptic } from '@/utils/haptics';
 import { ugx } from '@/utils/format';
-
-function Counter({
-  label,
-  hint,
-  value,
-  onChange,
-  min = 0,
-  max = 12,
-}: {
-  label: string;
-  hint?: string;
-  value: number;
-  onChange: (next: number) => void;
-  min?: number;
-  max?: number;
-}) {
-  const dec = () => {
-    selectionHaptic();
-    onChange(Math.max(min, value - 1));
-  };
-  const inc = () => {
-    selectionHaptic();
-    onChange(Math.min(max, value + 1));
-  };
-  return (
-    <View
-      accessibilityRole="adjustable"
-      accessibilityLabel={label}
-      accessibilityValue={{ now: value, min, max }}
-      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={(event) => {
-        if (event.nativeEvent.actionName === 'increment') inc();
-        if (event.nativeEvent.actionName === 'decrement') dec();
-      }}
-      style={styles.counterRow}>
-      <View style={styles.counterText}>
-        <Text style={styles.counterLabel} maxFontSizeMultiplier={1.3}>
-          {label}
-        </Text>
-        {hint ? (
-          <Text style={styles.counterHint} maxFontSizeMultiplier={1.3}>
-            {hint}
-          </Text>
-        ) : null}
-      </View>
-      <View style={styles.counterControls}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Fewer ${label.toLowerCase()}`}
-          disabled={value <= min}
-          onPress={dec}
-          style={[styles.counterBtn, value <= min && styles.counterBtnOff]}>
-          <Minus size={18} color={value <= min ? colors.disabledText : colors.green700} strokeWidth={2} />
-        </Pressable>
-        <Text style={styles.counterValue} maxFontSizeMultiplier={1.2}>
-          {value}
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`More ${label.toLowerCase()}`}
-          disabled={value >= max}
-          onPress={inc}
-          style={[styles.counterBtn, value >= max && styles.counterBtnOff]}>
-          <Plus size={18} color={value >= max ? colors.disabledText : colors.green700} strokeWidth={2} />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
 
 function StatusPill({ state }: { state: 'required' | 'done' | 'optional' }) {
   if (state === 'optional') {
@@ -387,7 +319,7 @@ export default function JobScopeScreen() {
               if (field.type === 'counter') {
                 return (
                   <View key={field.id} style={styles.fieldBlock}>
-                    <Counter
+                    <CounterStepper
                       label={field.label}
                       hint={field.hint}
                       value={scope[field.id] ?? field.initial}
@@ -702,33 +634,8 @@ const styles = StyleSheet.create({
   },
   fieldBlock: { paddingVertical: space[2] },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 48,
-    gap: space[3],
-  },
-  counterText: { flex: 1 },
   counterLabel: { ...text.bodyM, color: colors.text },
   counterHint: { ...text.caption, color: colors.textMuted },
-  counterControls: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  counterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.green50,
-  },
-  counterBtnOff: { backgroundColor: colors.disabledBg },
-  counterValue: {
-    minWidth: 24,
-    textAlign: 'center',
-    ...text.bodyM,
-    fontFamily: font.bodySemi,
-    color: colors.text,
-  },
   conditionWrap: { gap: space[2], marginTop: space[1] },
   conditionOption: {
     paddingVertical: space[2],

@@ -312,6 +312,17 @@ export function deleteBookingMedia(bookingId: string): void {
   }
 }
 
+/** Delete-account cleanup: removes every file kept for any booking. */
+export function deleteAllBookingMedia(): void {
+  if (!isNative) return;
+  try {
+    const directory = new Directory(Paths.document, jobMedia.bookingsDir);
+    if (directory.exists) directory.delete();
+  } catch {
+    // Best-effort.
+  }
+}
+
 export const mediaCounts = (items: BookingMediaItem[] = []) => ({
   total: items.length,
   videos: items.filter((item) => item.kind === 'video').length,

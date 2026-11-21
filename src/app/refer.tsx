@@ -1,6 +1,15 @@
+import { router, type Href } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check, Copy, Gift, MessageCircle, MessageSquare, Users } from 'lucide-react-native';
+import {
+  Check,
+  ChevronRight,
+  Copy,
+  Gift,
+  MessageCircle,
+  MessageSquare,
+  Users,
+} from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -16,7 +25,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TopBar } from '@/components/ui/top-bar';
-import { REFERRAL_REWARD, referralCodeFor, referralMessage } from '@/lib/referral';
+import {
+  REFERRAL_REWARD,
+  referralCodeFor,
+  referralMessage,
+  rewardsTotal,
+  stageCounts,
+  type ReferralStage,
+} from '@/lib/referral';
+import { useReferrals } from '@/store/referrals';
 import { useAuthUser } from '@/store/session';
 import { colors, font, radius, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
@@ -32,6 +49,15 @@ export default function ReferScreen() {
   const user = useAuthUser();
   const code = referralCodeFor(user);
   const [copied, setCopied] = useState(false);
+  const referrals = useReferrals();
+  const counts = stageCounts(referrals);
+  const credit = rewardsTotal(referrals);
+  const stageRows: { stage: ReferralStage; label: string; value: string; reward?: boolean }[] = [
+    { stage: 'invited', label: 'Friends invited', value: String(counts.invited) },
+    { stage: 'joined', label: 'Joined Gabfix', value: String(counts.joined) },
+    { stage: 'booked', label: 'First booking done', value: String(counts.booked) },
+    { stage: 'rewards', label: 'Reward earned', value: ugx(credit), reward: true },
+  ];
 
   useEffect(() => {
     if (!copied) return;
@@ -160,10 +186,16 @@ export default function ReferScreen() {
             A snapshot of the reward journey. It updates when the referral API is connected.
           </Text>
 
-          <ProgressRow label="Friends invited" value="3" done />
-          <ProgressRow label="Joined Gabfix" value="2" done />
-          <ProgressRow label="First booking done" value="1" done />
-          <ProgressRow label="Reward earned" value={ugx(REFERRAL_REWARD)} done reward />
+          {stageRows.map((row) => (
+            <ProgressRow
+              key={row.stage}
+              label={row.label}
+              value={row.value}
+              done
+              reward={row.reward}
+              onPress={() => router.push(`/refer/${row.stage}` as Href)}
+            />
+          ))}
         </View>
 
         <View style={styles.howCard}>
@@ -201,14 +233,17 @@ function ProgressRow({
   value,
   done = false,
   reward = false,
+  onPress,
 }: {
   label: string;
   value: string;
   done?: boolean;
   reward?: boolean;
+  onPress?: () => void;
 }) {
-  return (
-    <View style={styles.progressRow}>
+  const content = (
+    <>
+
       <View style={[styles.progressIcon, reward && styles.progressIconReward]}>
         {done ? (
           <Check
@@ -230,7 +265,22 @@ function ProgressRow({
         maxFontSizeMultiplier={1.2}>
         {value}
       </Text>
-    </View>
+      {onPress ? (
+        <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
+      ) : null}
+    </>
+  );
+
+  if (!onPress) return <View style={styles.progressRow}>{content}</View>;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}. View friends`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.progressRow, pressed && styles.progressRowPressed]}>
+      {content}
+    </Pressable>
   );
 }
 
@@ -356,6 +406,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
+  progressRowPressed: { opacity: 0.65 },
   progressIcon: {
     width: 24,
     height: 24,

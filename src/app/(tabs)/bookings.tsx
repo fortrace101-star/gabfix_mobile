@@ -281,7 +281,12 @@ export default function BookingsScreen() {
         </Pressable>
       </View>
       <View style={styles.tabsWrap}>
-        <SegmentedControl options={TABS} value={tab} onChange={setTab} />
+        <SegmentedControl
+          options={TABS}
+          value={tab}
+          onChange={setTab}
+          activeLabelColor={colors.green900}
+        />
       </View>
       {tab === 'requests' ? (
         <FlatList

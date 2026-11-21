@@ -11,10 +11,17 @@ type Props<T extends string> = {
   options: readonly Option<T>[];
   value: T;
   onChange: (value: T) => void;
+  /** Active label colour; defaults to `green700` so other screens are unchanged. */
+  activeLabelColor?: string;
 };
 
 /** Track 48, 4 padding, animated white thumb (Gabfix_App_Ui_2.md, 6.0). */
-export function SegmentedControl<T extends string>({ options, value, onChange }: Props<T>) {
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  activeLabelColor = colors.green700,
+}: Props<T>) {
   const [width, setWidth] = useState(0);
   const index = Math.max(
     0,
@@ -66,7 +73,11 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
               <Text
                 maxFontSizeMultiplier={1.2}
                 numberOfLines={1}
-                style={[styles.label, selected && styles.labelOn]}>
+                style={[
+                  styles.label,
+                  selected && styles.labelOn,
+                  selected && { color: activeLabelColor },
+                ]}>
                 {option.label}
               </Text>
             </Pressable>

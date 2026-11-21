@@ -448,11 +448,19 @@ export default function HomeTab() {
           </View>
 
           <View style={styles.grid}>
-            {services.map((service) => (
+            {[...services]
+              .filter((service) => service.active !== false)
+              .sort(
+                (a, b) =>
+                  (a.popularRank ?? Number.MAX_SAFE_INTEGER) -
+                  (b.popularRank ?? Number.MAX_SAFE_INTEGER),
+              )
+              .slice(0, 6)
+              .map((service) => (
               <Pressable
                 key={service.slug}
                 accessibilityRole="button"
-                accessibilityLabel={`${service.name}. From ${ugx(fromHourly)} per hour`}
+                accessibilityLabel={`${service.name}. ${service.pricingMode === 'quote' ? 'Get a quote' : `From ${ugx(fromHourly)} per hour`}`}
                 onPress={() =>
                   router.push({
                     pathname: '/service/[slug]',
@@ -481,7 +489,7 @@ export default function HomeTab() {
                   {service.name}
                 </Text>
                 <Text style={styles.servicePrice} maxFontSizeMultiplier={1.3}>
-                  From {ugx(fromHourly)}/hr
+                  {service.pricingMode === 'quote' ? 'Get a quote' : `From ${ugx(fromHourly)}/hr`}
                 </Text>
               </Pressable>
             ))}
@@ -489,7 +497,7 @@ export default function HomeTab() {
 
           {serviceCategories.map((category) => {
             const categoryServices = services.filter(
-              (service) => service.category === category.id,
+              (service) => service.active !== false && service.categoryId === category.id,
             );
             if (categoryServices.length === 0) return null;
 
@@ -498,7 +506,7 @@ export default function HomeTab() {
                 <View style={base.between}>
                   <View style={styles.categoryHeading}>
                     <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-                      {category.label}
+                      {category.name}
                     </Text>
                     <Text style={styles.sectionCaption} maxFontSizeMultiplier={1.2}>
                       {category.caption}
@@ -506,7 +514,7 @@ export default function HomeTab() {
                   </View>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`See all ${category.label}`}
+                    accessibilityLabel={`See all ${category.name}`}
                     hitSlop={8}
                     onPress={() => router.push('/(tabs)/services')}>
                     <Text style={styles.seeAll} maxFontSizeMultiplier={1.3}>

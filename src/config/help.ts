@@ -1,12 +1,17 @@
 import {
   CalendarDays,
   CreditCard,
+  LifeBuoy,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Tag,
+  UserRound,
   XCircle,
   type LucideIcon,
 } from 'lucide-react-native';
+
+import type { TicketCategory } from '@/store/tickets';
 
 export type HelpTopic = {
   slug: string;
@@ -22,6 +27,26 @@ export type FaqItem = {
   answer: string;
   top?: boolean;
 };
+
+/** Ticket categories for the Help Centre tiles (S1 16.3). */
+export type TicketCategoryOption = {
+  value: TicketCategory;
+  label: string;
+  blurb: string;
+  icon: LucideIcon;
+};
+
+export const ticketCategories: readonly TicketCategoryOption[] = [
+  { value: 'general', label: 'General', blurb: 'Anything else', icon: LifeBuoy },
+  { value: 'booking', label: 'Booking', blurb: 'Times and changes', icon: CalendarDays },
+  { value: 'payments', label: 'Payments', blurb: 'Charges and receipts', icon: CreditCard },
+  { value: 'account', label: 'Account', blurb: 'Profile and access', icon: UserRound },
+  { value: 'cleaner', label: 'Cleaner', blurb: 'About your cleaner', icon: Sparkles },
+  { value: 'app', label: 'App issue', blurb: 'A bug or crash', icon: Smartphone },
+];
+
+export const ticketCategoryLabel = (value: TicketCategory): string =>
+  ticketCategories.find((category) => category.value === value)?.label ?? 'General';
 
 export { support } from './support';
 

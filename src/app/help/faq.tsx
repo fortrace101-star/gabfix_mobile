@@ -1,13 +1,14 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FaqAccordion } from '@/components/help/faq-accordion';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { TopBar } from '@/components/ui/top-bar';
 import { faqsForTopic, helpTopicBySlug, helpTopics } from '@/config/help';
-import { base, chip, colors, font, radius, space, text } from '@/theme';
+import { base, colors, radius, space, text } from '@/theme';
 
 /** P22 grouped FAQ list; `?topic=booking` opens directly on one topic. */
 export default function FaqScreen() {
@@ -36,43 +37,21 @@ export default function FaqScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
           contentContainerStyle={styles.filters}>
-          <Pressable
-            accessibilityRole="radio"
-            accessibilityLabel="Filter FAQs: All topics"
-            accessibilityState={{ checked: selectedTopic === null }}
-            aria-checked={selectedTopic === null}
+          <FilterChip
+            label="All topics"
+            selected={selectedTopic === null}
             onPress={() => setSelectedTopic(null)}
-            style={[
-              chip.pill,
-              styles.filter,
-              selectedTopic === null && styles.filterSelected,
-            ]}>
-            <Text
-              style={[styles.filterText, selectedTopic === null && styles.filterTextSelected]}
-              maxFontSizeMultiplier={1.2}>
-              All topics
-            </Text>
-          </Pressable>
-          {helpTopics.map((topic) => {
-            const selected = selectedTopic === topic.slug;
-            return (
-              <Pressable
-                key={topic.slug}
-                accessibilityRole="radio"
-                accessibilityLabel={`Filter FAQs: ${topic.label}`}
-                accessibilityState={{ checked: selected }}
-                aria-checked={selected}
-                onPress={() => setSelectedTopic(topic.slug)}
-                style={[chip.pill, styles.filter, selected && styles.filterSelected]}>
-                <Text
-                  style={[styles.filterText, selected && styles.filterTextSelected]}
-                  maxFontSizeMultiplier={1.2}>
-                  {topic.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          />
+          {helpTopics.map((topic) => (
+            <FilterChip
+              key={topic.slug}
+              label={topic.label}
+              selected={selectedTopic === topic.slug}
+              onPress={() => setSelectedTopic(topic.slug)}
+            />
+          ))}
         </ScrollView>
 
         {topics.map((topic) => {
@@ -124,22 +103,8 @@ const styles = StyleSheet.create({
   intro: { gap: space[2] },
   title: { ...text.h1 },
   subtitle: { ...text.body, color: colors.textMuted, lineHeight: 21 },
-  filters: { gap: space[2] },
-  filter: {
-    height: 34,
-    borderColor: colors.border,
-    paddingHorizontal: space[3],
-  },
-  filterSelected: {
-    backgroundColor: colors.green500,
-    borderColor: colors.green500,
-  },
-  filterText: {
-    ...text.caption,
-    fontFamily: font.bodySemi,
-    color: colors.textMuted,
-  },
-  filterTextSelected: { color: colors.surface },
+  chipScroll: { flexGrow: 0 },
+  filters: { alignItems: 'center', gap: space[2] },
   section: { gap: space[3] },
   sectionHeader: {
     flexDirection: 'row',

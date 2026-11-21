@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-20 by engineering (Codebuff session, remaining screen-build gaps closed and Phase 2 Stage 1 Workstreams A/B UI started; Phase 2 progress tracked separately below) |
+| **Last updated** | 2026-11-21 by engineering (Codebuff session; Workstreams J and I complete, Phase 1 kit closed apart from the mock server, and a Phase 1 / Stage 1 status checklist added below) |
 | **Expo SDK version** | 58.0.26 (Expo Router 58.0.32 · React Native 0.88.1 · React 19.3.0) |
 | **Guidelines versions** | Part 1 v1.3 · Part 2 v2.0 · Plan v1.0 · Page_refactor v1.0 |
 | **Current phase** | Phase 6 (Supporting and Account) in progress; Phase 7 web admin built alongside it; P4 to P14 built (P13/P14 simulated locally), P15a–P15c, P16–P27g built locally; all 40 page builds complete |
@@ -42,11 +42,11 @@ Report this figure at the end of every session that changes the build. It is a w
 | # | Track | Weight | Score | Points | What the score counts |
 |---|---|---|---|---|---|
 | 1 | **Screen builds** — 40 pages implemented and passing typecheck, lint and web export | 45% | 100% | 45.0 | All 40 page builds are in place, including P7's parallax and scroll-fade header, P13's failure/auto-cancel state, P19's PDF export, P25/P27c photo attach, P26's force-update gate and P27g's sign-in/roles. P27g counts as a web app. Licensed service photography is a content input (Open item 18), not code. Does **not** count device verification (track 5) |
-| 2 | **Foundations and infrastructure** — Phase 0/1 tasks: tokens, UI kit, navigation, draft store, API client, tests | 15% | 78% | 11.7 | Missing CI colour/inset checks, component gallery, mock server, some kit components and formatter tests; no iOS dev build |
+| 2 | **Foundations and infrastructure** — Phase 0/1 tasks: tokens, UI kit, navigation, draft store, API client, tests | 15% | 80% | 12.0 | Phase 1 is 7 of 8 tasks complete: the mock server, the CI colour/inset checks, the gallery's 360/390/430 dp sign-off and an iOS dev build are still missing |
 | 3 | **Backend contracts and real data** — Open items 1–31 and the API/aggregator/admin endpoints they cover | 15% | 19% | 2.9 | 18 items have client-side scaffolding only; none confirmed against a running service; no aggregator, map key, push, admin API or live tracking feed |
 | 4 | **Expo per-screen check and accessibility** — the Section 1.2 checklist and a11y column | 10% | 22% | 2.2 | Compile-level conventions pass; back gestures, screen readers, 130% text and reduce motion are not device-checked |
 | 5 | **Acceptance, device matrix and hardening** — Part 2 Section 13, iOS + Android EAS passes, Phase 8.1–8.9 | 15% | 25% | 3.8 | Scripted browser QA now covers 13 page flows at 390 × 844 / 1280 × 900, including the P13 decline and auto-cancel, P19 PDF trigger, P26 gate, P7 fade header and P27g roles; **0 of 40** device-verified; Phase 8 not started |
-| | **Total** | **100%** | | **65.6%** | |
+| | **Total** | **100%** | | **65.9%** | |
 
 **Session log** — add one row per working session so the trend is visible:
 
@@ -56,6 +56,8 @@ Report this figure at the end of every session that changes the build. It is a w
 | 2026-11-20 | P4/P5/P6 remnants and order-flow Summary Sheet | **64%** | +1 | Home offer/categories/rebook/upcoming/reviews/pull-to-refresh, P6 category chips and sections, P5 cleaner results, shared price-breakdown sheet in P8–P11, P15a pull-to-refresh |
 | 2026-11-20 | P7 parallax and browser QA | **65%** | +1 | P7 hero parallax (43 px offset at 140 px scroll), fixed landing bottom inset and Home step-copy clipping, rebook date fit; headless-Chrome pass over Home, Services, Search, P7, P8 and P15a with no console errors |
 | 2026-11-20 | Remaining screen builds closed | **66%** | +1 | P13 failure/auto-cancel, P19 PDF, P25/P27c photo attach, P26 force-update gate, P27g sign-in/roles, P7 photo slot/art/fade header; scripted browser pass over each, typecheck/lint and both production builds pass. Screen builds now 100%; licensed photography remains a content input |
+| 2026-11-21 | Phase 2 Stage 1 Workstreams I/J and Phase 1 kit | **66%** | +0 | Service Areas removed (I), ticket centre and referral stage lists (J), shared `CounterStepper`/`Toast`, `/dev` gallery; Phase 1 track re-scored 78 → 80 because 7 of 8 tasks are now complete (65.9% raw). Phase 2 is tracked separately; no device or backend verification |
+| 2026-11-21 | Workstream D closed, Workstream H started | **66%** | +0 | Registered the three missing routes, refreshed stale deviation rows, delete-account now removes draft/booking media; new 7-category/18-service catalogue with `pricingMode`/`popularRank`/`active`, catalogue-aware discovery and search, and the `form-schema` engine with 8 seed schemas and 15 tests. Typecheck, lint and 8 suites / 76 tests pass |
 
 ### Next Up Checklist
 
@@ -84,7 +86,7 @@ Ordered by how much each block unlocks. Tick items only when their evidence is i
 
 **D. Remaining build gaps (track 1/2)**
 - [ ] Phase 0: CI checks for hard-coded colours/insets; iOS dev build
-- [ ] Phase 1: dev component gallery, missing `Toast`/`StatusChip`/`Card` variants, formatter tests, mock server
+- [ ] Phase 1: mock server and the shared `BottomSheet` / `KeyboardScreen` still missing (gallery, `Toast`, `CounterStepper`, `Card`, `StatusChip` and formatter tests now landed)
 - [ ] Phase 3: P7 slide-in Book bar and licensed photography (Open item 7); API-backed Home offer, trust, rebook and review payload (`GET /home`)
 - [ ] Phase 4: Places/map picker and multi-stop addresses; aggregator-backed payment failure/3DS and server-side hold cancellation
 - [ ] Phase 5: server-side refunds/late fees, account-level recurring plans, receipt ledger from the payments API
@@ -97,6 +99,69 @@ Ordered by how much each block unlocks. Tick items only when their evidence is i
 - [ ] 8.5 payments UAT in the aggregator sandbox · 8.6 security review (tokens, no card data, no PII logs)
 - [ ] 8.7 store assets, permission strings, privacy labels · 8.8 production EAS builds, TestFlight and Play internal testing · 8.9 final progress report
 
+**F. Granular Phase 2 Stage 1 build backlog (local work only, ordered)**
+
+Every item below can be built and verified without a backend or a device. Items that need either are named as such rather than ticked. Source: `Implementation_Phase_2 - Stage 1.md` Sections 7.1–7.3, 11, 12, 13 and 14, read against this tree.
+
+**0. Shared prerequisites**
+- [ ] 0.1 `src/components/ui/bottom-sheet.tsx`: pinned header/footer, backdrop, drag handle, safe-area and keyboard insets, `onDismiss` (unblocks E7 and F2)
+- [ ] 0.2 `src/components/ui/keyboard-screen.tsx`, `keyboard-sheet-body.tsx`, `sticky-composer.tsx` (unblocks F3)
+- [ ] 0.3 Phase 1 **mock server** (`mock/` plus a `package.json` script) so the API client can be exercised offline
+- [ ] 0.4 Gallery: add the missing components and states, then the 360/390/430 dp pass
+
+**D. Housekeeping**
+- [x] D1 Register `policies/[doc]`, `cleaner/[id]` and `booking/[id]/receipt` in `src/app/_layout.tsx`
+- [x] D2 Refresh the stale deviation rows (P19 now closed) and the 41-test figure
+- [x] D3 `deleteLocalAccount()` now deletes draft and booking media as well as cache and keychain data (`deleteDraftMedia`, `deleteAllBookingMedia`, `clearDeviceId`, `endSession`)
+- [x] D4 F17/F18 renumbering: neither the 49-page figure nor Phase 9 naming exists in either doc, so there was nothing to rename
+
+**H. Services catalogue and dynamic job details**
+- [x] H1 `src/config/service-categories.ts`: 7 categories (`id`, `name`, `caption`, `order`, `parentId`, `formSchemaId`, `active`)
+- [x] H2 Rewrite `src/config/services.ts`: 18 active services + 2 inactive (office-clean, move-out-clean, kept for old links), `categoryId`, `pricingMode`, `popularRank`, `formSchemaId`, `active`; helpers `activeServices`, `servicesByCategoryId`, `popularServices`, `serviceBySlug`
+- [x] H3 `use-services` and `lib/api/discovery.ts` use `categoryId`/`active`; the Services tab and Home filter inactive services; `ServiceListResponse` can carry categories (the tab still uses the bundled set)
+- [x] H4 Local search excludes inactive services; Home's Most popular list sorts by `popularRank` (the card restyle is G6)
+- [x] H5 `src/lib/form-schema.ts`: `validateSchema`, `visibleFields`, `visibleAnswers`, `validateAnswers`, `suggestedMinutes`, `requiresQuote`, `buildSnapshot`, `mergeAnswers`, `defaultSchema`
+- [x] H6 `src/config/form-schemas.ts`: cleaning, upholstery, surface, pest, repairs, building and outdoor seeds plus the global default and `schemaFor()`
+- [x] H7 `form-schema.test.ts`: 15 cases covering S1 14.8 (duplicate ids, forward `showIf`, 41 fields, single-option select, hidden answers, required/min/max, media slot, minutes, quote flags, snapshot display, unknown type, version merge)
+- [ ] H8 `DynamicForm` and `MeasurementInput` renderers with inline errors and a required media slot (next slice)
+- [ ] H9 P8b `scope.tsx` renders the service's schema; draft stores `schemaId`, answers and the snapshot; `buildSnapshot` feeds booking details
+- [ ] H10 Quote-mode branch: no hourly price or payment step; details and photos end in the quote flow
+- [ ] H11 Service page clean-up (S1 14.5): remove Reviews, Related services, Top cleaners, How it works, the discount badge, the trust strip and the rating chip; quote CTA
+- [ ] H12 Receipt, booking details and admin Bookings show the snapshot as "Job details"
+- [ ] H13 `service-content.ts`/`service-images.ts` entries for the 14 new services plus a generic fallback for unknown slugs
+- [ ] H14 H acceptance criteria 1–7 pass locally
+
+**F. Booking flow, drafts, keyboard, assignment, rating**
+- [ ] F1 `src/lib/use-draft-exit.ts`: `saveDraftNow`, `draftIsDirty`, `lastStep`, `useDraftGuard`
+- [ ] F2 Wire the exit guard and discard confirmation into the five order-flow steps
+- [ ] F3 Keyboard kit and apply it to login, sign-up, OTP, quote and chat
+- [ ] F4 `src/config/mock.ts` + `src/lib/assignment.ts`: auto-assign, arrival window, completion simulation
+- [ ] F5 `assignment.test.ts`
+- [ ] F6 Completion moves the booking to `completed` and seeds the next recurring clean
+- [ ] F7 Optional job/cleaner ratings, review migration and the split rows on P27f
+
+**E. Payments and receipts**
+- [ ] E1 Split `receipt-export.ts` into create/download/share with the `Gabfix-Receipt-<id>.pdf` name rule
+- [ ] E2 `src/lib/momo.ts` + tests: MTN/Airtel prefixes, normalisation, per-network copy
+- [ ] E3 `MomoNumberPicker`; remove the shared `payerPhone` prefill; draft migration and storage-version bump
+- [ ] E4 `store/payment-methods.ts`: empty seed, dedupe and prefix validation; `AddMethodSheet` uses `validateMomo`
+- [ ] E5 Pay balance runs `/payment/[id]` and updates the wallet ledger
+- [ ] E6 `wallet.ts` `queryTransactions`/`activeFilterCount` + `wallet.test.ts`
+- [ ] E7 Adopt the shared bottom sheet across the wallet and receipt sheets
+
+**G. Home dashboard**
+- [ ] G1 Remove the Blob, trust capsules, Top cleaners, category rows, How it works and Loved by customers, plus dead styles/imports
+- [ ] G2 New block order (continue draft, balance due, rate prompt, next clean, activity, offers, most popular, book again)
+- [ ] G3 Stat tile row via `StatTile`; Bookings accepts a `tab` param
+- [ ] G4 `dueSummary` in `wallet.ts`, `BalanceDueCard`, and `profile/payments` scroll-to + highlight
+- [ ] G5 `RatePromptCard` for completed unrated bookings
+- [ ] G6 Most popular as a horizontal photo-over-text row from `popularRank` with See all
+- [ ] G7 Location chip reads the default saved address, not a served area
+
+**J. Leftovers (blocked on contracts)**
+- [ ] J1 Ticket create/reply against `/support/tickets` once the contract exists
+- [ ] J2 Referral codes/stages through the referral API
+
 ---
 
 ## Implementation Phase 2 - Stage 1 UI progress (separate)
@@ -108,6 +173,8 @@ Ordered by how much each block unlocks. Tick items only when their evidence is i
 **Current progress (Workstream B / P8b Job scope UI slice, separate): 90%** — scope model/route/stepper, size/rooms/condition/focus, duration suggestion with **Apply**, draft persistence, review/confirmed/booking-detail/admin scope+media surfaces, two-view `MediaSheet`, `MediaTile`/`MediaPreview`, file normalization/media pipeline, `media-uploads` store, mock upload queue and `UploadStatus` are in place, and the P14 push pre-prompt now matches S1 4.2.4 ("Get a message when your cleaner is on the way", **Turn on** / **Not now**, 30-day snooze). Remaining: real backend upload targets/polling contracts, camera/video/HEIC/upload runtime verification on a dev/EAS build, and remaining P8b a11y/edge-case acceptance (§3.16).
 
 **Current progress (Workstream C / Profile security & preferences UI, separate): 74%** — v2 profile-settings migration and notification policy/quiet-hours libs, P28 notification preferences, P29 security hub, P29a change password (local mock), P29c login activity, P30 devices and sessions (local mock), profile tab/inbox wiring, **P29b mock 2FA flow** (`/profile/security/two-factor`, SMS/email method, 6-digit code, 10-min expiry, 30s resend cooldown, 5-attempt lock, recovery guidance, login-activity events), and **biometric toggle + lightweight native `AppLockGate`** (`expo-local-authentication`, web no-op, not a full cryptographic/session lock). P30 polish now follows S1 4.4.3 (most-recently-used order, `dateLong`/`time12` plus relative last-used within the hour, offline destructive actions disabled with the spec caption). Remaining: P28 remaining spec polish, real push registration/token sync, backend-backed password/2FA/session/device/login-activity flows, and device verification.
+
+**Current progress (Workstream J / UI polish, separate): 85%** — §16.1 segmented-control active label (`activeLabelColor`, Bookings uses `green900`), §16.2 red **Cancel booking** (`dangerGhost` + bottom-pinned cancel sheet), §16.3 ticket centre (`/help` tiles + request form + recent tickets, `/help/tickets`, `/help/tickets/[id]`, local ticket store with `GBT-` codes, screenshot attachments), §16.4 FAQ/Services/reviews chips on the shared `FilterChip`, and §16.5 referral rows with per-stage friend lists (`/refer/[stage]`, masked phones, seeded data). Remaining: the support backend (`/support/tickets`, replies), referral API, and device/VoiceOver verification.
 
 These Phase 2 figures are separate and are **not** added to the 66% overall score above. **Report Phase 2 percentages after every session.**
 
@@ -153,8 +220,54 @@ These are identified from the document but **not counted** in the 33% above unti
 | 2026-11-21 | Workstream J item 22 / build-order step 3: added the `dangerGhost` `Button` variant (transparent background, `colors.error` label and icon, `colors.errorBg` pressed state) and applied it to **Cancel booking** on P15b; the cancel sheet title and its final `destructive` confirm button are unchanged. | `tsc --noEmit` ✅, `expo lint` ✅. Visual contrast check not run on a device |
 | 2026-11-21 | Phase 1 UI-kit gap: added shared `src/components/ui/status-chip.tsx` (success/info/warning/error/neutral tones on theme tokens) and moved P15a's booking-status pill onto it, removing the screen-local copy and its hard-coded hex values. | `tsc --noEmit` ✅, `expo lint` ✅. Visual check not run |
 | 2026-11-21 | P28 permission handling (S1 4.2.4): permission is re-read on screen focus and whenever the app returns to `active`, so returning from phone settings updates the status line, which now reads `Phone permission: Allowed / Not asked yet / Off`. Added `src/utils/__tests__/format.test.ts` (6 tests) for the Phase 1 formatter-test gap. | `tsc --noEmit` ✅, `expo lint` ✅, `jest src/utils/__tests__/format.test.ts --runInBand` ✅ (6 passed). Phone-settings round trip not exercised on a device |
+| 2026-11-21 | **Workstream J** (§16.1–16.5): segmented control gained `activeLabelColor` (Bookings passes `green900`); the FAQ, Services and review filter chips moved onto the shared `FilterChip` with a fixed alignment; `/help` became the ticket centre (search, six category tiles, request form with subject/message limits, booking code, up to 3 screenshots and a `Ticket GBT-##### received` confirmation, recent tickets, common questions, Contact us); added `/help/tickets` and `/help/tickets/[id]` with the local ticket store (`src/store/tickets.ts`, `validateTicket`, `markTicketResolved`, hydration in the root layout), screenshot normalisation (`src/lib/ticket-media.ts`) and 7 unit tests; referral rows now open `/refer/[stage]` with masked-phone friend lists from `src/store/referrals.ts` (`stageCounts`, `forStage`, `rewardsTotal`). | `tsc --noEmit` ✅, `expo lint` ✅ (0 errors, 0 warnings), `jest src/lib/__tests__/tickets.test.ts` ✅ (7 passed), full `jest --runInBand` ✅ (61 passed). No device/screen-reader pass; ticket replies and referral data remain local until the backend exists |
+| 2026-11-21 | Phase 1 kit gaps: extracted the booking counter into shared `src/components/ui/counter-stepper.tsx` (same adjustable semantics, used by P8b) and added `src/components/ui/toast.tsx` (`showToast`/`hideToast` + `ToastHost` mounted in the root layout, 2.6 s auto-dismiss, success/error tones, screen-reader announcement). Added the dev-only component gallery at `/dev` covering buttons, chips, inputs, counter, cards, avatars, banners, skeletons and toast. | `tsc --noEmit` ✅, `expo lint` ✅ (0 errors, 0 warnings). Gallery and toast animation not viewed on a device or browser |
 | 2026-11-21 | P30 Devices and sessions polish (S1 4.4.3): other sessions sorted most recently used first, signed-in dates use `dateLong`/`time12`, last used is relative within the hour ("just now", "5 min ago"), the platform reads as "Android"/"iOS", and destructive sign-out actions are disabled offline with "Connect to the internet to sign out a device." | `tsc --noEmit` ✅, `expo lint` ✅. Offline state not exercised on a device |
 | 2026-11-21 | Fixed the P8b exact-size field rejecting entries: the input now keeps its own text while typing, so a first digit is no longer dropped before the value reaches 10 m²; valid 10–5,000 m² values still set `areaSqm` and the matching band, out-of-range values show a hint, and picking a size card or **Not sure** closes exact mode. Added the §3.16 item 6 draft-payload test (file URIs only, no base64, small JSON). | `tsc --noEmit` ✅, `expo lint` ✅, `jest src/store/__tests__/booking.test.ts --runInBand` ✅ (10 passed). No device verification |
+
+---
+
+## Phase 1 and Phase 2 Stage 1 status checklist (2026-11-21)
+
+Status is taken from the code in this working tree, not from the plan. `npx tsc --noEmit` ✅, `npx expo lint` ✅ (0 errors, 0 warnings) and `npx jest --runInBand` ✅ (8 suites / 76 tests) at the time of writing. No device, EAS or backend run exists for any item below.
+
+Legend: ✅ done · 🟨 partly done · ⬜ not started · 🚫 blocked on something outside the client.
+
+### Phase 1 — Foundations and UI Kit (`Gabfix_Implementation_Plan.md`)
+
+| # | Task | Status | Evidence / what is left |
+|---|---|---|---|
+| 1.1 | Theme, text styles, shadows, format helpers | ✅ | `src/theme/tokens.ts`, `src/theme/styles.ts`, `ugx`/`phoneUG`/`maskPhone`/`dateLong`/`time12`, validators, haptics helpers |
+| 1.2 | Core components (Button, Input, Chip, SelectableCard, SegmentedControl, CounterStepper, StatusChip, Card, Skeleton, Toast, EmptyState, ErrorState, OfflineBanner) | ✅ | All present in `src/components/ui/` and `src/components/booking/`; extras `Avatar`, `InlineBanner`, `StatTile`, `SettingsList`, `ConfirmSheet` |
+| 1.3 | Navigation shell (auth stack, tabs, order-flow stack, `gabfix://`) | ✅ | Root `Stack` in `src/app/_layout.tsx`, `(tabs)` group with `BrandTabBar`, scheme in `app.json` |
+| 1.4 | Tabs decision gate | ✅ | Custom tab bar retained (Decision 16) because native tabs cannot render the brand pill |
+| 1.5 | Booking store and `price()` with tests | ✅ | `src/store/booking.ts`, `src/lib/pricing.ts`, `src/store/__tests__/booking.test.ts`, `src/lib/__tests__/pricing.test.ts` |
+| 1.6 | API client + offline-first defaults + **mock server** | 🟨 | `src/lib/api/client.ts` complete (refresh, idempotency, timeout, `ApiError`). **Mock server not built** |
+| 1.7 | Dev-only component gallery | 🟨 | `src/app/dev/index.tsx` covers buttons, chips, inputs, counter, cards, avatars, banners, skeletons and toast; it does not yet show every component/state |
+| 1.8 | Unit tests for pricing, deposit, formatters | ✅ | Pricing/deposit in `pricing.test.ts`, formatters in `src/utils/__tests__/format.test.ts` (6 cases) |
+
+**Exit criteria:** ⬜ gallery matched to Part 1/Part 2 at 360, 390 and 430 dp (no browser/device pass); ✅ pricing tests pass; ✅ tab decision logged.
+
+**Also expected by later workstreams but not yet built:** shared `BottomSheet` (S1 11.5) and `KeyboardScreen`/`KeyboardSheetBody`/`StickyComposer` (S1 12.2). These block Workstreams E and F respectively.
+
+**Phase 1 result: 7 of 8 tasks complete; the mock server and the gallery's visual sign-off are the only open items.**
+
+### Phase 2 Stage 1 — Workstream status (`Implementation_Phase_2 - Stage 1.md`)
+
+| Workstream | Status | Done | Open |
+|---|---|---|---|
+| **A. Support contact details** | ✅ ~90% | Shared `src/lib/support.ts` + `src/config/support.ts` (single source, fail-closed), dynamic `ContactOptions` (channel hiding, booking context, long-press copy, open-failure fallback), booking/receipt/tracking/payment touchpoints, admin alignment, 4 support tests | `/support/*` backend, device QA |
+| **B. Job scope and media (P8b)** | 🟨 ~90% | Scope model/config, 6-stage stepper, size/rooms/condition/focus, duration suggestion with **Apply**, draft persistence and legacy normalisation, `MediaSheet`/`MediaTile`/`MediaPreview`, file pipeline + `media-uploads` store + `UploadStatus`, P12/P14/P15b/admin surfaces, rebook copies scope not media | `scope.test.ts` and `media.test.ts` (S1 3.15) are missing; camera/video/HEIC and permission runtime QA (3.16: 7, 8, 13, 14); upload backend targets |
+| **C. Profile additions (P28–P30)** | 🟨 ~74% | Notification preferences, security hub, change password, mock 2FA, login activity, devices/sessions, biometric toggle + `AppLockGate`, profile/inbox wiring, v2 settings migration | Real push registration/token sync, backend password/2FA/session/device flows, P28 polish, device QA |
+| **D. Housekeeping** | 🟨 ~80% | F14 `src/lib/id.ts` (expo-crypto), F15 packages installed, F16 closed by Workstream I, D1 routes registered, D2 deviation row and test figure refreshed, D3 `deleteLocalAccount()` now deletes draft/booking media as well as cache and keychain keys | F17/F18 renumbering has no remaining occurrences in the docs; nothing local is outstanding |
+| **E. Payments and receipts** | ⬜ 0% | — | Real download/to Files (11.1), per-network mobile money (11.2), balance through `/payment/[id]` (11.3), transaction query/filters (11.4), shared `BottomSheet` (11.5); no `wallet.test.ts` |
+| **F. Booking flow, drafts, keyboard, assignment, rating** | ⬜ 0% | `Avatar`, `ConfirmSheet` and the five booking steps exist as a base | `use-draft-exit`/`useDraftGuard`/`saveDraftNow`, keyboard kit/provider, `config/mock.ts` + `assignment.ts` + completion, optional job/cleaner ratings + review migration |
+| **G. Dashboard (Home)** | ⬜ 0% | `StatTile` exists; Most popular section exists in its old form | Remove Blob/trust capsules/Top cleaners/category rows/How it works/Loved by customers; stat tiles, Balance due card, `dueSummary`, new Most popular row, `popularRank` |
+| **H. Services catalogue and dynamic job details** | 🟨 ~35% | H1–H7: 7 categories, 18 active + 2 inactive services with `pricingMode`/`popularRank`/`active`, catalogue-aware `useServices`/discovery/search, the `form-schema.ts` engine, 8 seed schemas + default and 15 passing tests | `DynamicForm`/`MeasurementInput` (H8), P8b schema wiring and draft snapshot (H9), quote-mode branch (H10), service-page clean-up (H11), receipt/admin snapshot rows (H12), content and images for new services (H13), H acceptance 1–7 (H14) |
+| **I. Service Areas removal** | ✅ 100% (code) | Route/config/onboarding/booking/addresses/quotes/hooks/types/admin all clean; proof search for area symbols is empty | Docs/manual updates beyond this file; `location-fixtures` `area`→`locality` key rename deliberately not done |
+| **J. Bookings, Help Centre and Refer polish** | ✅ ~85% | Segmented active label, red cancel, ticket centre + list/detail + local store, chip migration, referral stage lists | `/support/tickets` backend and replies, referral API, device/VoiceOver QA |
+
+**Stage 1 result: 5 of 10 workstreams are functionally complete (A, B, C, I, J), 1 is partly done (D), and 4 have not started (E, F, G, H).** In the approved order, H comes next, then F → E → G, with D's small items foldable into any of them.
 
 ---
 
@@ -365,7 +478,7 @@ Record anything that differs from Part 1, Part 2 or Expo guidance.
 | 2026-11-18 | P14 Booking Confirmed | Live booking record, P15 booking detail/management and a working calendar export | Draft snapshot cleared on mount, local booking id shown and saved to an on-device bookings store; “View booking” opens local P15b and “Add to calendar” explains the missing calendar integration | P15 list/detail are local-only (no backend sync) and a calendar dependency/integration is not built | _pending_ |
 | 2026-11-18 | P15a/P15b Bookings | Live `/bookings` list/detail with assignment, status updates, actions and tracking | Local persisted records only; balance payment, extras edits and support remain placeholders; reschedule/cancel work against the local store and **Track** opens P15c, which uses a schematic map and time-derived ETA | No bookings API, realtime/status contracts, payment-balance flow, map provider or live tracking feed available | _pending_ |
 | 2026-11-18 | P18 Rebook | One-tap rebook that also re-prices on the server and filters live cleaner availability | Draft snapshot saved with the booking (`rebook`) and copied by `buildRebookDraft()`; “Book again” opens P10 with the date/time cleared; preferred cleaner id is passed to `/availability` but local bookings have no cleaning assignment yet | No cleaner assignment or `/availability` cleaner filter locally; the same-cleaner entry point stays hidden until a booking carries `cleanerId` | _pending_ |
-| 2026-11-18 | P19 Receipt | PDF receipt from HTML via `expo-print` + `expo-sharing`, server-issued invoices and payment ledger | Receipt recomputes charges from the stored draft snapshot and uses React Native `Share` for a text summary; PDF download is explained as pending | No invoice/ledger API and no `expo-print`/`expo-sharing` dependency was added for this demo | _pending_ |
+| 2026-11-18 | P19 Receipt | PDF receipt from HTML via `expo-print` + `expo-sharing`, server-issued invoices and payment ledger | Receipt recomputes charges from the stored draft snapshot; **closed 2026-11-20** — Share sends a summary and Download PDF builds the real receipt through `expo-print`/`expo-sharing` | Invoices and the payment ledger still need the payments API | _closed_ |
 | 2026-11-18 | P16 Reschedule/Cancel | `PATCH /bookings/{id}/schedule`, server-checked 24-hour policy, real refunds/late fees and account balance | Both sheets are local: reschedule writes the store, cancel flips the record and stores a dummy refund/late fee; reason chips, policy copy and the “I understand” gate follow the spec; platform `Modal` stands in for `BottomSheetModal` | No schedule/cancel/refund endpoints or balance ledger; the 30 %/UGX 20,000 deposit floor is reused as the dummy late fee | _pending_ |
 | 2026-11-19 | P27d Notifications | Push permission/delivery, server inbox and background deep links | Local persisted inbox with three seeded records; unread state, mark-all, swipe-to-read and in-app deep links only. P14 appends a local booking-confirmed record | No push service, device token or notifications API exists, and headless Chrome cannot exercise native push. The store is shaped for a future payload but does not claim delivery | _pending_ |
 | 2026-11-19 | P27e Profile and Settings | Server profile/preferences, localized copy, biometric sign-in, store review and server account deletion | Name/phone/email, avatar, five preferences and language choice persist locally; language sheet explains English-only; Rate the app opens an explanatory alert; delete clears the local account and session only | No profile, preferences, localization, biometric or account-deletion backend. `expo-image-picker` is installed for the avatar, but no photo upload exists; deletion is explicitly scoped to this device | _pending_ |
@@ -471,9 +584,9 @@ Next: initialise Expo Build profiles, produce iOS/Android dev builds, then close
 ### Phase 1 — In progress
 Delivered: `theme.ts` equivalents (`src/theme/tokens.ts`, `styles.ts`), text styles, shadows, formatters (`ugx`, `phoneUG`, `maskPhone`, `dateLong`, `time12`), validators, haptics helpers; UI kit `Button`, `Input`, `Checkbox`, `CodeInput`, `TopBar`, `LogoBadge`; root native stack and font loading with the splash held until fonts resolve.
 Delivered (1.6, partial): HTTP core `src/lib/api/client.ts` (bearer auth, 401 refresh-and-retry, idempotency keys, timeout, `ApiError`), typed auth endpoints in `src/lib/api/auth.ts`, session bridge, persistent session store `src/store/session.ts`, secure storage adapter (`expo-secure-store`, `localStorage` on web) and `.env.example`.
-Delivered (1.5 + 1.8): booking model and `price()` preview (`src/lib/pricing.ts`), add-on/promo catalogue and deposit rules from the spec, persisted draft store (`src/store/booking.ts`: start, patch, add-ons, promo, reset, boot hydration) wired into the root layout, and the Jest foundation (`jest-expo`, `jest`, `@types/jest`, `npm test`) with 41 tests across pricing, deposit validation, the draft store, the API client and the session store.
+Delivered (1.5 + 1.8): booking model and `price()` preview (`src/lib/pricing.ts`), add-on/promo catalogue and deposit rules from the spec, persisted draft store (`src/store/booking.ts`: start, patch, add-ons, promo, reset, boot hydration) wired into the root layout, and the Jest foundation (`jest-expo`, `jest`, `@types/jest`, `npm test`) with 41 tests across pricing, deposit validation, the draft store, the API client and the session store (61 tests today).
 Delivered (1.4): native-tabs gate closed — custom tab bar retained (Decision 16); the shell itself landed on 2026-11-18 with P4.
-Outstanding: dev-only component gallery, Toast/Skeleton/Sheet/StatusChip components, CI check for hard-coded colours and insets, formatter tests.
+Outstanding: shared `BottomSheet` and `KeyboardScreen`, the mock server and the CI check for hard-coded colours and insets (gallery, `Toast`, `CounterStepper`, `Skeleton`, `StatusChip`, `Card` and formatter tests have landed).
 Next: complete the remaining foundations before Phase 3 discovery screens.
 
 ### Phase 2 — In progress
@@ -566,3 +679,4 @@ Next: agree the admin API/auth contract, replace the local demo credentials in `
 | 2026-11-20 | Engineering (Codebuff) | Added the service-photography contract: four 1200 × 800 placeholder JPGs in `assets/images/services/`, `src/config/service-images.ts` and the reusable `ServicePhoto` (remote hero override with bundled fallback). Wired photos into the P7 hero and related cards, Home's popular grid and category rails, and the Services and Search rows. Typecheck, lint, web export and a 390 × 844 browser pass confirm every image loads at its intended crop |
 | 2026-11-20 | Engineering (Codebuff) | Closed the remaining screen-build gaps: P13 pending/approved/failed authorisation with a 2-minute expiry, demo decline and 30-minute unpaid-hold auto-cancel (`src/store/bookings.ts`); P19 receipt PDF through `expo-print`/`expo-sharing` from a shared receipt model; P25 quote photos and P27c chat image attach; P26 `EXPO_PUBLIC_MIN_SUPPORTED_VERSION` force-update gate; P27g local owner/operations sign-in and role gating; P7 hero `heroImage` slot, interim SVG art and a 120–220 px scroll-fade header. Typecheck, lint, web export, admin build and scripted browser checks pass; licensed P7 photography remains Open item 7 |
 | 2026-11-20 | Engineering (Codebuff) | Added P7's scroll parallax (`Animated.ScrollView`, 0.3× hero shift, JS driver on web), reserved 96 px + safe-area inset for the sticky Book bar, fixed Home's clipped step copy and rebook date, guarded P5's empty service list, and ran a scripted headless-Chrome pass over Home, Services, Search, P7, P8 and P15a |
+| 2026-11-21 | Engineering (Codebuff) | Workstream J (§16.1–16.5): ticket centre on `/help` with local ticket store, `/help/tickets` and `/help/tickets/[id]`, `FilterChip` chip migration, segmented active-label colour and referral stage lists; Phase 1 `CounterStepper`, `Toast` and the `/dev` component gallery. Service Areas removed earlier in the session (Workstream I) |
