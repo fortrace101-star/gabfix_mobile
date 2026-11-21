@@ -12,7 +12,7 @@ export type LoginEvent = {
   atISO: string;
   deviceName?: string;
   platform?: 'android' | 'ios' | 'web';
-  method?: 'password' | 'sms' | 'google' | 'phone';
+  method?: 'password' | 'sms' | 'google' | 'phone' | 'email';
   approxLocation?: string;
   newDevice?: boolean;
 };

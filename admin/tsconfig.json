@@ -17,5 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "../src/config/pricing.ts"]
+  "include": [
+    "src",
+    "../src/config/pricing.ts",
+    "../src/config/support-contact.ts",
+    "../src/lib/support.ts"
+  ]
 }

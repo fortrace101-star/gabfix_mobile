@@ -153,28 +153,6 @@ export default function ProfileTab() {
           </View>
         </View>
 
-        <SettingsGroup title="Security & devices">
-          <SettingsRow
-            icon={ShieldCheck}
-            label="Security"
-            caption="Password, sign-in and protection"
-            onPress={() => router.push('/profile/security' as Href)}
-          />
-          <SettingsRow
-            icon={Smartphone}
-            label="Devices and sessions"
-            caption={`${sessionCount} signed-in device${sessionCount === 1 ? '' : 's'}`}
-            onPress={() => router.push('/profile/devices' as Href)}
-          />
-          <SettingsRow
-            icon={Bell}
-            label="Notifications"
-            caption={notificationCaption}
-            onPress={() => router.push('/profile/notification-preferences' as Href)}
-            last
-          />
-        </SettingsGroup>
-
         <SettingsGroup title="Account">
           <SettingsRow
             icon={UserRound}
@@ -193,6 +171,28 @@ export default function ProfileTab() {
             label="Payments and wallet"
             caption="Cards, Mobile Money and receipts"
             onPress={() => router.push('/profile/payments' as Href)}
+            last
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Security & devices">
+          <SettingsRow
+            icon={ShieldCheck}
+            label="Security"
+            caption="Password, sign-in and protection"
+            onPress={() => router.push('/profile/security' as Href)}
+          />
+          <SettingsRow
+            icon={Smartphone}
+            label="Devices and sessions"
+            caption={`${sessionCount} signed-in device${sessionCount === 1 ? '' : 's'}`}
+            onPress={() => router.push('/profile/devices' as Href)}
+          />
+          <SettingsRow
+            icon={Bell}
+            label="Notifications"
+            caption={notificationCaption}
+            onPress={() => router.push('/profile/notification-preferences' as Href)}
             last
           />
         </SettingsGroup>

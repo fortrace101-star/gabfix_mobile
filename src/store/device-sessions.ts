@@ -106,29 +106,17 @@ export async function refreshDeviceSessions(force = false): Promise<void> {
 export async function signOutDevice(id: string): Promise<boolean> {
   const target = state.sessions.find((s) => s.id === id);
   if (!target || target.current) return false;
-  const previous = state.sessions;
-  setState({ ...state, sessions: previous.filter((s) => s.id !== id) });
-  try {
-    // Mock/local: nothing to call. API would DELETE /me/sessions/{id} here.
-    return true;
-  } catch {
-    setState({ ...state, sessions: previous });
-    return false;
-  }
+  setState({ ...state, sessions: state.sessions.filter((s) => s.id !== id) });
+  // Mock/local: nothing to call. API would DELETE /me/sessions/{id} here.
+  return true;
 }
 
 export async function signOutOtherDevices(): Promise<number> {
   const others = state.sessions.filter((s) => !s.current);
   if (others.length === 0) return 0;
-  const previous = state.sessions;
-  setState({ ...state, sessions: previous.filter((s) => s.current) });
-  try {
-    // Mock/local: nothing to call. API would POST /me/sessions/revoke-others here.
-    return others.length;
-  } catch {
-    setState({ ...state, sessions: previous });
-    return 0;
-  }
+  setState({ ...state, sessions: state.sessions.filter((s) => s.current) });
+  // Mock/local: nothing to call. API would POST /me/sessions/revoke-others here.
+  return others.length;
 }
 
 export function useDeviceSessionsState(): State {

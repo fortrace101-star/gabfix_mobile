@@ -552,12 +552,18 @@ export const initialRateCard: RateCard = {
   ),
 };
 
+import { supportContact } from '../../src/config/support-contact';
+import { buildSupport } from '../../src/lib/support';
+
 export const rateCardSource = 'src/config/pricing.ts';
 
+const customerSupport = buildSupport(supportContact);
+
 export const initialSettings: OperationsSettings = {
-  supportPhone: '+256 772 000 900',
-  supportEmail: 'operations@gabfix.ug',
-  supportHours: 'Mon – Sat, 7:00 am – 8:00 pm',
+  supportPhone: customerSupport.phone?.display ?? supportContact.callNumber,
+  supportWhatsapp: customerSupport.whatsapp?.display ?? supportContact.whatsappNumber,
+  supportEmail: customerSupport.email,
+  supportHours: customerSupport.hours,
   cashReminderHours: 24,
   autoAssign: true,
   notifyUnassigned: true,

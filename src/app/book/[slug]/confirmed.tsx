@@ -12,6 +12,7 @@ import { serviceBySlug } from '@/config/services';
 import { supportsNativeDriver } from '@/lib/animation';
 import { prepareBookingUploads, retryBookingUploads, startBookingUploads } from '@/lib/media-upload';
 import { finalizeDraftMedia } from '@/lib/media';
+import { getPushPermission, requestPushPermission } from '@/lib/push';
 import { price } from '@/lib/pricing';
 import { getBookingDraft, resetDraft } from '@/store/booking';
 import { addBooking } from '@/store/bookings';
@@ -38,8 +39,22 @@ export default function ConfirmedScreen() {
   const bookingId = typeof params.bookingId === 'string' ? params.bookingId : 'GBX-00000';
   const [snapshot] = useState(() => getBookingDraft());
   const [tick] = useState(() => new Animated.Value(0));
+  const [pushPrompt, setPushPrompt] = useState(false);
   const savedRef = useRef(false);
   const uploads = useMediaUploads(bookingId);
+
+  useEffect(() => {
+    void getPushPermission().then((status) => {
+      if (status === 'undetermined') setPushPrompt(true);
+    });
+  }, []);
+
+  const enableUpdates = async () => {
+    const status = await requestPushPermission();
+    if (status === 'granted' || status === 'denied' || status === 'unsupported') {
+      setPushPrompt(false);
+    }
+  };
 
   const service = serviceBySlug(slug || snapshot?.serviceSlug || '');
   const total = snapshot ? price(snapshot).total : Number(params.total) || 0;
@@ -257,6 +272,31 @@ export default function ConfirmedScreen() {
           ))}
         </View>
 
+        {pushPrompt ? (
+          <View style={styles.promptCard}>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+              Turn on booking updates
+            </Text>
+            <Text style={styles.promptBody} maxFontSizeMultiplier={1.3}>
+              Get reminders and status updates for this booking on this device.
+            </Text>
+            <View style={styles.promptActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setPushPrompt(false)}
+                style={styles.promptSecondary}>
+                <Text style={styles.promptSecondaryText} maxFontSizeMultiplier={1.2}>Not now</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void enableUpdates()}
+                style={styles.promptPrimary}>
+                <Text style={styles.promptPrimaryText} maxFontSizeMultiplier={1.2}>Enable</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.actions}>
           <Button label="View booking" onPress={() => router.push(`/booking/${bookingId}` as never)} />
           <Button
@@ -348,4 +388,24 @@ const styles = StyleSheet.create({
   timelineLine: { width: 2, flex: 1, backgroundColor: colors.green100, marginVertical: 2 },
   timelineText: { ...text.bodyM, flex: 1, paddingTop: 1 },
   actions: { gap: space[2] },
+  promptCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: space[4],
+    gap: space[2],
+  },
+  promptBody: { ...text.body, color: colors.textMuted },
+  promptActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: space[2], marginTop: space[1] },
+  promptSecondary: { minHeight: 44, paddingHorizontal: space[3], justifyContent: 'center' },
+  promptSecondaryText: { ...text.button, color: colors.textMuted },
+  promptPrimary: {
+    minHeight: 44,
+    paddingHorizontal: space[4],
+    borderRadius: radius.pill,
+    backgroundColor: colors.green500,
+    justifyContent: 'center',
+  },
+  promptPrimaryText: { ...text.button, color: colors.surface },
 });

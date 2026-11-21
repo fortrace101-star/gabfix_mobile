@@ -75,6 +75,23 @@ function CleanerRow({
 
   const call = async () => {
     if (!phone) {
+      const { support } = await import('@/config/support');
+      if (support.phone) {
+        Alert.alert('Call support', `Your cleaner's number isn't available yet. Call Gabfix support on ${support.phone.display}?`, [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Call support',
+            onPress: async () => {
+              try {
+                await Linking.openURL(support.phone!.href);
+              } catch {
+                Alert.alert("Couldn't open your phone app", 'Please try again or use another contact option.');
+              }
+            },
+          },
+        ]);
+        return;
+      }
       Alert.alert(
         'Call cleaner',
         'Calling will be available when cleaner contact details are connected to this build.',

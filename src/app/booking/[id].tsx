@@ -422,7 +422,9 @@ export default function BookingDetailScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Need help? Open help centre"
-        onPress={() => router.push('/help' as Href)}
+        onPress={() =>
+          router.push({ pathname: '/help/contact', params: { bookingId: booking.id } } as Href)
+        }
         style={[styles.needHelp, { bottom: insets.bottom + space[4] }]}>
         <CircleHelp size={20} color={colors.yellow500} strokeWidth={2} />
         <Text style={styles.needHelpText} maxFontSizeMultiplier={1.2}>

@@ -14,12 +14,15 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppLockGate } from '@/components/auth/app-lock-gate';
+import { AppErrorBoundary } from '@/components/ui/error-boundary';
 import { ForceUpdateScreen } from '@/components/ui/force-update';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { SessionExpiredModal } from '@/components/ui/session-expired-modal';
 import { isUpdateRequired } from '@/config/release';
+import { cleanupDraftMedia } from '@/lib/media';
 import { hydrateAddresses } from '@/store/addresses';
-import { hydrateBookingDraft } from '@/store/booking';
+import { getBookingDraft, hydrateBookingDraft } from '@/store/booking';
 import { hydrateBookings } from '@/store/bookings';
 import { refreshDeviceSessions } from '@/store/device-sessions';
 import { hydrateLoginActivity } from '@/store/login-activity';
@@ -55,7 +58,9 @@ export default function RootLayout() {
     // flow needs any saved draft, and the bookings tab needs saved booking history.
     Promise.all([
       restoreSession(),
-      hydrateBookingDraft(),
+      hydrateBookingDraft().then(() => {
+        cleanupDraftMedia(getBookingDraft()?.media?.items.map((item) => item.uri) ?? []);
+      }),
       hydrateBookings(),
       hydratePlans(),
       hydrateAddresses(),
@@ -83,113 +88,117 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        {isUpdateRequired() ? (
-          <ForceUpdateScreen />
-        ) : (
-          <>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: auth.bgTop },
-            animation: 'slide_from_right',
-          }}>
-          <Stack.Screen name="index" options={{ animation: 'fade' }} />
-          <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
-          <Stack.Screen name="welcome-back" options={{ animation: 'fade' }} />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="sign-up" />
-          <Stack.Screen name="otp" />
-          <Stack.Screen name="forgot-password" />
-          <Stack.Screen name="area-select" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-          <Stack.Screen
-            name="book/[slug]/details"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="book/[slug]/add-ons"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="book/[slug]/scope"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="book/[slug]/schedule"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="book/[slug]/location"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="book/[slug]/review"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="payment/[id]"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'slide_from_right',
-              gestureEnabled: false,
-            }}
-          />
-          <Stack.Screen
-            name="book/[slug]/confirmed"
-            options={{
-              presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-              animation: 'fade',
-              gestureEnabled: false,
-            }}
-          />
-          <Stack.Screen name="booking/plans" />
-          <Stack.Screen name="booking/[id]" />
-          <Stack.Screen name="booking/[id]/track" />
-          <Stack.Screen name="quote/[slug]" />
-          <Stack.Screen name="offers" />
-          <Stack.Screen name="refer" />
-          <Stack.Screen name="addresses/index" />
-          <Stack.Screen name="addresses/[id]" />
-          <Stack.Screen name="help/index" />
-          <Stack.Screen name="help/faq" />
-          <Stack.Screen name="help/contact" />
-          <Stack.Screen name="chat/[threadId]" />
-          <Stack.Screen name="notifications" />
-          <Stack.Screen name="booking/[id]/rate" />
-          <Stack.Screen name="profile/edit" />
-          <Stack.Screen name="profile/notification-preferences" />
-          <Stack.Screen name="profile/security/index" />
-          <Stack.Screen name="profile/security/password" />
-          <Stack.Screen name="profile/security/activity" />
-          <Stack.Screen name="profile/devices" />
-          <Stack.Screen name="search" />
-          <Stack.Screen name="service/[slug]/reviews" />
-          <Stack.Screen name="service/[slug]" />
-          <Stack.Screen name="profile/payments" />
-        </Stack>
-            <OfflineBanner />
-            <SessionExpiredModal />
-          </>
-        )}
+        <AppErrorBoundary>
+          {isUpdateRequired() ? (
+            <ForceUpdateScreen />
+          ) : (
+            <>
+              <StatusBar style="dark" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: auth.bgTop },
+                  animation: 'slide_from_right',
+                }}>
+                <Stack.Screen name="index" options={{ animation: 'fade' }} />
+                <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
+                <Stack.Screen name="welcome-back" options={{ animation: 'fade' }} />
+                <Stack.Screen name="login" />
+                <Stack.Screen name="sign-up" />
+                <Stack.Screen name="otp" />
+                <Stack.Screen name="forgot-password" />
+                <Stack.Screen name="area-select" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                <Stack.Screen
+                  name="book/[slug]/details"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[slug]/add-ons"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[slug]/scope"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[slug]/schedule"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[slug]/location"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[slug]/review"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                  }}
+                />
+                <Stack.Screen
+                  name="payment/[id]"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'slide_from_right',
+                    gestureEnabled: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[slug]/confirmed"
+                  options={{
+                    presentation: Platform.OS === 'ios' ? 'modal' : 'card',
+                    animation: 'fade',
+                    gestureEnabled: false,
+                  }}
+                />
+                <Stack.Screen name="booking/plans" />
+                <Stack.Screen name="booking/[id]" />
+                <Stack.Screen name="booking/[id]/track" />
+                <Stack.Screen name="quote/[slug]" />
+                <Stack.Screen name="offers" />
+                <Stack.Screen name="refer" />
+                <Stack.Screen name="addresses/index" />
+                <Stack.Screen name="addresses/[id]" />
+                <Stack.Screen name="help/index" />
+                <Stack.Screen name="help/faq" />
+                <Stack.Screen name="help/contact" />
+                <Stack.Screen name="chat/[threadId]" />
+                <Stack.Screen name="notifications" />
+                <Stack.Screen name="booking/[id]/rate" />
+                <Stack.Screen name="profile/edit" />
+                <Stack.Screen name="profile/notification-preferences" />
+                <Stack.Screen name="profile/security/index" />
+                <Stack.Screen name="profile/security/password" />
+                <Stack.Screen name="profile/security/two-factor" />
+                <Stack.Screen name="profile/security/activity" />
+                <Stack.Screen name="profile/devices" />
+                <Stack.Screen name="search" />
+                <Stack.Screen name="service/[slug]/reviews" />
+                <Stack.Screen name="service/[slug]" />
+                <Stack.Screen name="profile/payments" />
+              </Stack>
+              <OfflineBanner />
+              <SessionExpiredModal />
+              <AppLockGate />
+            </>
+          )}
+        </AppErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

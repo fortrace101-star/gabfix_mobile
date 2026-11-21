@@ -59,13 +59,23 @@ export function SettingsPage({
 
       <div className="settings-layout">
         <div className="settings-main">
-          <SectionCard title="Support details" meta="Shown to customers in the help centre">
+          <SectionCard
+            title="Support details"
+            meta="Shown to customers in the help centre · defaults from src/config/support-contact.ts"
+          >
             <div className="form-grid">
               <Field label="Support phone">
                 <input
                   className="text-input"
                   value={draft.supportPhone}
                   onChange={(event) => update('supportPhone', event.target.value)}
+                />
+              </Field>
+              <Field label="WhatsApp number">
+                <input
+                  className="text-input"
+                  value={draft.supportWhatsapp}
+                  onChange={(event) => update('supportWhatsapp', event.target.value)}
                 />
               </Field>
               <Field label="Support email">

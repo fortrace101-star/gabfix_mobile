@@ -3,7 +3,8 @@ import { useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'gabfix.security.v1';
 
-export type TwoFactorState = { enabled: boolean; method: 'sms'; enabledAtISO?: string };
+export type TwoFactorMethod = 'sms' | 'email';
+export type TwoFactorState = { enabled: boolean; method: TwoFactorMethod; enabledAtISO?: string };
 
 export type SecurityState = {
   passwordChangedAtISO?: string;
@@ -58,7 +59,7 @@ export async function hydrateSecurity(): Promise<void> {
         biometric: parsed.biometric === true,
         twoFactor: {
           enabled: parsed.twoFactor?.enabled === true,
-          method: 'sms',
+          method: parsed.twoFactor?.method === 'email' ? 'email' : 'sms',
           enabledAtISO:
             typeof parsed.twoFactor?.enabledAtISO === 'string'
               ? parsed.twoFactor.enabledAtISO

@@ -1,12 +1,10 @@
 import { buildSupport } from '@/lib/support';
+import { supportContact } from './support-contact';
+
+export { supportContact };
 
 /**
  * The single source of truth for customer support contact details.
- * Edit the values here only.
+ * Edit values in support-contact.ts only.
  */
-export const support = buildSupport({
-  callNumber: '0793195401',
-  whatsappNumber: '0752777773',
-  email: 'gabfixuganda@gmail.com',
-  hours: 'Open 7 days · 7:00 am – 9:00 pm',
-});
+export const support = buildSupport(supportContact);

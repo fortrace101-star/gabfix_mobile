@@ -114,12 +114,22 @@ export function removeUploadsForBooking(bookingId: string): void {
   setItems(state.items.filter((item) => item.bookingId !== bookingId));
 }
 
+const uploadsCache = new Map<string | undefined, { items: UploadItem[]; result: UploadItem[] }>();
+const EMPTY_UPLOADS: UploadItem[] = [];
+
+function selectUploads(bookingId?: string): UploadItem[] {
+  const items = getState().items;
+  if (!bookingId) return items;
+  const cached = uploadsCache.get(bookingId);
+  if (cached && cached.items === items) return cached.result;
+  const filtered = items.filter((item) => item.bookingId === bookingId);
+  const result = filtered.length === 0 ? EMPTY_UPLOADS : filtered;
+  uploadsCache.set(bookingId, { items, result });
+  return result;
+}
+
 export function useMediaUploads(bookingId?: string): UploadItem[] {
-  return useSyncExternalStore(
-    subscribe,
-    () => (bookingId ? getState().items.filter((item) => item.bookingId === bookingId) : getState().items),
-    () => (bookingId ? getState().items.filter((item) => item.bookingId === bookingId) : getState().items),
-  );
+  return useSyncExternalStore(subscribe, () => selectUploads(bookingId), () => selectUploads(bookingId));
 }
 
 export function useMediaUploadsHydrated(): boolean {

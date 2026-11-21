@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check } from 'lucide-react-native';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TopBar } from '@/components/ui/top-bar';
@@ -54,6 +54,16 @@ export default function PolicyScreen() {
           This {doc.title.toLowerCase()} applies to the Gabfix app and the cleaning services booked
           through it.
         </Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Contact support about this policy"
+          hitSlop={8}
+          onPress={() => router.push('/help/contact' as never)}
+          style={styles.contactFooter}>
+          <Text style={styles.contactFooterText} maxFontSizeMultiplier={1.3}>
+            Questions about this policy? <Text style={styles.contactFooterLink}>Contact support</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -92,4 +102,7 @@ const styles = StyleSheet.create({
   heading: { ...text.h3, color: colors.text, fontFamily: font.headingSemi },
   paragraph: { ...text.body, color: colors.text, lineHeight: 22 },
   footer: { ...text.caption, color: colors.textMuted, textAlign: 'center' },
+  contactFooter: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: space[2] },
+  contactFooterText: { ...text.caption, color: colors.textMuted, textAlign: 'center' },
+  contactFooterLink: { color: colors.green700, fontFamily: font.bodySemi, textDecorationLine: 'underline' },
 });

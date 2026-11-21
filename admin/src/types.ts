@@ -128,6 +128,7 @@ export type RateCard = {
 
 export type OperationsSettings = {
   supportPhone: string;
+  supportWhatsapp: string;
   supportEmail: string;
   supportHours: string;
   cashReminderHours: number;

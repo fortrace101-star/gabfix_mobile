@@ -1,4 +1,5 @@
 // Pure TypeScript: no React Native imports, so the admin app can use it too.
+declare const __DEV__: boolean | undefined;
 
 const UG_MOBILE = /^(?:\+?256|0)?(7\d{8})$/;
 
