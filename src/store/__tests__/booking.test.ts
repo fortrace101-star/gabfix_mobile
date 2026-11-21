@@ -31,6 +31,16 @@ describe('booking draft store', () => {
       serviceSlug: 'deep-clean',
       details: { cleaners: 1, hours: 4, frequency: 'once', materials: false },
       addOns: [],
+      scope: {
+        bathrooms: 1,
+        bedrooms: 2,
+        floors: 1,
+        focusAreas: [],
+        livingAreas: 1,
+        meetingRooms: 1,
+        toilets: 2,
+      },
+      media: { items: [], uploaded: false },
     });
   });
 

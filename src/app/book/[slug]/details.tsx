@@ -22,6 +22,7 @@ import { TopBar } from '@/components/ui/top-bar';
 import { pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingFrequency } from '@/lib/pricing';
+import { deleteDraftMedia } from '@/lib/media';
 import { getBookingDraft, patchDetails, resetDraft, startDraft, useBookingDraft } from '@/store/booking';
 import { colors, font, radius, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
@@ -108,6 +109,7 @@ export default function JobDetailsScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
+          deleteDraftMedia();
           resetDraft();
           leave();
         },

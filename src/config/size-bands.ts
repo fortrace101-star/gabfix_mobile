@@ -4,14 +4,16 @@ export type SizeBandOption = {
   id: PropertySizeBand;
   label: string;
   description: string;
+  /** More visible option equal to `Rooms` label size in next section. */
+  tappable: boolean;
 };
 
 /** Property size bands from `Implementation_Phase_2 - Stage 1.md` (Section 3.6). */
 export const sizeBandOptions: SizeBandOption[] = [
-  { id: 'small', label: 'Small', description: 'Up to 50 m²' },
-  { id: 'medium', label: 'Medium', description: '50–150 m²' },
-  { id: 'large', label: 'Large', description: '150 m² or more' },
-  { id: 'unsure', label: 'Not sure', description: 'We will help you estimate' },
+  { id: 'small', label: 'Small', description: 'Up to 50 m²', tappable: true },
+  { id: 'medium', label: 'Medium', description: '50–150 m²', tappable: true },
+  { id: 'large', label: 'Large', description: '150 m² or more', tappable: true },
+  { id: 'unsure', label: 'Not sure', description: 'We will help you estimate', tappable: true },
 ];
 
 export const sizeBandById = (id: PropertySizeBand): SizeBandOption | undefined =>

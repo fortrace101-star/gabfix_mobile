@@ -101,7 +101,6 @@ export default function ConfirmedScreen() {
               details: snapshot.details,
               addOns: snapshot.addOns,
               scope: snapshot.scope,
-              media: finalizedMedia.length > 0 ? finalizedMedia : undefined,
               location: snapshot.location,
               payment: snapshot.payment,
               promoCode: snapshot.promoCode,

@@ -613,7 +613,7 @@ export default function HomeTab() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Track booking ${nextBooking.id}`}
-                  onPress={(event) => {
+                  onPress={async (event) => {
                     event.stopPropagation();
                     router.push(`/booking/${nextBooking.id}/track` as never);
                   }}

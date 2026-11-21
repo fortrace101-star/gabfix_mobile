@@ -120,17 +120,21 @@ export default function NotificationPreferencesScreen() {
       setDraft((current) => ({ ...current, push: false }));
       return;
     }
-    const current = permission === 'undetermined' ? await requestPushPermission() : permission;
-    setPermission(current);
-    if (current === 'granted') {
-      setDraft((d) => ({ ...d, push: true }));
-    } else if (current === 'denied' || current === 'unsupported') {
+    const permissionNow = permission === 'undetermined' ? await requestPushPermission() : permission;
+    setPermission(permissionNow);
+    if (permissionNow !== 'granted') {
       setDraft((d) => ({ ...d, push: false }));
+      return;
     }
+    setDraft((d) => ({ ...d, push: true }));
   };
 
   const save = () => {
     if (!dirty || quietError) return;
+    if (draft.push && permission !== 'granted') {
+      setBanner({ variant: 'error', message: 'Allow phone notifications to save Push.' });
+      return;
+    }
     setSaving(true);
     saveNotificationPreferences(draft);
     setInitial(draft);
@@ -141,6 +145,7 @@ export default function NotificationPreferencesScreen() {
   const bothOff = !draft.inApp && !draft.push;
   const permissionLabel =
     permission === 'granted' ? 'Allowed' : permission === 'denied' ? 'Off' : permission === 'unsupported' ? 'Not supported on web' : 'Not asked yet';
+  const permissionBlocked = permission === 'denied' || permission === 'unsupported';
 
   return (
     <View style={styles.screen}>
@@ -176,11 +181,11 @@ export default function NotificationPreferencesScreen() {
           />
         </SettingsGroup>
 
-        {permission === 'denied' ? (
+        {permissionBlocked ? (
           <PermissionCard
             icon={Bell}
             title="Notifications are off for Gabfix on this phone"
-            body="Allow them in Settings to get alerts on this device."
+            body={permission === 'denied' ? 'Allow them in Settings to get alerts on this device.' : 'This device does not support push notifications.'}
             onOpenSettings={() => void Linking.openSettings()}
           />
         ) : null}

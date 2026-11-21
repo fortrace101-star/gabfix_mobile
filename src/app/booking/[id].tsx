@@ -255,8 +255,8 @@ export default function BookingDetailScreen() {
               <UploadStatus
                 items={uploads}
                 onRetry={() => {
-                  retryFailedUploads(booking.id);
-                  void retryBookingUploads(booking.id, booking.media ?? []);
+                  const failed = retryFailedUploads(booking.id);
+                  if (failed.length > 0) void retryBookingUploads(booking.id, booking.media ?? []);
                 }}
               />
             ) : null}

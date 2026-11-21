@@ -13,6 +13,7 @@ import { addOns, type AddOnId } from '@/config/add-ons';
 import { pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
 import { addOnPrice, price } from '@/lib/pricing';
+import { deleteDraftMedia } from '@/lib/media';
 import {
   getBookingDraft,
   patchDetails,
@@ -62,6 +63,7 @@ export default function AddOnsScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
+          deleteDraftMedia();
           resetDraft();
           if (router.canGoBack()) router.back();
           else router.replace('/home');

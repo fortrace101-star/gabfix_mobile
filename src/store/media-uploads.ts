@@ -30,6 +30,7 @@ let state: UploadsState = { items: [], hydrated: false };
 const listeners = new Set<() => void>();
 
 const getState = () => state;
+export const getUploadState = getState;
 
 const subscribe = (listener: () => void) => {
   listeners.add(listener);

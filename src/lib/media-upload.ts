@@ -119,7 +119,15 @@ export async function startBookingUploads(
   }
 }
 
-/** Retry button on P14/P15b. */
+/** Retry button on P14/P15b: only re-uploads items currently marked failed. */
 export async function retryBookingUploads(bookingId: string, items: BookingMediaItem[]): Promise<void> {
-  await startBookingUploads(bookingId, items);
+  const { getUploadState } = await import('@/store/media-uploads');
+  const failedIds = new Set(
+    getUploadState()
+      .items.filter((item) => item.bookingId === bookingId && item.state === 'failed')
+      .map((item) => item.clientId),
+  );
+  const toRetry = items.filter((item) => failedIds.has(item.id));
+  if (toRetry.length === 0) return;
+  await startBookingUploads(bookingId, toRetry);
 }

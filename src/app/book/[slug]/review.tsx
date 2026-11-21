@@ -46,6 +46,7 @@ import {
   type PaymentPlan,
 } from '@/lib/pricing';
 import { totalAccountBalance } from '@/lib/wallet';
+import { deleteDraftMedia } from '@/lib/media';
 import {
   getBookingDraft,
   patchDraft,
@@ -333,6 +334,7 @@ export default function ReviewScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
+          deleteDraftMedia();
           resetDraft();
           leave();
         },
@@ -642,6 +644,7 @@ export default function ReviewScreen() {
               scope={active.scope}
               media={active.media?.items ?? []}
               compact
+              hideLabels
             />
           </View>
         </View>

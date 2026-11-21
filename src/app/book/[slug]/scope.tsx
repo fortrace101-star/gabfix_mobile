@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check, Info, Minus, Plus, TriangleAlert, X } from 'lucide-react-native';
+import { TopBar } from '@/components/ui/top-bar';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   BackHandler,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,8 +18,7 @@ import { MediaTile } from '@/components/booking/media-tile';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { SummarySheet } from '@/components/booking/summary-sheet';
-import { SelectableCard } from '@/components/booking/selectable-card';
-import { TopBar } from '@/components/ui/top-bar';
+import { Pressable } from 'react-native';
 import { jobMedia } from '@/config/media';
 import { scopeFor } from '@/config/service-scope';
 import { serviceBySlug } from '@/config/services';
@@ -282,31 +281,37 @@ export default function JobScopeScreen() {
             </Text>
             <StatusPill state={sizeDone ? 'done' : 'required'} />
           </View>
-          <View style={styles.cards}>
-            {sizeBandOptions.slice(0, 3).map((option) => (
-              <SelectableCard
+          <View style={styles.sizeTabWrap}>
+            {sizeBandOptions.map((option) => (
+              <Pressable
                 key={option.id}
-                title={option.label}
-                subtitle={option.description}
-                selected={scope.sizeBand === option.id}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: scope.sizeBand === option.id }}
                 onPress={() => {
                   selectionHaptic();
                   patchScope(selectSizeBand(option.id));
                 }}
-              />
+                style={[styles.sizeTab, scope.sizeBand === option.id && styles.sizeTabOn]}>
+                <Text
+                  style={[styles.sizeTabText, scope.sizeBand === option.id && styles.sizeTabTextOn]}
+                  maxFontSizeMultiplier={1.3}>
+                  {option.label}
+                </Text>
+              </Pressable>
             ))}
           </View>
           <View style={styles.ghostRow}>
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="radio"
               accessibilityState={{ selected: scope.sizeBand === 'unsure' }}
               onPress={() => {
                 selectionHaptic();
                 patchScope({ sizeBand: 'unsure' as PropertySizeBand, areaSqm: undefined });
                 setShowExactSize(false);
-              }}>
+              }}
+              style={[styles.sizeTab, scope.sizeBand === 'unsure' && styles.sizeTabOn]}>
               <Text
-                style={[styles.ghostLink, scope.sizeBand === 'unsure' && styles.ghostLinkOn]}
+                style={[styles.sizeTabText, scope.sizeBand === 'unsure' && styles.sizeTabTextOn]}
                 maxFontSizeMultiplier={1.3}>
                 Not sure
               </Text>
@@ -314,8 +319,11 @@ export default function JobScopeScreen() {
             <Text style={styles.ghostDot} maxFontSizeMultiplier={1.3}>·</Text>
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{ expanded: showExactSize }}
               onPress={() => setShowExactSize((current) => !current)}>
-              <Text style={styles.ghostLink} maxFontSizeMultiplier={1.3}>
+              <Text
+                style={[styles.ghostLink, showExactSize && styles.ghostLinkOn]}
+                maxFontSizeMultiplier={1.3}>
                 I know the exact size
               </Text>
             </Pressable>
@@ -370,7 +378,7 @@ export default function JobScopeScreen() {
                     <Text style={styles.counterLabel} maxFontSizeMultiplier={1.3}>
                       {field.label}
                     </Text>
-                    <View style={styles.chipWrap}>
+                    <View style={styles.chipWrap} accessibilityRole="radiogroup" accessibilityLabel={field.label}>
                       {workstationOptions.map((option) => {
                         const selected = scope.workstations === option.value;
                         return (
@@ -400,7 +408,7 @@ export default function JobScopeScreen() {
                   <Text style={styles.counterLabel} maxFontSizeMultiplier={1.3}>
                     {field.label}
                   </Text>
-                  <View style={styles.conditionWrap}>
+                  <View style={styles.conditionWrap} accessibilityRole="radiogroup" accessibilityLabel={field.label}>
                     {conditionOptions.map((option) => {
                       const selected = scope.condition === option.value;
                       return (
@@ -628,6 +636,11 @@ const styles = StyleSheet.create({
   pillTextDone: { color: colors.green700 },
   cards: { gap: space[3] },
   ghostRow: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  sizeTabWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3] },
+  sizeTab: { flex: 1, minWidth: 72, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.input, alignItems: 'center', justifyContent: 'center', paddingVertical: space[2] },
+  sizeTabOn: { borderColor: colors.green500, backgroundColor: colors.green50 },
+  sizeTabText: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 14, color: colors.text },
+  sizeTabTextOn: { color: colors.green700 },
   ghostLink: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   ghostLinkOn: { textDecorationLine: 'underline' },
   ghostDot: { ...text.caption, color: colors.textMuted },

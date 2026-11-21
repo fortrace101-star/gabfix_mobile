@@ -28,6 +28,7 @@ import { allAreas } from '@/config/areas';
 import type { FixturePlace } from '@/config/location-fixtures';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingLocation } from '@/lib/pricing';
+import { deleteDraftMedia } from '@/lib/media';
 import {
   getBookingDraft,
   patchDraft,
@@ -190,6 +191,7 @@ export default function LocationScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
+          deleteDraftMedia();
           resetDraft();
           if (router.canGoBack()) router.back();
           else router.replace('/home');

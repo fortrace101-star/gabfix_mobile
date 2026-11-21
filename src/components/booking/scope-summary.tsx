@@ -11,10 +11,12 @@ type Props = {
   media?: BookingMediaItem[];
   /** Tighter padding when nested inside another card. */
   compact?: boolean;
+  /** Hide row labels when the parent already provides a section heading. */
+  hideLabels?: boolean;
 };
 
 /** Facts + thumbnail strip for review, confirmation and booking detail (Phase 2, 3.12). */
-export function ScopeSummary({ scope, media = [], compact = false }: Props) {
+export function ScopeSummary({ scope, media = [], compact = false, hideLabels = false }: Props) {
   const facts = scopeSummary(scope);
   const photos = media.filter((item) => item.kind === 'image').length;
   const videos = media.filter((item) => item.kind === 'video').length;
@@ -26,18 +28,22 @@ export function ScopeSummary({ scope, media = [], compact = false }: Props) {
   return (
     <View style={[styles.root, compact && styles.compact]}>
       <View style={styles.row}>
-        <Text style={styles.label} maxFontSizeMultiplier={1.3}>
-          Job scope
-        </Text>
-        <Text style={styles.value} maxFontSizeMultiplier={1.3}>
+        {!hideLabels ? (
+          <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+            Job scope
+          </Text>
+        ) : null}
+        <Text style={[styles.value, hideLabels && styles.valueLeft]} maxFontSizeMultiplier={1.3}>
           {facts}
         </Text>
       </View>
       <View style={styles.row}>
-        <Text style={styles.label} maxFontSizeMultiplier={1.3}>
-          Media
-        </Text>
-        <Text style={styles.value} maxFontSizeMultiplier={1.3}>
+        {!hideLabels ? (
+          <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+            Media
+          </Text>
+        ) : null}
+        <Text style={[styles.value, hideLabels && styles.valueLeft]} maxFontSizeMultiplier={1.3}>
           {mediaLine}
         </Text>
       </View>
@@ -73,6 +79,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: space[3] },
   label: { ...text.caption, color: colors.textMuted, flexShrink: 0 },
   value: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 14, flex: 1, textAlign: 'right' },
+  valueLeft: { textAlign: 'left' },
   strip: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2], marginTop: 2 },
   thumb: {
     width: 56,

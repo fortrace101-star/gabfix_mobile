@@ -24,6 +24,7 @@ import { serviceBySlug } from '@/config/services';
 import { useAvailability } from '@/hooks/use-availability';
 import { getAvailability } from '@/lib/api/availability';
 import { price, type BookingFrequency } from '@/lib/pricing';
+import { deleteDraftMedia } from '@/lib/media';
 import {
   getBookingDraft,
   patchDraft,
@@ -138,6 +139,7 @@ export default function ScheduleScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
+          deleteDraftMedia();
           resetDraft();
           leave();
         },
