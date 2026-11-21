@@ -296,26 +296,41 @@ export default function JobScopeScreen() {
               />
             ))}
           </View>
-          <View style={styles.ghostRow}>
+          <View style={styles.sizeRadioRow}>
             <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: scope.sizeBand === 'unsure' }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: scope.sizeBand === 'unsure' && !showExactSize }}
               onPress={() => {
                 selectionHaptic();
                 patchScope({ sizeBand: 'unsure' as PropertySizeBand, areaSqm: undefined });
                 setShowExactSize(false);
-              }}>
-              <Text
-                style={[styles.ghostLink, scope.sizeBand === 'unsure' && styles.ghostLinkOn]}
-                maxFontSizeMultiplier={1.3}>
+              }}
+              style={styles.sizeRadioOption}>
+              <View
+                style={[
+                  styles.sizeRadioRing,
+                  scope.sizeBand === 'unsure' && !showExactSize && styles.sizeRadioRingOn,
+                ]}>
+                {scope.sizeBand === 'unsure' && !showExactSize ? (
+                  <View style={styles.sizeRadioDot} />
+                ) : null}
+              </View>
+              <Text style={styles.sizeRadioLabel} maxFontSizeMultiplier={1.3}>
                 Not sure
               </Text>
             </Pressable>
-            <Text style={styles.ghostDot} maxFontSizeMultiplier={1.3}>·</Text>
             <Pressable
-              accessibilityRole="button"
-              onPress={() => setShowExactSize((current) => !current)}>
-              <Text style={styles.ghostLink} maxFontSizeMultiplier={1.3}>
+              accessibilityRole="radio"
+              accessibilityState={{ selected: showExactSize }}
+              onPress={() => {
+                selectionHaptic();
+                setShowExactSize(true);
+              }}
+              style={styles.sizeRadioOption}>
+              <View style={[styles.sizeRadioRing, showExactSize && styles.sizeRadioRingOn]}>
+                {showExactSize ? <View style={styles.sizeRadioDot} /> : null}
+              </View>
+              <Text style={styles.sizeRadioLabel} maxFontSizeMultiplier={1.3}>
                 I know the exact size
               </Text>
             </Pressable>
@@ -627,10 +642,26 @@ const styles = StyleSheet.create({
   pillTextRequired: { color: colors.error },
   pillTextDone: { color: colors.green700 },
   cards: { gap: space[3] },
-  ghostRow: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  ghostLink: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
-  ghostLinkOn: { textDecorationLine: 'underline' },
-  ghostDot: { ...text.caption, color: colors.textMuted },
+  sizeRadioRow: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
+  sizeRadioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    minHeight: 44,
+  },
+  sizeRadioRing: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  sizeRadioRingOn: { borderColor: colors.green700 },
+  sizeRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.green700 },
+  sizeRadioLabel: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.text },
   areaInput: {
     height: 48,
     borderRadius: radius.input,
