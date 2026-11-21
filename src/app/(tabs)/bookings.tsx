@@ -26,6 +26,7 @@ import { SegmentedControl } from '@/components/booking/segmented-control';
 import { slotLabel } from '@/components/booking/slot-chips';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusChip, type StatusChipTone } from '@/components/ui/status-chip';
 import { buildRebookDraft } from '@/lib/rebook';
 import { startRebookDraft } from '@/store/booking';
 import {
@@ -49,16 +50,10 @@ const TABS = [
 
 type BookingsTab = (typeof TABS)[number]['value'];
 
-const statusLabel: Record<BookingStatus, string> = {
-  upcoming: 'Confirmed',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
-
-const statusTone: Record<BookingStatus, { bg: string; fg: string }> = {
-  upcoming: { bg: '#E8F5EC', fg: colors.green700 },
-  completed: { bg: '#EEF2FF', fg: '#3730A3' },
-  cancelled: { bg: '#FEE2E2', fg: colors.error },
+const statusChip: Record<BookingStatus, { label: string; tone: StatusChipTone }> = {
+  upcoming: { label: 'Confirmed', tone: 'success' },
+  completed: { label: 'Completed', tone: 'info' },
+  cancelled: { label: 'Cancelled', tone: 'error' },
 };
 
 const parseISODate = (iso: string): Date => {
@@ -78,17 +73,6 @@ const whenLabel = (booking: SavedBooking): string => {
 
 const whereLabel = (booking: SavedBooking): string =>
   [booking.area, booking.street].filter(Boolean).join(' · ') || 'Address to confirm';
-
-function StatusChip({ status }: { status: BookingStatus }) {
-  const tone = statusTone[status];
-  return (
-    <View style={[styles.chip, { backgroundColor: tone.bg }]}>
-      <Text style={[styles.chipText, { color: tone.fg }]} maxFontSizeMultiplier={1.2}>
-        {statusLabel[status]}
-      </Text>
-    </View>
-  );
-}
 
 function BookingCard({ booking }: { booking: SavedBooking }) {
   const open = () => router.push(`/booking/${booking.id}` as never);
@@ -116,7 +100,7 @@ function BookingCard({ booking }: { booking: SavedBooking }) {
             {booking.id}
           </Text>
         </View>
-        <StatusChip status={booking.status} />
+        <StatusChip label={statusChip[booking.status].label} tone={statusChip[booking.status].tone} />
       </View>
 
       <View style={styles.metaRow}>
@@ -354,8 +338,6 @@ const styles = StyleSheet.create({
   cardTitleWrap: { flex: 1, gap: 2 },
   cardTitle: { ...text.h3, color: colors.text },
   cardId: { ...text.caption, color: colors.textMuted },
-  chip: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6 },
-  chipText: { fontSize: 12, fontFamily: font.bodySemi },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   metaText: { ...text.bodyM, color: colors.textMuted, flex: 1 },
   cardFooter: {

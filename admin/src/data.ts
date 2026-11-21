@@ -568,7 +568,6 @@ export const initialSettings: OperationsSettings = {
   autoAssign: true,
   notifyUnassigned: true,
   notifyFailedPayment: true,
-  serviceAreas: 'Kololo, Ntinda, Bugolobi, Muyenga, Nakasero, Nakawa',
 };
 
 export const notificationsSeed = [

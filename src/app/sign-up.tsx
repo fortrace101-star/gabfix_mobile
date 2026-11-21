@@ -1,4 +1,4 @@
-import { ChevronRight, Mail, MapPin, User } from 'lucide-react-native';
+import { Mail, User } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -11,7 +11,7 @@ import { SocialButton } from '@/components/auth/social-button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { register, requestOtp } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
-import { setUserName, useOnboardingArea } from '@/store/onboarding';
+import { setUserName } from '@/store/onboarding';
 import { auth, authSize, font } from '@/theme';
 import {
   isStrongEnoughPassword,
@@ -27,12 +27,10 @@ type Errors = {
   email?: string;
   password?: string;
   confirm?: string;
-  area?: string;
   terms?: string;
 };
 
 export default function SignUpScreen() {
-  const area = useOnboardingArea();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -54,14 +52,13 @@ export default function SignUpScreen() {
     if (!isStrongEnoughPassword(password)) next.password = 'Use at least 8 characters';
     if (!isStrongEnoughPassword(confirm)) next.confirm = 'Retype your password';
     else if (confirm !== password) next.confirm = 'Passwords do not match';
-    if (!area) next.area = 'Choose your area';
     if (!terms) next.terms = 'Accept the Terms and Privacy Policy to continue';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
   const createAccount = async () => {
-    if (loading || !area) return;
+    if (loading) return;
     if (!validate()) return;
     setLoading(true);
     const phoneNumber = normalisePhone(phone);
@@ -71,7 +68,6 @@ export default function SignUpScreen() {
         phone: phoneNumber,
         email: email.trim() || undefined,
         password,
-        areaId: area.id,
       });
       await requestOtp({ phone: phoneNumber });
       setUserName(name.trim().split(/\s+/)[0]);
@@ -207,16 +203,6 @@ export default function SignUpScreen() {
           autoComplete="new-password"
           textContentType="newPassword"
           error={errors.confirm}
-        />
-
-        <GlassInput
-          value={area ? `${area.name}, ${area.division}` : ''}
-          onPress={() => router.push('/area-select')}
-          placeholder="Select your area"
-          leadingIcon={MapPin}
-          icon={ChevronRight}
-          accessibilityLabel="Area / neighbourhood"
-          error={errors.area}
         />
 
         <Checkbox

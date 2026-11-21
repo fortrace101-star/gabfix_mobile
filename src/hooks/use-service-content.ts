@@ -27,17 +27,17 @@ const messageFrom = (cause: unknown) =>
  * Loads one service landing payload. The bundled copy in `src/config/service-content.ts`
  * is shown while no API base URL is set, so P7 works without a backend.
  */
-export function useServiceContent(slug: string, areaId?: string): ServiceContentState {
+export function useServiceContent(slug: string): ServiceContentState {
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
-  const key = `${slug}:${areaId ?? ''}:${attempt}`;
+  const key = `${slug}:${attempt}`;
   const local = serviceContentBySlug(slug) ?? null;
 
   useEffect(() => {
     if (!hasApiBaseUrl || !slug) return;
 
     let cancelled = false;
-    getServiceContent(slug, areaId)
+    getServiceContent(slug)
       .then((content) => {
         if (!cancelled) setResult({ key, content, error: null });
       })
@@ -48,7 +48,7 @@ export function useServiceContent(slug: string, areaId?: string): ServiceContent
     return () => {
       cancelled = true;
     };
-  }, [areaId, key, local, slug]);
+  }, [key, local, slug]);
 
   const refresh = useCallback(() => setAttempt((value) => value + 1), []);
   const current = result?.key === key ? result : null;

@@ -19,11 +19,6 @@ export function SettingsPage({
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  const areas = draft.serviceAreas
-    .split(',')
-    .map((area) => area.trim())
-    .filter(Boolean);
-
   return (
     <div className="page">
       <PageHeader
@@ -152,19 +147,6 @@ export function SettingsPage({
             </div>
           </SectionCard>
 
-          <SectionCard title="Service areas" meta="Comma-separated · used by matching">
-            <Field label="Live areas" hint="Changes apply to this local operations session">
-              <textarea
-                className="text-input textarea"
-                rows={3}
-                value={draft.serviceAreas}
-                onChange={(event) => update('serviceAreas', event.target.value)}
-              />
-            </Field>
-            <div className="area-tags">
-              {areas.map((area) => <span className="area-tag" key={area}>{area}</span>)}
-            </div>
-          </SectionCard>
         </div>
 
         <aside className="settings-side">

@@ -147,6 +147,7 @@ function CancelBody({
 
             <ScrollView
               showsVerticalScrollIndicator={false}
+              style={styles.scroll}
               contentContainerStyle={styles.content}>
               <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
                 Why are you cancelling?
@@ -223,15 +224,24 @@ function CancelBody({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
+  backdrop: {
+    flex: 1,
+    backgroundColor: colors.scrim,
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
+  },
   sheet: {
+    width: '100%',
     maxHeight: '88%',
+    overflow: 'hidden',
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     paddingHorizontal: space[4],
     paddingTop: space[2],
   },
+  // Keeps the footer inside the sheet when the reason list and policy copy run long.
+  scroll: { flexShrink: 1 },
   handle: {
     alignSelf: 'center',
     width: 40,

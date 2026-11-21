@@ -39,7 +39,7 @@ export default function OtpScreen() {
       const session = await verifyOtp({ phone, code: value });
       await startSession(session);
       successHaptic();
-      router.replace({ pathname: '/area-select', params: { next: '/home', firstRun: '1' } });
+      router.replace('/home');
     } catch (err) {
       submitted.current = false;
       const message =

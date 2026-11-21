@@ -10,7 +10,7 @@ type ServicePhotoProps = {
   /** Remote catalogue/card image from the services API. */
   cardUri?: string;
   /** Area-specific remote image; wins over `cardUri`. */
-  areaUri?: string;
+
   style?: ImageProps['style'];
   contentFit?: ImageProps['contentFit'];
   transition?: number;
@@ -20,14 +20,14 @@ type ServicePhotoProps = {
 
 /**
  * One service photo for heroes and cards. The first available remote URL is tried
- * (uri > areaUri > cardUri); a failed remote load falls back to the bundled photo so a
+ * (uri > cardUri); a failed remote load falls back to the bundled photo so a
  * bad response never leaves the slot empty.
  */
 export function ServicePhoto({
   slug,
   uri,
   cardUri,
-  areaUri,
+
   style,
   contentFit = 'cover',
   transition = 160,
@@ -35,7 +35,7 @@ export function ServicePhoto({
   priority,
 }: ServicePhotoProps) {
   const [failedUris, setFailedUris] = useState<readonly string[]>([]);
-  const remote = [uri, areaUri, cardUri].find(
+  const remote = [uri, cardUri].find(
     (value): value is string =>
       typeof value === 'string' && value.length > 0 && !failedUris.includes(value),
   );

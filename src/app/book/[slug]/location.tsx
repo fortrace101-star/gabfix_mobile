@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import * as Location from 'expo-location';
-import { Check, ChevronRight, Home, MapPin, X } from 'lucide-react-native';
+import { Check, Home, MapPin, X } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -24,7 +25,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { PermissionCard } from '@/components/ui/permission-card';
 import { TopBar } from '@/components/ui/top-bar';
-import { allAreas } from '@/config/areas';
 import type { FixturePlace } from '@/config/location-fixtures';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingLocation } from '@/lib/pricing';
@@ -37,7 +37,6 @@ import {
   useBookingDraft,
 } from '@/store/booking';
 import { useAddresses, type SavedAddress } from '@/store/addresses';
-import { setArea, useOnboardingArea } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { colors, font, radius, space, text } from '@/theme';
 
@@ -74,7 +73,6 @@ export default function LocationScreen() {
   const params = useLocalSearchParams<{ slug?: string }>();
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const draft = useBookingDraft();
-  const area = useOnboardingArea();
   const savedAddresses = useAddresses();
   const user = useAuthUser();
   const service = serviceBySlug(slug);
@@ -108,7 +106,9 @@ export default function LocationScreen() {
     if (!current || current.serviceSlug !== slug) startDraft(slug);
   }, [slug]);
 
-  const areaName = area?.name ?? '';
+  // The area is a free-text neighbourhood now (Workstream I); it is never a gate.
+  const [locality, setLocality] = useState(() => getBookingDraft()?.location?.area ?? '');
+  const [localityEditing, setLocalityEditing] = useState(false);
 
   const toLocation = (next: Form, nextArea: string): BookingLocation => ({
     addressId: next.addressId,
@@ -128,7 +128,7 @@ export default function LocationScreen() {
   const update = (changes: Partial<Form>) => {
     const next = { ...form, ...changes };
     setForm(next);
-    if (getBookingDraft()) patchDraft({ location: toLocation(next, areaName) });
+    if (getBookingDraft()) patchDraft({ location: toLocation(next, locality) });
   };
 
   const markTouched = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
@@ -143,22 +143,17 @@ export default function LocationScreen() {
       landmark: place.landmark ?? '',
       propertyType: place.propertyType ?? form.propertyType,
     };
-    const matchedArea = allAreas.find(
-      (candidate) => candidate.served && candidate.name.toLowerCase() === place.area.toLowerCase(),
-    );
-    const nextArea = matchedArea ?? area;
-    if (matchedArea) setArea(matchedArea);
+    const nextLocality = place.area || locality;
+    setLocality(nextLocality);
     setForm(next);
     if (getBookingDraft()) {
-      patchDraft({ location: toLocation(next, nextArea?.name || areaName) });
+      patchDraft({ location: toLocation(next, nextLocality) });
     }
   };
 
   const pickSavedAddress = (address: SavedAddress) => {
-    const matchedArea = allAreas.find(
-      (candidate) => candidate.served && candidate.name.toLowerCase() === address.area.toLowerCase(),
-    );
-    if (matchedArea) setArea(matchedArea);
+    const nextLocality = address.area || locality;
+    setLocality(nextLocality);
     const next: Form = {
       ...form,
       addressId: address.id,
@@ -171,7 +166,7 @@ export default function LocationScreen() {
     };
     setForm(next);
     if (getBookingDraft()) {
-      patchDraft({ location: toLocation(next, matchedArea?.name || areaName) });
+      patchDraft({ location: toLocation(next, nextLocality) });
     }
   };
 
@@ -233,7 +228,6 @@ export default function LocationScreen() {
       : undefined;
 
   const complete =
-    Boolean(areaName) &&
     form.street.trim().length >= 3 &&
     form.contactName.trim().length >= 2 &&
     isValidPhone(form.contactPhone) &&
@@ -272,7 +266,7 @@ export default function LocationScreen() {
   };
 
   const onNext = () => {
-    if (getBookingDraft()) patchDraft({ location: toLocation(form, areaName) });
+    if (getBookingDraft()) patchDraft({ location: toLocation(form, locality) });
     router.push({ pathname: '/book/[slug]/review', params: { slug } });
   };
 
@@ -390,10 +384,13 @@ export default function LocationScreen() {
           </View>
           <View style={styles.mapBody}>
             <Text style={styles.mapTitle} maxFontSizeMultiplier={1.3}>
-              {areaName ? `${areaName}${form.street ? ` · ${form.street.split(',')[0]}` : ''}` : 'No area chosen yet'}
+              {form.street
+                ? `${locality ? `${locality} · ` : ''}${form.street.split(',')[0]}`
+                : 'Add your address'}
             </Text>
             <Text style={styles.mapCaption} maxFontSizeMultiplier={1.3}>
-              Your cleaner is matched to this area. The pin is confirmed when you review the booking.
+              Your cleaner will use this address and pin to find you. The pin is confirmed when you
+              review the booking.
             </Text>
           </View>
         </View>
@@ -410,23 +407,40 @@ export default function LocationScreen() {
           />
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={areaName ? `Area: ${areaName}. Change area` : 'Choose your area'}
-          onPress={() => router.push('/area-select')}
-          style={({ pressed }) => [styles.areaRow, pressed && styles.areaRowPressed]}>
-          <View style={styles.areaBody}>
-            <Text style={styles.areaCaption} maxFontSizeMultiplier={1.2}>
-              Area
+        <View style={styles.group}>
+          <View style={styles.localityRow}>
+            <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+              Neighbourhood <Text style={styles.optional}>(optional)</Text>
             </Text>
-            <Text
-              style={[styles.areaValue, !areaName && styles.areaValueEmpty]}
-              maxFontSizeMultiplier={1.3}>
-              {areaName || 'Choose your area'}
-            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={localityEditing ? 'Done editing neighbourhood' : 'Edit neighbourhood'}
+              hitSlop={8}
+              onPress={() => setLocalityEditing((current) => !current)}>
+              <Text style={styles.localityEdit} maxFontSizeMultiplier={1.2}>
+                {localityEditing ? 'Done' : 'Edit'}
+              </Text>
+            </Pressable>
           </View>
-          <ChevronRight size={20} color={colors.disabledText} strokeWidth={2} />
-        </Pressable>
+          {localityEditing ? (
+            <TextInput
+              accessibilityLabel="Neighbourhood"
+              maxLength={60}
+              onChangeText={(value) => {
+                setLocality(value);
+                if (getBookingDraft()) patchDraft({ location: toLocation(form, value) });
+              }}
+              placeholder="e.g. Kireka"
+              placeholderTextColor={colors.placeholder}
+              style={styles.localityInput}
+              value={locality}
+            />
+          ) : (
+            <Text style={styles.localityValue} maxFontSizeMultiplier={1.3}>
+              {locality || 'Filled in from your address when available'}
+            </Text>
+          )}
+        </View>
 
         <Input
           label="Street, building or house number"
@@ -520,17 +534,10 @@ export default function LocationScreen() {
           ) : null}
         </View>
 
-        {!areaName ? (
-          <View style={styles.warning}>
-            <Text style={styles.warningText} maxFontSizeMultiplier={1.3}>
-              Choose an area to continue. We only serve the areas listed in the area picker.
-            </Text>
-          </View>
-        ) : null}
       </ScrollView>
 
       <SummaryBar
-        caption={form.street ? `${areaName || 'Area'} · ${form.street}` : 'Add your address'}
+        caption={form.street ? `${locality ? `${locality} · ` : ''}${form.street}` : 'Add your address'}
         total={quote.total}
         actionLabel="Next"
         onPress={onNext}
@@ -540,7 +547,7 @@ export default function LocationScreen() {
 
       <SummarySheet
         draft={active}
-        locationLabel={form.street ? `${areaName || 'Area'} · ${form.street}` : undefined}
+        locationLabel={form.street ? `${locality ? `${locality} · ` : ''}${form.street}` : undefined}
         onClose={() => setSummaryOpen(false)}
         serviceName={service?.name}
         visible={summaryOpen}
@@ -626,6 +633,26 @@ const styles = StyleSheet.create({
   mapBody: { flex: 1, gap: 2 },
   mapTitle: { ...text.bodyM, fontFamily: font.bodySemi, color: colors.green900 },
   mapCaption: { ...text.caption, color: colors.green700 },
+  localityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[3],
+  },
+  localityEdit: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
+  localityValue: { ...text.bodyM, color: colors.textMuted },
+  localityInput: {
+    height: 48,
+    borderRadius: radius.input,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: space[3],
+    fontFamily: font.body,
+    fontSize: 15,
+    color: colors.text,
+  },
+  optional: { ...text.caption, color: colors.textMuted, fontFamily: font.body },
   areaRow: {
     flexDirection: 'row',
     alignItems: 'center',

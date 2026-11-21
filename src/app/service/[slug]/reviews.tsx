@@ -17,7 +17,6 @@ import { TopBar } from '@/components/ui/top-bar';
 import { breakdownForService, reviewsForService } from '@/config/reviews';
 import { serviceBySlug } from '@/config/services';
 import { useServiceContent } from '@/hooks/use-service-content';
-import { useOnboardingArea } from '@/store/onboarding';
 import { base, chip, colors, font, radius, space, text } from '@/theme';
 import type { Href } from 'expo-router';
 
@@ -35,9 +34,8 @@ export default function ServiceReviewsScreen() {
   const params = useLocalSearchParams<{ slug?: string }>();
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const insets = useSafeAreaInsets();
-  const area = useOnboardingArea();
   const service = serviceBySlug(slug);
-  const { content } = useServiceContent(slug, area?.id);
+  const { content } = useServiceContent(slug);
   const [filter, setFilter] = useState<Filter>('all');
 
   const source = useMemo(() => reviewsForService(slug), [slug]);

@@ -10,23 +10,19 @@ export type ServiceListResponse = { services?: Service[] };
  * Discovery catalogue. Until `EXPO_PUBLIC_API_BASE_URL` is configured the bundled list in
  * `src/config/services.ts` is returned, so Home and Services work without a backend.
  */
-export async function getServices(areaId?: string): Promise<readonly Service[]> {
+export async function getServices(): Promise<readonly Service[]> {
   if (!hasApiBaseUrl) return localServices;
 
-  const query = areaId ? `?areaId=${encodeURIComponent(areaId)}` : '';
-  const data = await apiRequest<ServiceListResponse>(`/services${query}`);
+  const data = await apiRequest<ServiceListResponse>('/services');
 
   return Array.isArray(data?.services) ? data.services : localServices;
 }
 
 /**
- * `GET /search?q=&areaId=` (Part 2, P5). Without a backend the bundled catalogue is
+ * `GET /search?q=` (Part 2, P5). Without a backend the bundled catalogue is
  * filtered on name, tagline and tag, which matches what the API is expected to index.
  */
-export async function searchServices(
-  query: string,
-  areaId?: string,
-): Promise<readonly Service[]> {
+export async function searchServices(query: string): Promise<readonly Service[]> {
   const term = query.trim();
   if (!term) return [];
 
@@ -38,7 +34,6 @@ export async function searchServices(
   }
 
   const params = new URLSearchParams({ q: term });
-  if (areaId) params.set('areaId', areaId);
 
   const data = await apiRequest<ServiceListResponse>(`/search?${params.toString()}`);
   return Array.isArray(data?.services) ? data.services : [];

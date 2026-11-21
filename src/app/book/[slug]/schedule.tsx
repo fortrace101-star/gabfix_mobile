@@ -32,7 +32,6 @@ import {
   startDraft,
   useBookingDraft,
 } from '@/store/booking';
-import { useOnboardingArea } from '@/store/onboarding';
 import { colors, font, radius, space, text } from '@/theme';
 
 const daysAhead = 30;
@@ -100,7 +99,6 @@ export default function ScheduleScreen() {
   const params = useLocalSearchParams<{ slug?: string }>();
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const draft = useBookingDraft();
-  const area = useOnboardingArea();
   const service = serviceBySlug(slug);
   const active = draft && draft.serviceSlug === slug ? draft : null;
 
@@ -117,7 +115,6 @@ export default function ScheduleScreen() {
   const { slots, loading, error, refresh } = useAvailability(
     slug,
     selectedISO,
-    area?.id,
     active?.preferredCleanerId,
   );
 
@@ -205,7 +202,6 @@ export default function ScheduleScreen() {
         const nextISO = toISODate(days[offset]);
         const nextSlots = await getAvailability({
           serviceSlug: slug,
-          areaId: area?.id,
           dateISO: nextISO,
           cleanerId: active?.preferredCleanerId,
         });

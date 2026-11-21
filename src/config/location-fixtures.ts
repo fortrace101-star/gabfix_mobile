@@ -4,7 +4,7 @@ import type { BookingLocation } from '@/lib/pricing';
  * Bundled places for the P11 address picker. `Location_Fixtures.md` describes a
  * Google Places integration; until a key and a billing account exist this table
  * provides Kampala coverage offline, including the Maganjo examples from the spec.
- * Area names match `src/config/areas.ts` so a pick can switch the served area.
+ * Each place carries a free-text neighbourhood, shown as a label only (Workstream I).
  */
 export type FixturePlace = {
   id: string;

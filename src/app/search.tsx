@@ -25,7 +25,6 @@ import {
   clearRecentSearches,
   loadRecentSearches,
 } from '@/lib/recent-searches';
-import { useOnboardingArea } from '@/store/onboarding';
 import { colors, font, radius, shadow, size, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
@@ -61,10 +60,9 @@ function Highlight({
 /** P5 Search. Recent and popular terms before typing, catalogue results after. */
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const area = useOnboardingArea();
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
-  const { services, loading, error } = useServiceSearch(query, area?.id);
+  const { services, loading, error } = useServiceSearch(query);
   const term = query.trim();
   const cleanMatches = term
     ? cleaners.filter((cleaner) =>
@@ -256,7 +254,7 @@ export default function SearchScreen() {
                       <ServicePhoto
                         slug={service.slug}
                         cardUri={service.cardImage}
-                        areaUri={service.areaImage}
+                        
                         style={styles.thumb}
                       />
                       <View style={styles.rowBody}>

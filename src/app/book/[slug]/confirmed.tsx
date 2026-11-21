@@ -12,7 +12,7 @@ import { serviceBySlug } from '@/config/services';
 import { supportsNativeDriver } from '@/lib/animation';
 import { prepareBookingUploads, retryBookingUploads, startBookingUploads } from '@/lib/media-upload';
 import { finalizeDraftMedia } from '@/lib/media';
-import { getPushPermission, requestPushPermission } from '@/lib/push';
+import { requestPushPermission, shouldShowPushPrePrompt, snoozePushPrePrompt } from '@/lib/push';
 import { price } from '@/lib/pricing';
 import { getBookingDraft, resetDraft } from '@/store/booking';
 import { addBooking } from '@/store/bookings';
@@ -44,16 +44,19 @@ export default function ConfirmedScreen() {
   const uploads = useMediaUploads(bookingId);
 
   useEffect(() => {
-    void getPushPermission().then((status) => {
-      if (status === 'undetermined') setPushPrompt(true);
+    void shouldShowPushPrePrompt().then((show) => {
+      if (show) setPushPrompt(true);
     });
   }, []);
 
   const enableUpdates = async () => {
-    const status = await requestPushPermission();
-    if (status === 'granted' || status === 'denied' || status === 'unsupported') {
-      setPushPrompt(false);
-    }
+    await requestPushPermission();
+    setPushPrompt(false);
+  };
+
+  const dismissUpdates = async () => {
+    setPushPrompt(false);
+    await snoozePushPrePrompt();
   };
 
   const service = serviceBySlug(slug || snapshot?.serviceSlug || '');
@@ -274,15 +277,15 @@ export default function ConfirmedScreen() {
         {pushPrompt ? (
           <View style={styles.promptCard}>
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Turn on booking updates
+              Get a message when your cleaner is on the way
             </Text>
             <Text style={styles.promptBody} maxFontSizeMultiplier={1.3}>
-              Get reminders and status updates for this booking on this device.
+              Turn on notifications and we&apos;ll tell you when they&apos;re on the way.
             </Text>
             <View style={styles.promptActions}>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => setPushPrompt(false)}
+                onPress={() => void dismissUpdates()}
                 style={styles.promptSecondary}>
                 <Text style={styles.promptSecondaryText} maxFontSizeMultiplier={1.2}>Not now</Text>
               </Pressable>
@@ -290,7 +293,7 @@ export default function ConfirmedScreen() {
                 accessibilityRole="button"
                 onPress={() => void enableUpdates()}
                 style={styles.promptPrimary}>
-                <Text style={styles.promptPrimaryText} maxFontSizeMultiplier={1.2}>Enable</Text>
+                <Text style={styles.promptPrimaryText} maxFontSizeMultiplier={1.2}>Turn on</Text>
               </Pressable>
             </View>
           </View>

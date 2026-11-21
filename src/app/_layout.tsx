@@ -107,7 +107,6 @@ export default function RootLayout() {
                 <Stack.Screen name="sign-up" />
                 <Stack.Screen name="otp" />
                 <Stack.Screen name="forgot-password" />
-                <Stack.Screen name="area-select" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
                 <Stack.Screen
                   name="book/[slug]/details"

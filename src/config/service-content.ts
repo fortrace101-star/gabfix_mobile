@@ -13,7 +13,6 @@ export type ServiceContent = {
   /** Remote catalogue/card image from `GET /services/{slug}`. */
   cardImage?: string;
   /** Area-specific image override from an area-scoped content request. */
-  areaImage?: string;
   intro: string;
   includes: string[];
   excludes: string[];

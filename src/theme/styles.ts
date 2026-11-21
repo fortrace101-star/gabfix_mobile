@@ -52,6 +52,8 @@ export const btn = StyleSheet.create({
   },
   destructive: { backgroundColor: colors.error },
   ghost: { backgroundColor: 'transparent' },
+  dangerGhost: { backgroundColor: 'transparent' },
+  dangerGhostPressed: { backgroundColor: colors.errorBg },
   disabled: { backgroundColor: colors.disabledBg },
   small: { height: 40, paddingHorizontal: space[4], borderRadius: radius.input },
 });
@@ -62,6 +64,7 @@ export const btnLabel = StyleSheet.create({
   secondary: { ...text.button, color: colors.green500 },
   destructive: { ...text.button, color: colors.surface },
   ghost: { ...text.button, color: colors.green500 },
+  dangerGhost: { ...text.button, color: colors.error },
   disabled: { ...text.button, color: colors.disabledText },
 });
 

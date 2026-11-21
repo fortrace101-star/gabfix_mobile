@@ -383,7 +383,7 @@ export default function BookingDetailScreen() {
                 />
                 <Button
                   label="Cancel booking"
-                  variant="ghost"
+                  variant="dangerGhost"
                   icon={XCircle}
                   onPress={() => setCancelOpen(true)}
                 />

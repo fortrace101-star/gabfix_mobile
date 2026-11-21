@@ -1,8 +1,8 @@
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Bell, CalendarClock, ChevronDown, Clock3, Globe2, Smartphone, Tag } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { TimezoneSheet } from '@/components/profile/timezone-sheet';
 import { Button } from '@/components/ui/button';
@@ -72,9 +72,25 @@ export default function NotificationPreferencesScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.hydrated]);
 
-  useEffect(() => {
-    void getPushPermission().then(setPermission);
-  }, []);
+  // S1 4.2.4: re-read the permission on focus and when the app returns from phone settings.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const read = () => {
+        void getPushPermission().then((next) => {
+          if (active) setPermission(next);
+        });
+      };
+      read();
+      const sub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') read();
+      });
+      return () => {
+        active = false;
+        sub.remove();
+      };
+    }, []),
+  );
 
   useEffect(() => {
     if (banner?.variant !== 'success') return;
@@ -174,7 +190,7 @@ export default function NotificationPreferencesScreen() {
           <SettingsRow
             icon={Smartphone}
             label="Push"
-            caption={`Alerts on this phone. Phone permission: ${permissionLabel}`}
+            caption={`Phone permission: ${permissionLabel}`}
             switchValue={draft.push}
             onSwitchChange={(value) => void togglePush(value)}
             last

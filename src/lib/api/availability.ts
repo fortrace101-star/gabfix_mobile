@@ -13,7 +13,6 @@ type AvailabilityResponse = { slots?: Slot[] };
 
 export type AvailabilityQuery = {
   serviceSlug: string;
-  areaId?: string;
   dateISO: string;
   /** P18 “Book same cleaner”: only return slots this cleaner can work. */
   cleanerId?: string;
@@ -40,17 +39,15 @@ export const localSlots = (dateISO: string): Slot[] => {
   });
 };
 
-/** `GET /availability?service=&areaId=&date=` (Part 2, P10) with a local fallback. */
+/** `GET /availability?service=&date=` (Part 2, P10) with a local fallback. */
 export async function getAvailability({
   serviceSlug,
-  areaId,
   dateISO,
   cleanerId,
 }: AvailabilityQuery): Promise<readonly Slot[]> {
   if (!hasApiBaseUrl) return localSlots(dateISO);
 
   const params = new URLSearchParams({ service: serviceSlug, date: dateISO });
-  if (areaId) params.set('areaId', areaId);
   if (cleanerId) params.set('cleanerId', cleanerId);
 
   const data = await apiRequest<AvailabilityResponse>(`/availability?${params.toString()}`);

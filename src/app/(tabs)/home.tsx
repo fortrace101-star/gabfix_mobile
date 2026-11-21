@@ -47,7 +47,8 @@ import {
   useBookings,
 } from '@/store/bookings';
 import { useNotificationsHydrated, useUnreadNotificationCount } from '@/store/notifications';
-import { useOnboardingArea, useOnboardingUserName } from '@/store/onboarding';
+import { useOnboardingUserName } from '@/store/onboarding';
+import { useAddresses } from '@/store/addresses';
 import { useAuthUser } from '@/store/session';
 import { auth, base, colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
@@ -95,13 +96,17 @@ export default function HomeTab() {
   const { width } = useWindowDimensions();
   useStatusBarStyle('light');
 
-  const area = useOnboardingArea();
+  const addresses = useAddresses();
+  const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0];
+  const addressLabel = defaultAddress
+    ? [defaultAddress.area, defaultAddress.street].filter(Boolean).join(' · ')
+    : '';
   const userName = useOnboardingUserName();
   const user = useAuthUser();
   const draft = useBookingDraft();
   const notificationsReady = useNotificationsHydrated();
   const unreadNotifications = useUnreadNotificationCount();
-  const { services, refresh: refreshServices } = useServices(area?.id);
+  const { services, refresh: refreshServices } = useServices();
   const bookings = useBookings();
   const [refreshing, setRefreshing] = useState(false);
   const [activeOffer, setActiveOffer] = useState(0);
@@ -239,12 +244,12 @@ export default function HomeTab() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={area ? `Area: ${area.name}. Change area` : 'Choose your area'}
-            onPress={() => router.push('/area-select')}
+            accessibilityLabel={defaultAddress ? `Address: ${addressLabel}. Change address` : 'Set your address'}
+            onPress={() => router.push('/addresses')}
             style={styles.areaPill}>
             <MapPin size={14} color={colors.surface} strokeWidth={2} />
             <Text style={styles.areaText} maxFontSizeMultiplier={1.3} numberOfLines={1}>
-              {area ? area.name : 'Choose area'}
+              {defaultAddress ? addressLabel : 'Set your address'}
             </Text>
             <ChevronDown size={14} color={colors.surface} strokeWidth={2} />
           </Pressable>
@@ -458,7 +463,7 @@ export default function HomeTab() {
                 <ServicePhoto
                   slug={service.slug}
                   cardUri={service.cardImage}
-                  areaUri={service.areaImage}
+                  
                   style={styles.servicePhoto}
                 />
                 <LinearGradient
@@ -532,7 +537,7 @@ export default function HomeTab() {
                       <ServicePhoto
                         slug={service.slug}
                         cardUri={service.cardImage}
-                        areaUri={service.areaImage}
+                        
                         style={styles.categoryPhoto}
                       />
                       <View style={styles.categoryBody}>

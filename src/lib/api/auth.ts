@@ -6,7 +6,6 @@ export type AuthUser = {
   name: string;
   phone?: string;
   email?: string;
-  areaId?: string;
 };
 
 export type AuthSession = {
@@ -21,7 +20,6 @@ export type RegisterPayload = {
   phone: string;
   email?: string;
   password: string;
-  areaId: string;
 };
 export type OtpRequestPayload = { phone: string };
 export type OtpVerifyPayload = { phone: string; code: string };

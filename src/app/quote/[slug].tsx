@@ -38,7 +38,6 @@ import {
   quoteSizeLabel,
 } from '@/lib/quotes';
 import { addQuoteRequest, type QuoteRequest } from '@/store/quotes';
-import { useOnboardingArea } from '@/store/onboarding';
 import { useAuthUser } from '@/store/session';
 import { chip, colors, font, radius, space, text } from '@/theme';
 import { phoneUG } from '@/utils/format';
@@ -102,7 +101,6 @@ function ChoiceChip({
 export default function QuoteRequestScreen() {
   const params = useLocalSearchParams<{ slug?: string; details?: string }>();
   const insets = useSafeAreaInsets();
-  const area = useOnboardingArea();
   const user = useAuthUser();
   const slug = typeof params.slug === 'string' ? params.slug : 'custom';
   const service = serviceBySlug(slug);
@@ -122,7 +120,8 @@ export default function QuoteRequestScreen() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState<QuoteRequest | null>(null);
 
-  const areaName = area?.name ?? '';
+  // Workstream I: quotes ask where the job is; there is no served-area list any more.
+  const [jobLocation, setJobLocation] = useState('');
   const detailsError =
     touched.details && custom && details.trim().length < 10
       ? 'Tell us what needs cleaning, with at least a short description.'
@@ -134,7 +133,7 @@ export default function QuoteRequestScreen() {
       ? 'Enter the 9 digits after +256, for example 772 123 456.'
       : undefined;
   const complete =
-    Boolean(areaName) &&
+    jobLocation.trim().length >= 3 &&
     (!custom || details.trim().length >= 10) &&
     contactName.trim().length >= 2 &&
     isValidPhone(contactPhone);
@@ -185,7 +184,7 @@ export default function QuoteRequestScreen() {
       size,
       frequency,
       preferredDateISO,
-      areaName,
+      areaName: jobLocation.trim(),
       contactName: contactName.trim(),
       contactPhone,
       photos,
@@ -426,25 +425,15 @@ export default function QuoteRequestScreen() {
             </View>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={areaName ? `Area: ${areaName}. Change area` : 'Choose your area'}
-            onPress={() => router.push('/area-select')}
-            style={styles.areaRow}>
-            <View style={styles.areaBody}>
-              <Text style={styles.areaCaption} maxFontSizeMultiplier={1.2}>
-                Area
-              </Text>
-              <Text
-                style={[styles.areaValue, !areaName && styles.areaValueEmpty]}
-                maxFontSizeMultiplier={1.3}>
-                {areaName || 'Choose your area'}
-              </Text>
-            </View>
-            <Text style={styles.changeText} maxFontSizeMultiplier={1.2}>
-              Change
-            </Text>
-          </Pressable>
+          <Input
+            label="Where is the job?"
+            value={jobLocation}
+            onChangeText={setJobLocation}
+            placeholder="Street, landmark or neighbourhood"
+            maxLength={120}
+            autoCapitalize="words"
+            helper="A street, landmark or neighbourhood is enough. Add the pin on the booking if you have one."
+          />
 
           <View style={styles.group}>
             <Text style={styles.label} maxFontSizeMultiplier={1.3}>
@@ -475,10 +464,10 @@ export default function QuoteRequestScreen() {
             />
           </View>
 
-          {!areaName ? (
+          {jobLocation.trim().length < 3 ? (
             <View style={styles.warning}>
               <Text style={styles.warningText} maxFontSizeMultiplier={1.3}>
-                Choose an area so we can confirm the visit is within our service zone.
+                Tell us where the job is so we can price the visit and assign a cleaner.
               </Text>
             </View>
           ) : null}

@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { AddMethodSheet } from '@/components/wallet/add-method-sheet';
 import { PaymentMethodSheet } from '@/components/wallet/payment-method-sheet';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TopBar } from '@/components/ui/top-bar';
 import { savedCardLabel, type SavedCard, type SavedMobileMoney } from '@/config/payments';
@@ -78,30 +79,6 @@ type PayAction =
   | { kind: 'booking'; booking: SavedBooking }
   | { kind: 'account'; amount: number; bookingIds: string[] };
 
-function FilterChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.filterChip, selected && styles.filterChipSelected]}>
-      <Text
-        style={[styles.filterChipText, selected && styles.filterChipTextSelected]}
-        maxFontSizeMultiplier={1.2}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
 
 function MethodRow({
   icon,
@@ -658,19 +635,6 @@ const styles = StyleSheet.create({
   addText: { ...text.bodyM, color: colors.green700, fontFamily: font.bodySemi },
   cashCaption: { ...text.caption, color: colors.textMuted },
   filters: { gap: space[2], paddingVertical: space[1] },
-  filterChip: {
-    height: 32,
-    paddingHorizontal: space[3],
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterChipSelected: { backgroundColor: colors.green500, borderColor: colors.green500 },
-  filterChipText: { ...text.caption, color: colors.textMuted, fontFamily: font.bodySemi },
-  filterChipTextSelected: { color: colors.surface },
   txList: {
     backgroundColor: colors.surface,
     borderRadius: radius.card,

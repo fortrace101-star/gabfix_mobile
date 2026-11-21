@@ -135,5 +135,4 @@ export type OperationsSettings = {
   autoAssign: boolean;
   notifyUnassigned: boolean;
   notifyFailedPayment: boolean;
-  serviceAreas: string;
 };

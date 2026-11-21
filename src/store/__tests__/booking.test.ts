@@ -131,6 +131,33 @@ describe('booking draft store', () => {
     expect(await storage.getItem(STORAGE_KEY)).toBeNull();
   });
 
+  it('keeps media as file references, never inline base64, in the stored draft', async () => {
+    const { store, storage } = await loadStore();
+    await store.hydrateBookingDraft();
+    store.startDraft('deep-clean');
+    store.setMedia({
+      items: [
+        {
+          id: 'media-1',
+          uri: 'file:///data/user/0/com.gabfix.gabfix/files/gabfix-media/draft/media-1.jpg',
+          kind: 'image',
+          mimeType: 'image/jpeg',
+          width: 1600,
+          height: 1200,
+          sizeBytes: 180000,
+        },
+      ],
+      uploaded: false,
+    });
+
+    const raw = await storage.getItem(STORAGE_KEY);
+    expect(raw).not.toBeNull();
+    // §3.16 item 6: the draft JSON carries the file path only; the bytes live on disk.
+    expect(raw).not.toMatch(/data:image|base64/);
+    expect((raw as string).length).toBeLessThan(4096);
+    expect(JSON.parse(raw as string).media.items[0].uri).toMatch(/^file:\/\//);
+  });
+
   it('ignores patches when there is no draft', async () => {
     const { store } = await loadStore();
     await store.hydrateBookingDraft();

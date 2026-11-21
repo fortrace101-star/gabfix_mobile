@@ -17,7 +17,7 @@ import { supportsNativeDriver } from '@/lib/animation';
 import { btn, btnLabel, colors, duration, size } from '@/theme';
 import { pressHaptic } from '@/utils/haptics';
 
-export type ButtonVariant = 'primary' | 'onGreen' | 'secondary' | 'ghost' | 'destructive';
+export type ButtonVariant = 'primary' | 'onGreen' | 'secondary' | 'ghost' | 'destructive' | 'dangerGhost';
 
 export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   label: string;
@@ -36,6 +36,7 @@ const spinnerColor: Record<ButtonVariant, string> = {
   secondary: colors.green500,
   ghost: colors.green500,
   destructive: colors.surface,
+  dangerGhost: colors.error,
 };
 
 const iconColor: Record<ButtonVariant, string> = {
@@ -44,6 +45,7 @@ const iconColor: Record<ButtonVariant, string> = {
   secondary: colors.green500,
   ghost: colors.green500,
   destructive: colors.surface,
+  dangerGhost: colors.error,
 };
 
 /** Height 52, radius 14, 16/600 label. Pressed = scale 0.98 with a 100 ms timing (Part 2, 2.2). */
@@ -63,6 +65,7 @@ export function Button({
 }: ButtonProps) {
   const reducedMotion = useReducedMotion();
   const [scale] = useState(() => new Animated.Value(1));
+  const [pressed, setPressed] = useState(false);
   const isDisabled = disabled || loading;
 
   const animateTo = (value: number) => {
@@ -84,10 +87,12 @@ export function Button({
       hitSlop={8}
       onPressIn={(event) => {
         animateTo(0.98);
+        setPressed(true);
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
         animateTo(1);
+        setPressed(false);
         onPressOut?.(event);
       }}
       onPress={(event) => {
@@ -99,6 +104,7 @@ export function Button({
         btn.base,
         small && btn.small,
         isDisabled && variant !== 'ghost' ? btn.disabled : btn[variant],
+        variant === 'dangerGhost' && pressed && !isDisabled ? btn.dangerGhostPressed : null,
         style,
         { transform: [{ scale }] },
       ]}>

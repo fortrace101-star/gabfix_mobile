@@ -32,10 +32,8 @@ export function BookingsPage({
 }) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<(typeof statuses)[number]>('All statuses');
-  const [area, setArea] = useState('All areas');
   const [dateFilter, setDateFilter] = useState('All dates');
   const [assigning, setAssigning] = useState<Booking | null>(null);
-  const areas = ['All areas', ...Array.from(new Set(bookings.map((booking) => booking.area)))];
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -47,7 +45,6 @@ export function BookingsPage({
           .toLowerCase()
           .includes(term);
       const matchesStatus = status === 'All statuses' || booking.status === status;
-      const matchesArea = area === 'All areas' || booking.area === area;
       const matchesDate =
         dateFilter === 'All dates' ||
         (dateFilter === 'Today' && booking.dateISO === '2026-11-20') ||
@@ -55,16 +52,16 @@ export function BookingsPage({
         (dateFilter === 'This week' &&
           booking.dateISO >= '2026-11-16' &&
           booking.dateISO <= '2026-11-22');
-      return matchesQuery && matchesStatus && matchesArea && matchesDate;
+      return matchesQuery && matchesStatus && matchesDate;
     });
-  }, [area, bookings, dateFilter, query, status]);
+  }, [bookings, dateFilter, query, status]);
 
   const totalValue = filtered.reduce((sum, booking) => sum + booking.total, 0);
   const needsCleaner = filtered.filter((booking) => !booking.cleanerId).length;
 
   const exportRows = () => {
     downloadCsv('gabfix-bookings-2026-11-20.csv', [
-      ['Booking', 'Customer', 'Phone', 'Service', 'Area', 'Date', 'Time', 'Hours', 'Cleaner', 'Status', 'Payment', 'Total UGX', 'Paid UGX'],
+      ['Booking', 'Customer', 'Phone', 'Service', 'Location', 'Date', 'Time', 'Hours', 'Cleaner', 'Status', 'Payment', 'Total UGX', 'Paid UGX'],
       ...filtered.map((booking) => [
         booking.id,
         booking.customer,
@@ -128,19 +125,13 @@ export function BookingsPage({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search ID, customer, phone or area"
+              placeholder="Search ID, customer, phone or location"
             />
           </label>
           <label className="select-field">
             <span className="sr-only">Status</span>
             <select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
               {statuses.map((option) => <option key={option}>{option}</option>)}
-            </select>
-          </label>
-          <label className="select-field">
-            <span className="sr-only">Area</span>
-            <select value={area} onChange={(event) => setArea(event.target.value)}>
-              {areas.map((option) => <option key={option}>{option}</option>)}
             </select>
           </label>
           <label className="select-field">
@@ -152,14 +143,13 @@ export function BookingsPage({
               <option>This week</option>
             </select>
           </label>
-          {(query || status !== 'All statuses' || area !== 'All areas' || dateFilter !== 'All dates') ? (
+          {(query || status !== 'All statuses' || dateFilter !== 'All dates') ? (
             <button
               type="button"
               className="text-btn clear-filters"
               onClick={() => {
                 setQuery('');
                 setStatus('All statuses');
-                setArea('All areas');
                 setDateFilter('All dates');
               }}
             >
@@ -246,14 +236,13 @@ export function BookingsPage({
         ) : (
           <EmptyState
             title="No bookings match these filters"
-            detail="Try a different status, area or date range."
+            detail="Try a different status or date range."
             action={
               <Button
                 variant="primary"
                 onClick={() => {
                   setQuery('');
                   setStatus('All statuses');
-                  setArea('All areas');
                   setDateFilter('All dates');
                 }}
               >

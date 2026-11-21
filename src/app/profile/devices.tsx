@@ -1,3 +1,4 @@
+import { useNetworkState } from 'expo-network';
 import { LogOut, Smartphone } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -11,16 +12,32 @@ import { StatTile } from '@/components/ui/stat-tile';
 import { TopBar } from '@/components/ui/top-bar';
 import { useDeviceSessions } from '@/hooks/use-device-sessions';
 import { colors, font, radius, space, text } from '@/theme';
+import { dateLong, time12, titleCase } from '@/utils/format';
 
-const timeLabel = (iso: string) => {
+const signedInLabel = (iso: string) => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return `${dateLong(date)}, ${time12(date)}`;
+};
+
+/** Relative inside the last hour, otherwise the app date/time format (S1 4.4.3). */
+const lastUsedLabel = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 60_000) return 'just now';
+  if (diffMs < 60 * 60 * 1000) return `${Math.floor(diffMs / 60_000)} min ago`;
+  return `${dateLong(date)}, ${time12(date)}`;
 };
 
 /** P30 Devices and sessions. */
 export default function DevicesScreen() {
   const { sessions, current, others, status, refresh, signOutDevice, signOutOthers } = useDeviceSessions();
+  const network = useNetworkState();
+  const offline = network.isConnected === false || network.isInternetReachable === false;
+  const otherSessions = [...others].sort(
+    (a, b) => new Date(b.lastUsedAtISO).getTime() - new Date(a.lastUsedAtISO).getTime(),
+  );
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<{ type: 'one'; id: string; name: string } | { type: 'all' } | null>(null);
 
@@ -71,12 +88,20 @@ export default function DevicesScreen() {
           </View>
 
           {others.length > 0 ? (
-            <Button
-              label="Sign out other devices"
-              variant="destructive"
-              icon={LogOut}
-              onPress={() => setConfirm({ type: 'all' })}
-            />
+            <>
+              <Button
+                label="Sign out other devices"
+                variant="destructive"
+                icon={LogOut}
+                disabled={offline}
+                onPress={() => setConfirm({ type: 'all' })}
+              />
+              {offline ? (
+                <Text style={styles.offlineNote} maxFontSizeMultiplier={1.3}>
+                  Connect to the internet to sign out a device.
+                </Text>
+              ) : null}
+            </>
           ) : null}
 
           {current ? (
@@ -88,9 +113,9 @@ export default function DevicesScreen() {
                   <Text style={styles.deviceName} maxFontSizeMultiplier={1.3}>{current.name}</Text>
                   <View style={styles.badge}><Text style={styles.badgeText} maxFontSizeMultiplier={1.2}>Current device</Text></View>
                 </View>
-                <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Last used: {timeLabel(current.lastUsedAtISO)}</Text>
-                <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Signed in: {timeLabel(current.signedInAtISO)}</Text>
-                <Text style={styles.meta} maxFontSizeMultiplier={1.3}>{current.platform.toUpperCase()} · {current.approxLocation ?? 'Location unavailable'}</Text>
+                <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Last used: {lastUsedLabel(current.lastUsedAtISO)}</Text>
+                <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Signed in: {signedInLabel(current.signedInAtISO)}</Text>
+                <Text style={styles.meta} maxFontSizeMultiplier={1.3}>{titleCase(current.platform)} · {current.approxLocation ?? 'Location unavailable'}</Text>
                 <Text style={styles.note} maxFontSizeMultiplier={1.3}>This is the phone you’re using.</Text>
               </View>
             </View>
@@ -102,19 +127,20 @@ export default function DevicesScreen() {
               <EmptyState icon={Smartphone} title="Only this phone" body="You're only signed in on this phone." />
             ) : (
               <View style={{ gap: space[3] }}>
-                {others.map((session) => (
+                {otherSessions.map((session) => (
                   <View key={session.id} style={styles.card}>
                     <View style={styles.cardHead}>
                       <Smartphone size={20} color={colors.green700} strokeWidth={2} />
                       <Text style={styles.deviceName} maxFontSizeMultiplier={1.3}>{session.name}</Text>
                     </View>
-                    <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Last used: {timeLabel(session.lastUsedAtISO)}</Text>
-                    <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Signed in: {timeLabel(session.signedInAtISO)}</Text>
-                    <Text style={styles.meta} maxFontSizeMultiplier={1.3}>{session.platform.toUpperCase()}</Text>
+                    <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Last used: {lastUsedLabel(session.lastUsedAtISO)}</Text>
+                    <Text style={styles.meta} maxFontSizeMultiplier={1.3}>Signed in: {signedInLabel(session.signedInAtISO)}</Text>
+                    <Text style={styles.meta} maxFontSizeMultiplier={1.3}>{titleCase(session.platform)}</Text>
                     <Button
                       label="Sign out device"
                       variant="ghost"
                       icon={LogOut}
+                      disabled={offline}
                       onPress={() => setConfirm({ type: 'one', id: session.id, name: session.name })}
                     />
                   </View>
@@ -160,4 +186,5 @@ const styles = StyleSheet.create({
   badgeText: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
   meta: { ...text.caption, color: colors.textMuted },
   note: { ...text.caption, color: colors.green700, backgroundColor: colors.green50, borderRadius: 8, padding: space[2] },
+  offlineNote: { ...text.caption, color: colors.textMuted, marginLeft: 4 },
 });

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Check, MapPin, Navigation } from 'lucide-react-native';
+import { Check, MapPin } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { allAreas } from '@/config/areas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TopBar } from '@/components/ui/top-bar';
@@ -24,7 +23,6 @@ import {
   useAddressesHydrated,
   type AddressLabel,
 } from '@/store/addresses';
-import { setArea, useOnboardingArea } from '@/store/onboarding';
 import { colors, font, radius, space, text } from '@/theme';
 
 const LABELS: AddressLabel[] = ['Home', 'Work', 'Other'];
@@ -44,7 +42,6 @@ export default function AddressFormScreen() {
   const isNew = id === 'new';
   const addresses = useAddresses();
   const hydrated = useAddressesHydrated();
-  const area = useOnboardingArea();
   const existing = useMemo(
     () => addresses.find((address) => address.id === id),
     [addresses, id],
@@ -54,32 +51,18 @@ export default function AddressFormScreen() {
   const [street, setStreet] = useState(existing?.street ?? '');
   const [landmark, setLandmark] = useState(existing?.landmark ?? '');
   const [access, setAccess] = useState(existing?.access ?? '');
-  const [initialAreaName] = useState(existing?.area ?? area?.name ?? '');
-  const [areaPicked, setAreaPicked] = useState(false);
-  const areaName = areaPicked ? (area?.name ?? initialAreaName) : initialAreaName;
+  const [locality, setLocality] = useState(existing?.area ?? '');
   const [propertyType, setPropertyType] = useState<BookingLocation['propertyType']>(
     existing?.propertyType ?? 'house',
   );
   const [makeDefault, setMakeDefault] = useState(existing?.isDefault ?? false);
   const [streetError, setStreetError] = useState('');
-  const [areaError, setAreaError] = useState('');
   const [saving, setSaving] = useState(false);
-
-  const openAreaPicker = () => {
-    const match = allAreas.find((candidate) => candidate.name === areaName);
-    if (match) setArea(match);
-    setAreaPicked(true);
-    router.push('/area-select');
-  };
 
   const save = () => {
     const nextStreet = street.trim();
     if (nextStreet.length < 3) {
       setStreetError('Add the street, plot or building name.');
-      return;
-    }
-    if (!areaName) {
-      setAreaError('Choose the area for this address.');
       return;
     }
     setSaving(true);
@@ -88,7 +71,7 @@ export default function AddressFormScreen() {
       street: nextStreet,
       landmark: landmark.trim() || undefined,
       access: access.trim() || undefined,
-      area: areaName,
+      area: locality.trim(),
       propertyType,
       lat: existing?.lat,
       lng: existing?.lng,
@@ -191,25 +174,16 @@ export default function AddressFormScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Area
+              Neighbourhood (optional)
             </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Change area, currently ${areaName || 'not set'}`}
-              onPress={openAreaPicker}
-              style={[styles.areaRow, areaError ? styles.areaRowError : null]}>
-              <MapPin size={20} color={colors.green700} strokeWidth={2} />
-              <View style={styles.areaTextWrap}>
-                <Text style={styles.areaLabel} maxFontSizeMultiplier={1.2}>
-                  Service area
-                </Text>
-                <Text style={styles.areaValue} maxFontSizeMultiplier={1.3}>
-                  {areaName || 'Choose your area'}
-                </Text>
-              </View>
-              <Navigation size={18} color={colors.textMuted} strokeWidth={2} />
-            </Pressable>
-            {areaError ? <Text style={styles.error}>{areaError}</Text> : null}
+            <Input
+              value={locality}
+              onChangeText={setLocality}
+              placeholder="e.g. Kireka"
+              maxLength={60}
+              autoCapitalize="words"
+              accessibilityLabel="Neighbourhood, optional"
+            />
           </View>
 
           <View style={styles.section}>

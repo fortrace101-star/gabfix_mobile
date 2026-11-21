@@ -22,19 +22,19 @@ const messageFrom = (cause: unknown) =>
   cause instanceof Error ? cause.message : 'We could not load the services.';
 
 /**
- * Loads the discovery catalogue for the chosen area. With no API base URL configured the
- * bundled catalogue is already in place, so the screens never render an empty list.
+ * Loads the discovery catalogue. With no API base URL configured the bundled catalogue
+ * is already in place, so the screens never render an empty list.
  */
-export function useServices(areaId?: string): ServicesState {
+export function useServices(): ServicesState {
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
-  const key = `${areaId ?? ''}:${attempt}`;
+  const key = `catalogue:${attempt}`;
 
   useEffect(() => {
     if (!hasApiBaseUrl) return;
 
     let cancelled = false;
-    getServices(areaId)
+    getServices()
       .then((services) => {
         if (!cancelled) setResult({ key, services, error: null });
       })
@@ -45,7 +45,7 @@ export function useServices(areaId?: string): ServicesState {
     return () => {
       cancelled = true;
     };
-  }, [areaId, key]);
+  }, [key]);
 
   const refresh = useCallback(() => setAttempt((value) => value + 1), []);
   const current = result?.key === key ? result : null;

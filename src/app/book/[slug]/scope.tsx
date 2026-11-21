@@ -144,6 +144,8 @@ export default function JobScopeScreen() {
   const active = draft && draft.serviceSlug === slug ? draft : null;
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [showExactSize, setShowExactSize] = useState(false);
+  // Local copy of the size field so a first digit ("5" of "50") is not rejected before it is valid.
+  const [areaText, setAreaText] = useState('');
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<BookingMediaItem | null>(null);
@@ -292,6 +294,8 @@ export default function JobScopeScreen() {
                 onPress={() => {
                   selectionHaptic();
                   patchScope(selectSizeBand(option.id));
+                  setShowExactSize(false);
+                  setAreaText('');
                 }}
               />
             ))}
@@ -304,6 +308,7 @@ export default function JobScopeScreen() {
                 selectionHaptic();
                 patchScope({ sizeBand: 'unsure' as PropertySizeBand, areaSqm: undefined });
                 setShowExactSize(false);
+                setAreaText('');
               }}
               style={styles.sizeRadioOption}>
               <View
@@ -324,6 +329,7 @@ export default function JobScopeScreen() {
               accessibilityState={{ selected: showExactSize }}
               onPress={() => {
                 selectionHaptic();
+                setAreaText(scope.areaSqm ? String(scope.areaSqm) : '');
                 setShowExactSize(true);
               }}
               style={styles.sizeRadioOption}>
@@ -336,23 +342,36 @@ export default function JobScopeScreen() {
             </Pressable>
           </View>
           {showExactSize ? (
-            <TextInput
-              accessibilityLabel="Size in square metres"
-              keyboardType="number-pad"
-              maxLength={4}
-              onChangeText={(value) => {
-                const areaSqm = Number(value.replace(/[^0-9]/g, ''));
-                if (!value.trim()) {
-                  patchScope({ areaSqm: undefined, sizeBand: undefined });
-                  return;
-                }
-                if (areaSqm >= 10 && areaSqm <= 5000) patchScope(applyExactArea(areaSqm));
-              }}
-              placeholder="Size in m²"
-              placeholderTextColor={colors.placeholder}
-              style={styles.areaInput}
-              value={scope.areaSqm ? String(scope.areaSqm) : ''}
-            />
+            <>
+              <TextInput
+                accessibilityLabel="Size in square metres"
+                keyboardType="number-pad"
+                maxLength={4}
+                onChangeText={(value) => {
+                  const digits = value.replace(/[^0-9]/g, '').slice(0, 4);
+                  setAreaText(digits);
+                  const areaSqm = Number(digits);
+                  if (!digits) {
+                    patchScope({ areaSqm: undefined, sizeBand: undefined });
+                    return;
+                  }
+                  if (areaSqm >= 10 && areaSqm <= 5000) {
+                    patchScope(applyExactArea(areaSqm));
+                  } else {
+                    patchScope({ areaSqm: undefined, sizeBand: undefined });
+                  }
+                }}
+                placeholder="Size in m²"
+                placeholderTextColor={colors.placeholder}
+                style={styles.areaInput}
+                value={areaText}
+              />
+              {areaText && (Number(areaText) < 10 || Number(areaText) > 5000) ? (
+                <Text style={styles.areaError} maxFontSizeMultiplier={1.3}>
+                  Enter a size between 10 and 5,000 m².
+                </Text>
+              ) : null}
+            </>
           ) : null}
         </View>
 
@@ -673,6 +692,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
   },
+  areaError: { ...text.caption, color: colors.error },
   panel: {
     backgroundColor: colors.surface,
     borderRadius: radius.card,

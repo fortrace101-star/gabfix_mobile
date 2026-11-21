@@ -20,7 +20,7 @@ const messageFrom = (cause: unknown) =>
   cause instanceof Error ? cause.message : 'Search is unavailable right now.';
 
 /** Debounced `GET /search` (Part 2, P5) with a 300 ms wait after the last keystroke. */
-export function useServiceSearch(query: string, areaId?: string): ServiceSearchState {
+export function useServiceSearch(query: string): ServiceSearchState {
   const trimmed = query.trim();
   const [debounced, setDebounced] = useState('');
   const [result, setResult] = useState<Result | null>(null);
@@ -30,13 +30,13 @@ export function useServiceSearch(query: string, areaId?: string): ServiceSearchS
     return () => clearTimeout(timer);
   }, [trimmed]);
 
-  const key = `${debounced}:${areaId ?? ''}`;
+  const key = debounced;
 
   useEffect(() => {
     if (!debounced) return;
 
     let cancelled = false;
-    searchServices(debounced, areaId)
+    searchServices(debounced)
       .then((services) => {
         if (!cancelled) setResult({ key, services, error: null });
       })
@@ -47,7 +47,7 @@ export function useServiceSearch(query: string, areaId?: string): ServiceSearchS
     return () => {
       cancelled = true;
     };
-  }, [areaId, debounced, key]);
+  }, [debounced, key]);
 
   const current = result?.key === key ? result : null;
 

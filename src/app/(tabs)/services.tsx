@@ -8,7 +8,6 @@ import { ServicePhoto } from '@/components/service/service-photo';
 import { useServices } from '@/hooks/use-services';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
 import { fromHourly, serviceCategories, type Service, type ServiceCategoryId } from '@/config/services';
-import { useOnboardingArea } from '@/store/onboarding';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
@@ -34,7 +33,7 @@ function ServiceRow({ service }: { service: Service }) {
       <ServicePhoto
         slug={service.slug}
         cardUri={service.cardImage}
-        areaUri={service.areaImage}
+        
         style={styles.thumb}
       />
       <View style={styles.rowBody}>
@@ -61,8 +60,7 @@ function ServiceRow({ service }: { service: Service }) {
 /** P6 Services: category chips and grouped sections over `GET /services`. */
 export default function ServicesTab() {
   const insets = useSafeAreaInsets();
-  const area = useOnboardingArea();
-  const { services, error, refresh } = useServices(area?.id);
+  const { services, error, refresh } = useServices();
   const [category, setCategory] = useState<CategoryFilter>('all');
   useStatusBarStyle('dark');
 
