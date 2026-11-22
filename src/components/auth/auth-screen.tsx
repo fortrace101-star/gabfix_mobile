@@ -2,10 +2,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
@@ -16,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Blob, type BlobVariant } from '@/components/auth/blob';
 import { BrandMark } from '@/components/auth/brand-mark';
 import { LoadingOverlay } from '@/components/auth/loading-overlay';
+import { KeyboardScreen } from '@/components/ui/keyboard-screen';
 import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
 import { auth, authSize, size } from '@/theme';
 
@@ -78,30 +76,22 @@ export function AuthScreen({
           </View>
         ) : null}
 
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View
-            style={[styles.flex, loading && styles.dim]}
-            pointerEvents={loading ? 'none' : 'auto'}
-            importantForAccessibility={loading ? 'no-hide-descendants' : 'auto'}
-            accessibilityElementsHidden={loading}>
-            <ScrollView
-              contentContainerStyle={[
-                styles.content,
-                { paddingTop: contentTop, paddingBottom: insets.bottom + 16 },
-                center && styles.center,
-                contentStyle,
-              ]}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              bounces={false}
-              showsVerticalScrollIndicator={false}>
-              {children}
-              {footer ? <View style={styles.footer}>{footer}</View> : null}
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
+        <View
+          style={[styles.flex, loading && styles.dim]}
+          pointerEvents={loading ? 'none' : 'auto'}
+          importantForAccessibility={loading ? 'no-hide-descendants' : 'auto'}
+          accessibilityElementsHidden={loading}>
+          <KeyboardScreen
+            contentContainerStyle={[
+              styles.content,
+              { paddingTop: contentTop, paddingBottom: insets.bottom + 16 },
+              center && styles.center,
+              contentStyle,
+            ]}>
+            {children}
+            {footer ? <View style={styles.footer}>{footer}</View> : null}
+          </KeyboardScreen>
+        </View>
       </View>
 
       <LoadingOverlay visible={loading} />

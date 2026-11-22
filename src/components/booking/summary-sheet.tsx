@@ -1,11 +1,10 @@
-import { X } from 'lucide-react-native';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { addOns } from '@/config/add-ons';
 import { frequencyLabels } from '@/config/pricing';
 import { addOnPrice, price, type PriceableDraft } from '@/lib/pricing';
-import { colors, font, radius, shadow, space, text } from '@/theme';
+import { colors, font, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
 type Props = {
@@ -20,10 +19,7 @@ type Props = {
 const frequencyLabel = (frequency: PriceableDraft['details']['frequency']): string =>
   frequency === 'once' ? 'One time' : frequencyLabels[frequency];
 
-/**
- * Order-flow price breakdown (Gabfix_App_Ui_2.md, 2.2 Summary Sheet). Uses the platform
- * Modal because `@gorhom/bottom-sheet` is not a dependency in this build.
- */
+/** Order-flow price breakdown (S1 11.5 shared bottom sheet). */
 export function SummarySheet({
   visible,
   onClose,
@@ -32,130 +28,89 @@ export function SummarySheet({
   scheduleLabel,
   locationLabel,
 }: Props) {
-  const insets = useSafeAreaInsets();
   const quote = draft ? price(draft) : null;
-  const chosenAddOns = draft
-    ? addOns.filter((item) => draft.addOns.includes(item.id))
-    : [];
+  const chosenAddOns = draft ? addOns.filter((item) => draft.addOns.includes(item.id)) : [];
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
-      <View style={styles.backdrop}>
-        <Pressable
-          accessibilityLabel="Close price breakdown"
-          accessibilityRole="button"
-          onPress={onClose}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space[4]) }]}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <View style={styles.headerText}>
-              <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-                Price breakdown
+    <BottomSheet
+      visible={visible}
+      onDismiss={onClose}
+      title="Price breakdown"
+      subtitle={serviceName ?? 'Your booking'}
+      maxHeightRatio={0.8}
+      contentContainerStyle={styles.content}>
+      {quote && draft ? (
+        <>
+          <View style={styles.context}>
+            <Text style={styles.contextText} maxFontSizeMultiplier={1.3}>
+              {frequencyLabel(draft.details.frequency)} · {draft.details.hours} h ·{' '}
+              {draft.details.cleaners} cleaner{draft.details.cleaners === 1 ? '' : 's'}
+            </Text>
+            {scheduleLabel ? (
+              <Text style={styles.contextText} maxFontSizeMultiplier={1.3}>
+                {scheduleLabel}
               </Text>
-              <Text style={styles.subtitle} maxFontSizeMultiplier={1.3} numberOfLines={1}>
-                {serviceName ?? 'Your booking'}
+            ) : null}
+            {locationLabel ? (
+              <Text style={styles.contextText} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+                {locationLabel}
               </Text>
-            </View>
-            <Pressable
-              accessibilityLabel="Close"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={onClose}
-              style={styles.close}>
-              <X size={22} color={colors.text} strokeWidth={2} />
-            </Pressable>
+            ) : null}
           </View>
 
-          {quote && draft ? (
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-              <View style={styles.context}>
-                <Text style={styles.contextText} maxFontSizeMultiplier={1.3}>
-                  {frequencyLabel(draft.details.frequency)} · {draft.details.hours} h ·{' '}
-                  {draft.details.cleaners} cleaner{draft.details.cleaners === 1 ? '' : 's'}
-                </Text>
-                {scheduleLabel ? (
-                  <Text style={styles.contextText} maxFontSizeMultiplier={1.3}>
-                    {scheduleLabel}
-                  </Text>
-                ) : null}
-                {locationLabel ? (
-                  <Text style={styles.contextText} maxFontSizeMultiplier={1.3} numberOfLines={1}>
-                    {locationLabel}
-                  </Text>
-                ) : null}
-              </View>
+          <View style={styles.rows}>
+            <Row
+              label={`${draft.details.hours} h × ${draft.details.cleaners} cleaner${
+                draft.details.cleaners === 1 ? '' : 's'
+              }`}
+              value={ugx(quote.base)}
+            />
+            {quote.materials > 0 ? <Row label="Materials" value={ugx(quote.materials)} /> : null}
+            {chosenAddOns.map((item) => (
+              <Row key={item.id} label={item.name} value={ugx(addOnPrice(item.id))} />
+            ))}
+            {quote.frequencyDiscount > 0 ? (
+              <Row
+                label={`${frequencyLabel(draft.details.frequency)} discount`}
+                value={`−${ugx(quote.frequencyDiscount)}`}
+                tone="credit"
+              />
+            ) : null}
+            {quote.promoDiscount > 0 ? (
+              <Row
+                label={`Promo ${draft.promoCode?.toUpperCase() ?? ''}`.trim()}
+                value={`−${ugx(quote.promoDiscount)}`}
+                tone="credit"
+              />
+            ) : null}
+            <Row label="VAT (18%)" value={ugx(quote.vat)} />
+          </View>
 
-              <View style={styles.rows}>
-                <Row
-                  label={`${draft.details.hours} h × ${draft.details.cleaners} cleaner${
-                    draft.details.cleaners === 1 ? '' : 's'
-                  }`}
-                  value={ugx(quote.base)}
-                />
-                {quote.materials > 0 ? (
-                  <Row label="Materials" value={ugx(quote.materials)} />
-                ) : null}
-                {chosenAddOns.map((item) => (
-                  <Row
-                    key={item.id}
-                    label={item.name}
-                    value={ugx(addOnPrice(item.id))}
-                  />
-                ))}
-                {quote.frequencyDiscount > 0 ? (
-                  <Row
-                    label={`${frequencyLabel(draft.details.frequency)} discount`}
-                    value={`−${ugx(quote.frequencyDiscount)}`}
-                    tone="credit"
-                  />
-                ) : null}
-                {quote.promoDiscount > 0 ? (
-                  <Row
-                    label={`Promo ${draft.promoCode?.toUpperCase() ?? ''}`.trim()}
-                    value={`−${ugx(quote.promoDiscount)}`}
-                    tone="credit"
-                  />
-                ) : null}
-                <Row label="VAT (18%)" value={ugx(quote.vat)} />
-              </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel} maxFontSizeMultiplier={1.3}>
+              Total
+            </Text>
+            <Text style={styles.totalValue} maxFontSizeMultiplier={1.2}>
+              {ugx(quote.total)}
+            </Text>
+          </View>
 
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel} maxFontSizeMultiplier={1.3}>
-                  Total
-                </Text>
-                <Text style={styles.totalValue} maxFontSizeMultiplier={1.2}>
-                  {ugx(quote.total)}
-                </Text>
-              </View>
-
-              <Text style={styles.note} maxFontSizeMultiplier={1.3}>
-                Cleaning time: {quote.minutes / 60} h. Final price is confirmed when you book.
-              </Text>
-            </ScrollView>
-          ) : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText} maxFontSizeMultiplier={1.3}>
-                Your price appears once you choose a service.
-              </Text>
-            </View>
-          )}
+          <Text style={styles.note} maxFontSizeMultiplier={1.3}>
+            Cleaning time: {quote.minutes / 60} h. Final price is confirmed when you book.
+          </Text>
+        </>
+      ) : (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText} maxFontSizeMultiplier={1.3}>
+            Your price appears once you choose a service.
+          </Text>
         </View>
-      </View>
-    </Modal>
+      )}
+    </BottomSheet>
   );
 }
 
-function Row({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: 'credit';
-}) {
+function Row({ label, value, tone }: { label: string; value: string; tone?: 'credit' }) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3} numberOfLines={2}>
@@ -171,39 +126,7 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.scrim,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    maxHeight: '80%',
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    paddingHorizontal: space[4],
-    paddingTop: space[2],
-    ...shadow.floating,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    marginBottom: space[3],
-  },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: space[3] },
-  headerText: { flex: 1, gap: 2 },
-  title: { ...text.h2 },
-  subtitle: { ...text.caption },
-  close: {
-    width: 48,
-    height: 48,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  content: { paddingTop: space[3], paddingBottom: space[4], gap: space[4] },
+  content: { paddingHorizontal: space[4], paddingTop: space[3], paddingBottom: space[4], gap: space[4] },
   context: { gap: 4 },
   contextText: { ...text.caption, color: colors.textMuted },
   rows: { gap: space[2] },

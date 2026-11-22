@@ -360,7 +360,12 @@ export default function HomeTab() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Balance due: ${ugx(dueTotal)}. Pay now`}
-              onPress={() => router.push('/profile/payments')}
+              onPress={() =>
+                router.push({
+                  pathname: '/profile/payments',
+                  params: { focus: 'balance-due' },
+                })
+              }
               style={styles.dueCard}
             >
               <View style={styles.dueIcon}>

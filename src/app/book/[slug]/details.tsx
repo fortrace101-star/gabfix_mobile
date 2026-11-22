@@ -105,6 +105,11 @@ export default function JobDetailsScreen() {
   const recurring = details.frequency !== 'once';
 
   const onNext = () => {
+    // Quote services are priced from the job details, so the extras step is skipped (H10).
+    if (service?.pricingMode === 'quote') {
+      router.push({ pathname: '/book/[slug]/scope', params: { slug } });
+      return;
+    }
     router.push({ pathname: '/book/[slug]/add-ons', params: { slug } });
   };
 

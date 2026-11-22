@@ -2,10 +2,7 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Check, MapPin } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardScreen } from '@/components/ui/keyboard-screen';
 import { TopBar } from '@/components/ui/top-bar';
 import type { BookingLocation } from '@/lib/pricing';
 import {
@@ -107,144 +105,137 @@ export default function AddressFormScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <TopBar title={isNew ? 'Add address' : 'Edit address'} onBack={() => router.back()} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Label
-            </Text>
-            <View style={styles.chipRow}>
-              {LABELS.map((option) => {
-                const selected = label === option;
-                return (
-                  <Pressable
-                    key={option}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    accessibilityLabel={option}
-                    onPress={() => setLabel(option)}
-                    style={[styles.chip, selected && styles.chipSelected]}>
-                    <Text
-                      style={[styles.chipText, selected && styles.chipTextSelected]}
-                      maxFontSizeMultiplier={1.2}>
-                      {option}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+      <KeyboardScreen style={styles.flex} contentContainerStyle={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+            Label
+          </Text>
+          <View style={styles.chipRow}>
+            {LABELS.map((option) => {
+              const selected = label === option;
+              return (
+                <Pressable
+                  key={option}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  accessibilityLabel={option}
+                  onPress={() => setLabel(option)}
+                  style={[styles.chip, selected && styles.chipSelected]}>
+                  <Text
+                    style={[styles.chipText, selected && styles.chipTextSelected]}
+                    maxFontSizeMultiplier={1.2}>
+                    {option}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
+        </View>
 
+        <Input
+          label="Street, plot or building"
+          placeholder="e.g. Plot 14, Ntinda Road"
+          value={street}
+          onChangeText={(value) => {
+            setStreet(value);
+            if (streetError) setStreetError('');
+          }}
+          error={streetError}
+          autoCapitalize="words"
+          returnKeyType="next"
+        />
+
+        <Input
+          label="Landmark (optional)"
+          placeholder="e.g. Near Shell petrol station, blue gate"
+          value={landmark}
+          onChangeText={setLandmark}
+          autoCapitalize="sentences"
+        />
+
+        <Input
+          label="Access notes (optional)"
+          placeholder="e.g. Call on arrival, gate code 1234"
+          value={access}
+          onChangeText={setAccess}
+          multiline
+          numberOfLines={3}
+          inputStyle={styles.multiline}
+          autoCapitalize="sentences"
+        />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+            Neighbourhood (optional)
+          </Text>
           <Input
-            label="Street, plot or building"
-            placeholder="e.g. Plot 14, Ntinda Road"
-            value={street}
-            onChangeText={(value) => {
-              setStreet(value);
-              if (streetError) setStreetError('');
-            }}
-            error={streetError}
+            value={locality}
+            onChangeText={setLocality}
+            placeholder="e.g. Kireka"
+            maxLength={60}
             autoCapitalize="words"
-            returnKeyType="next"
+            accessibilityLabel="Neighbourhood, optional"
           />
+        </View>
 
-          <Input
-            label="Landmark (optional)"
-            placeholder="e.g. Near Shell petrol station, blue gate"
-            value={landmark}
-            onChangeText={setLandmark}
-            autoCapitalize="sentences"
-          />
-
-          <Input
-            label="Access notes (optional)"
-            placeholder="e.g. Call on arrival, gate code 1234"
-            value={access}
-            onChangeText={setAccess}
-            multiline
-            numberOfLines={3}
-            inputStyle={styles.multiline}
-            autoCapitalize="sentences"
-          />
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Neighbourhood (optional)
-            </Text>
-            <Input
-              value={locality}
-              onChangeText={setLocality}
-              placeholder="e.g. Kireka"
-              maxLength={60}
-              autoCapitalize="words"
-              accessibilityLabel="Neighbourhood, optional"
-            />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+            Property type
+          </Text>
+          <View style={styles.chipRow}>
+            {PROPERTY_TYPES.map((option) => {
+              const selected = propertyType === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  accessibilityLabel={option.label}
+                  onPress={() => setPropertyType(option.value)}
+                  style={[styles.chip, selected && styles.chipSelected]}>
+                  <Text
+                    style={[styles.chipText, selected && styles.chipTextSelected]}
+                    maxFontSizeMultiplier={1.2}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
+        </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Property type
-            </Text>
-            <View style={styles.chipRow}>
-              {PROPERTY_TYPES.map((option) => {
-                const selected = propertyType === option.value;
-                return (
-                  <Pressable
-                    key={option.value}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    accessibilityLabel={option.label}
-                    onPress={() => setPropertyType(option.value)}
-                    style={[styles.chip, selected && styles.chipSelected]}>
-                    <Text
-                      style={[styles.chipText, selected && styles.chipTextSelected]}
-                      maxFontSizeMultiplier={1.2}>
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+        {!existing?.isDefault ? (
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: makeDefault }}
+            accessibilityLabel="Use as my default address"
+            onPress={() => setMakeDefault((value) => !value)}
+            style={styles.defaultRow}>
+            <View style={[styles.checkbox, makeDefault && styles.checkboxChecked]}>
+              {makeDefault ? <Check size={16} color={colors.surface} strokeWidth={3} /> : null}
             </View>
-          </View>
-
-          {!existing?.isDefault ? (
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: makeDefault }}
-              accessibilityLabel="Use as my default address"
-              onPress={() => setMakeDefault((value) => !value)}
-              style={styles.defaultRow}>
-              <View style={[styles.checkbox, makeDefault && styles.checkboxChecked]}>
-                {makeDefault ? <Check size={16} color={colors.surface} strokeWidth={3} /> : null}
-              </View>
-              <View style={styles.defaultTextWrap}>
-                <Text style={styles.defaultTitle} maxFontSizeMultiplier={1.3}>
-                  Use as my default address
-                </Text>
-                <Text style={styles.defaultBody} maxFontSizeMultiplier={1.3}>
-                  Picked first whenever you book.
-                </Text>
-              </View>
-            </Pressable>
-          ) : null}
-
-          {existing && !existing.landmark ? (
-            <View style={styles.pinNote}>
-              <MapPin size={16} color={colors.textMuted} strokeWidth={2} />
-              <Text style={styles.pinNoteText} maxFontSizeMultiplier={1.3}>
-                No map pin saved. Your area and landmark are enough for the team to find you.
+            <View style={styles.defaultTextWrap}>
+              <Text style={styles.defaultTitle} maxFontSizeMultiplier={1.3}>
+                Use as my default address
+              </Text>
+              <Text style={styles.defaultBody} maxFontSizeMultiplier={1.3}>
+                Picked first whenever you book.
               </Text>
             </View>
-          ) : null}
+          </Pressable>
+        ) : null}
 
-          <Button label={isNew ? 'Save address' : 'Save changes'} loading={saving} onPress={save} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {existing && !existing.landmark ? (
+          <View style={styles.pinNote}>
+            <MapPin size={16} color={colors.textMuted} strokeWidth={2} />
+            <Text style={styles.pinNoteText} maxFontSizeMultiplier={1.3}>
+              No map pin saved. Your area and landmark are enough for the team to find you.
+            </Text>
+          </View>
+        ) : null}
+
+        <Button label={isNew ? 'Save address' : 'Save changes'} loading={saving} onPress={save} />
+      </KeyboardScreen>
     </SafeAreaView>
   );
 }

@@ -64,7 +64,16 @@ export async function hydrateBookingDraft(): Promise<void> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     const parsed = raw ? (JSON.parse(raw) as BookingDraft) : null;
-    if (parsed?.serviceSlug && parsed.details) draft = withScopeDefaults(parsed);
+    if (parsed?.serviceSlug && parsed.details) {
+      const normalized = withScopeDefaults(parsed);
+      draft = {
+        ...normalized,
+        media: {
+          ...normalized.media,
+          items: dedupeMediaItems(normalized.media?.items ?? []),
+        },
+      };
+    }
   } catch {
     draft = null;
   }
@@ -99,9 +108,20 @@ export function patchScope(changes: Partial<BookingScope>): void {
   setDraft({ ...state.draft, scope: { ...(state.draft.scope as BookingScope), ...changes } });
 }
 
+function dedupeMediaItems(items: BookingMediaItem[]): BookingMediaItem[] {
+  const seen = new Set<string>();
+  const out: BookingMediaItem[] = [];
+  for (const item of items) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+  }
+  return out;
+}
+
 export function setMedia(media: BookingMedia): void {
   if (!state.draft) return;
-  setDraft({ ...state.draft, media });
+  setDraft({ ...state.draft, media: { ...media, items: dedupeMediaItems(media.items) } });
 }
 
 /** P8b: append picked photos/videos and clear the “uploaded” marker. */

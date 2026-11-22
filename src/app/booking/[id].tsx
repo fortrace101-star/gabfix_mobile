@@ -267,22 +267,38 @@ export default function BookingDetailScreen() {
           <Text style={styles.cardTitle} maxFontSizeMultiplier={1.3}>
             Payment summary
           </Text>
-          <SummaryRow label="Plan" value={planLabel} />
-          <SummaryRow label="Method" value={methodLabel} />
-          <SummaryRow label="Total" value={ugx(booking.total)} />
-          <SummaryRow label="Paid" value={ugx(booking.paid)} />
-          <SummaryRow label={booking.balance > 0 ? 'Balance due' : 'Balance'} value={ugx(booking.balance)} strong />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="View receipt"
-            hitSlop={8}
-            onPress={() => router.push(`/booking/${booking.id}/receipt` as never)}
-            style={styles.receiptLink}>
-            <FileText size={16} color={colors.green700} strokeWidth={2} />
-            <Text style={styles.receiptText} maxFontSizeMultiplier={1.2}>
-              View receipt
-            </Text>
-          </Pressable>
+          {booking.quoteRequestedAtISO ? (
+            <>
+              <Text style={styles.bodyMuted} maxFontSizeMultiplier={1.3}>
+                We&apos;re pricing this job from your details. You&apos;ll get a quote to approve and
+                nothing is charged until you accept it.
+              </Text>
+              <SummaryRow label="Quote" value="Awaiting our price" strong />
+            </>
+          ) : (
+            <>
+              <SummaryRow label="Plan" value={planLabel} />
+              <SummaryRow label="Method" value={methodLabel} />
+              <SummaryRow label="Total" value={ugx(booking.total)} />
+              <SummaryRow label="Paid" value={ugx(booking.paid)} />
+              <SummaryRow
+                label={booking.balance > 0 ? 'Balance due' : 'Balance'}
+                value={ugx(booking.balance)}
+                strong
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View receipt"
+                hitSlop={8}
+                onPress={() => router.push(`/booking/${booking.id}/receipt` as never)}
+                style={styles.receiptLink}>
+                <FileText size={16} color={colors.green700} strokeWidth={2} />
+                <Text style={styles.receiptText} maxFontSizeMultiplier={1.2}>
+                  View receipt
+                </Text>
+              </Pressable>
+            </>
+          )}
         </View>
 
         {booking.status === 'completed' ? (

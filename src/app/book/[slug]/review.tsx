@@ -11,8 +11,6 @@ import {
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,6 +22,7 @@ import { slotLabel } from '@/components/booking/slot-chips';
 import { SelectableCard } from '@/components/booking/selectable-card';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
+import { StickyComposer } from '@/components/ui/sticky-composer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -268,6 +267,8 @@ export default function ReviewScreen() {
   const savedCards = useSavedCards();
   const accountBalance = totalAccountBalance(bookings);
   const service = serviceBySlug(slug);
+  // Quote services have no price to collect here: the request goes out for pricing (H10).
+  const isQuote = service?.pricingMode === 'quote';
   const active = draft && draft.serviceSlug === slug ? draft : null;
 
   const savedPayment = getBookingDraft()?.payment;
@@ -370,9 +371,10 @@ export default function ReviewScreen() {
     hasLocation &&
     consent &&
     accountBalance <= 0 &&
-    (plan !== 'deposit' || depositValid) &&
-    (!payNowNeedsPhone || phoneValid) &&
-    (!afterNeedsPhone || phoneValid);
+    (isQuote ||
+      ((plan !== 'deposit' || depositValid) &&
+        (!payNowNeedsPhone || phoneValid) &&
+        (!afterNeedsPhone || phoneValid)));
 
   const scheduleText = active.schedule
     ? `${parseISODate(active.schedule.dateISO).toLocaleDateString('en-GB', {
@@ -454,7 +456,7 @@ export default function ReviewScreen() {
           ? saveCard
           : undefined,
     };
-    patchDraft({ payment });
+    if (!isQuote) patchDraft({ payment });
 
     try {
       const current = getBookingDraft();
@@ -464,9 +466,14 @@ export default function ReviewScreen() {
         ? { ...current, scope: snapshotScope(current.scope) }
         : current;
       if (scoped.scope) patchDraft({ scope: scoped.scope });
-      const { bookingId } = await createBooking(scoped, total);
+      const { bookingId } = await createBooking(scoped, isQuote ? 0 : total);
 
-      if (dueToday > 0) {
+      if (isQuote) {
+        router.push({
+          pathname: '/book/[slug]/confirmed',
+          params: { slug, bookingId, paid: '0', quote: '1' },
+        });
+      } else if (dueToday > 0) {
         router.push({
           pathname: '/payment/[id]',
           params: {
@@ -502,9 +509,7 @@ export default function ReviewScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.screen}>
+    <StickyComposer style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Review'}
         onBack={requestExit}
@@ -528,10 +533,12 @@ export default function ReviewScreen() {
         contentContainerStyle={styles.content}>
         <View style={styles.intro}>
           <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-            Review and pay
+            {isQuote ? 'Review your request' : 'Review and pay'}
           </Text>
           <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
-            Check the booking, then choose when to pay.
+            {isQuote
+              ? 'Check the details, then send your request for a quote.'
+              : 'Check the booking, then choose when to pay.'}
           </Text>
         </View>
 
@@ -594,12 +601,14 @@ export default function ReviewScreen() {
             editLabel="Edit cleaners and length"
             onEdit={() => edit('details')}
           />
-          <SummaryRow
-            label="Extras"
-            value={addOnNames || 'None'}
-            editLabel="Edit extras"
-            onEdit={() => edit('add-ons')}
-          />
+          {isQuote ? null : (
+            <SummaryRow
+              label="Extras"
+              value={addOnNames || 'None'}
+              editLabel="Edit extras"
+              onEdit={() => edit('add-ons')}
+            />
+          )}
           <View style={styles.scopeBlock}>
             <View style={styles.summaryRow}>
               <View style={styles.summaryBody}>
@@ -627,6 +636,20 @@ export default function ReviewScreen() {
           </View>
         </View>
 
+        {isQuote ? (
+          <View style={styles.quoteNote}>
+            <Text style={styles.quoteNoteTitle} maxFontSizeMultiplier={1.3}>
+              Custom quote
+            </Text>
+            <Text style={styles.quoteNoteBody} maxFontSizeMultiplier={1.3}>
+              We price this job from the details you gave us. Send your request and we&apos;ll reply
+              with a quote to approve before any work starts — nothing is charged today.
+            </Text>
+          </View>
+        ) : null}
+
+        {!isQuote ? (
+          <>
         <Section title="Promo code">
           {appliedPromo ? (
             <View style={styles.promoApplied}>
@@ -967,6 +990,9 @@ export default function ReviewScreen() {
           </Text>
         </View>
 
+          </>
+        ) : null}
+
         <View style={styles.consent}>
           <Checkbox
             checked={consent}
@@ -1002,19 +1028,24 @@ export default function ReviewScreen() {
       </ScrollView>
 
       <SummaryBar
-        caption="Pay now"
-        total={dueToday}
+        caption={isQuote ? 'Nothing due today' : 'Pay now'}
+        total={isQuote ? 0 : dueToday}
+        valueLabel={isQuote ? 'Custom quote' : undefined}
         actionLabel={
           submitting
-            ? 'Starting…'
-            : dueToday > 0
-              ? `Pay ${ugx(dueToday)} and confirm`
-              : 'Confirm booking'
+            ? isQuote
+              ? 'Sending…'
+              : 'Starting…'
+            : isQuote
+              ? 'Request quote'
+              : dueToday > 0
+                ? `Pay ${ugx(dueToday)} and confirm`
+                : 'Confirm booking'
         }
         onPress={onConfirm}
         disabled={!ready || submitting}
       />
-    </KeyboardAvoidingView>
+    </StickyComposer>
   );
 }
 
@@ -1028,6 +1059,14 @@ const styles = StyleSheet.create({
   },
   content: { padding: space[4], paddingBottom: space[10], gap: space[5] },
   intro: { gap: space[1] },
+  quoteNote: {
+    backgroundColor: colors.green50,
+    borderRadius: radius.card,
+    padding: space[4],
+    gap: space[1],
+  },
+  quoteNoteTitle: { ...text.h3, color: colors.green900 },
+  quoteNoteBody: { ...text.bodyM, color: colors.textMuted },
   title: { ...text.h2 },
   subtitle: { ...text.caption },
   card: {

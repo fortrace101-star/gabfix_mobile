@@ -1,13 +1,13 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Download, Flag, Share2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LogoBadge } from '@/components/brand/logo-badge';
 import { TopBar } from '@/components/ui/top-bar';
 import { receiptModel, type BookingStatusLabel } from '@/lib/receipt';
-import { shareReceiptPdf } from '@/lib/receipt-export';
+import { downloadReceiptPdf } from '@/lib/receipt-export';
 import { getBookingById, useBookings } from '@/store/bookings';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
@@ -92,7 +92,14 @@ export default function ReceiptScreen() {
     if (downloading) return;
     setDownloading(true);
     try {
-      await shareReceiptPdf(booking);
+      const { fileName } = await downloadReceiptPdf(booking);
+      Alert.alert(
+        'Receipt PDF ready',
+        Platform.OS === 'ios'
+          ? `${fileName} — choose Save to Files in the share sheet to keep it.`
+          : `${fileName} — choose Files or Downloads in the share sheet to keep it.`,
+        [{ text: 'Got it' }],
+      );
     } catch (error) {
       Alert.alert(
         'Could not create the PDF',
@@ -265,8 +272,8 @@ export default function ReceiptScreen() {
         </View>
 
         <Text style={styles.footer} maxFontSizeMultiplier={1.2}>
-          The PDF is generated on this device from the booking record saved here. Share it or
-          save it to your files.
+          The PDF is generated on this device from the booking record saved here and named
+          after this booking, so it is easy to find once saved.
         </Text>
       </ScrollView>
     </SafeAreaView>

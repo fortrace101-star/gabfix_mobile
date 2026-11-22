@@ -12,8 +12,6 @@ import {
 import { useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -26,6 +24,7 @@ import { DateStrip, toISODate } from '@/components/booking/date-strip';
 import { SelectableCard } from '@/components/booking/selectable-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardScreen } from '@/components/ui/keyboard-screen';
 import { TopBar } from '@/components/ui/top-bar';
 import { serviceBySlug } from '@/config/services';
 import { shortDate } from '@/lib/plans';
@@ -252,15 +251,9 @@ export default function QuoteRequestScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.screen}>
-      <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
         <TopBar title="Request a quote" onBack={() => router.back()} />
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}>
+        <KeyboardScreen contentContainerStyle={styles.content}>
           <View style={styles.intro}>
             <Text style={styles.title} maxFontSizeMultiplier={1.3}>
               Tell us about the job
@@ -471,7 +464,7 @@ export default function QuoteRequestScreen() {
               </Text>
             </View>
           ) : null}
-        </ScrollView>
+        </KeyboardScreen>
 
         <View
           style={[
@@ -488,8 +481,7 @@ export default function QuoteRequestScreen() {
             No payment now. We reply within 24 hours.
           </Text>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

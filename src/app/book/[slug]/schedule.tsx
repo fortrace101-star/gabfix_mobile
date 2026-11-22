@@ -358,7 +358,8 @@ export default function ScheduleScreen() {
 
       <SummaryBar
         caption={caption}
-        total={quote.total}
+        total={service?.pricingMode === 'quote' ? 0 : quote.total}
+        valueLabel={service?.pricingMode === 'quote' ? 'Custom quote' : undefined}
         actionLabel="Next"
         onPress={onNext}
         disabled={!selectedTime}

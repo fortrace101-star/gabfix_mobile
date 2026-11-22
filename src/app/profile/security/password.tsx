@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { InlineBanner } from '@/components/ui/inline-banner';
 import { Input } from '@/components/ui/input';
+import { KeyboardScreen } from '@/components/ui/keyboard-screen';
 import { TopBar } from '@/components/ui/top-bar';
 import { newId } from '@/lib/id';
 import { addLoginEvent } from '@/store/login-activity';
@@ -75,9 +76,9 @@ export default function ChangePasswordScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.screen}>
+    <View style={styles.screen}>
       <TopBar title="Change password" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardScreen style={styles.flex} contentContainerStyle={styles.content}>
         <Text style={styles.intro} maxFontSizeMultiplier={1.3}>
           Choose a strong password you don’t use elsewhere.
         </Text>
@@ -117,22 +118,29 @@ export default function ChangePasswordScreen() {
             if (errors.confirm) setErrors((e) => ({ ...e, confirm: undefined }));
           }}
           onBlur={() => {
-            if (confirm && confirm !== next) setErrors((e) => ({ ...e, confirm: "Passwords don't match." }));
+            if (confirm && confirm !== next)
+              setErrors((e) => ({ ...e, confirm: "Passwords don't match." }));
           }}
           error={errors.confirm}
           textContentType="newPassword"
         />
-        <Button label="Update password" onPress={() => void onSave()} loading={saving} disabled={!canSave} />
+        <Button
+          label="Update password"
+          onPress={() => void onSave()}
+          loading={saving}
+          disabled={!canSave}
+        />
         <Text style={styles.note} maxFontSizeMultiplier={1.3}>
           Mock mode: use anything as your current password, except “wrongpass” to see the error state.
         </Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
+  flex: { flex: 1 },
   content: { padding: space[4], gap: space[4], paddingBottom: space[10] },
   intro: { ...text.bodyM, color: colors.textMuted },
   field: { gap: 4 },

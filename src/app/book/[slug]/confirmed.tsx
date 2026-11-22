@@ -34,6 +34,7 @@ export default function ConfirmedScreen() {
     bookingId?: string;
     paid?: string;
     total?: string;
+    quote?: string;
   }>();
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const bookingId = typeof params.bookingId === 'string' ? params.bookingId : 'GBX-00000';
@@ -60,7 +61,9 @@ export default function ConfirmedScreen() {
   };
 
   const service = serviceBySlug(slug || snapshot?.serviceSlug || '');
-  const total = snapshot ? price(snapshot).total : Number(params.total) || 0;
+  // H10: a quote request has no price yet, so nothing is charged or owed.
+  const isQuote = params.quote === '1' || service?.pricingMode === 'quote';
+  const total = isQuote ? 0 : snapshot ? price(snapshot).total : Number(params.total) || 0;
   const paid = Number(params.paid) || 0;
   const balance = Math.max(total - paid, 0);
   const schedule = snapshot?.schedule;
@@ -97,6 +100,7 @@ export default function ConfirmedScreen() {
         contactName: location?.contactName,
         cleanerId: preferredCleaner?.id,
         cleanerName: preferredCleaner?.name,
+        quoteRequestedAtISO: isQuote ? new Date().toISOString() : undefined,
         scope: snapshot?.scope,
         media: finalizedMedia.length > 0 ? finalizedMedia : undefined,
         rebook: snapshot
@@ -114,8 +118,10 @@ export default function ConfirmedScreen() {
       addNotification({
         id: `booking-confirmed-${bookingId}`,
         kind: 'booking',
-        title: 'Booking confirmed',
-        body: `${service?.name ?? 'Your clean'} is booked. Tap to view the details.`,
+        title: isQuote ? 'Quote requested' : 'Booking confirmed',
+        body: isQuote
+          ? `We're pricing ${service?.name ?? 'your job'}. Tap to view the request.`
+          : `${service?.name ?? 'Your clean'} is booked. Tap to view the details.`,
         createdAtISO: new Date().toISOString(),
         href: `/booking/${bookingId}`,
       });
@@ -129,7 +135,7 @@ export default function ConfirmedScreen() {
       successHaptic();
       Animated.spring(tick, { toValue: 1, useNativeDriver: supportsNativeDriver }).start();
     })();
-  }, [balance, bookingId, location?.area, location?.contactName, location?.propertyType, location?.street, paid, preferredCleaner?.id, preferredCleaner?.name, schedule?.dateISO, schedule?.startTime, service?.name, service?.slug, slug, snapshot, snapshot?.details.cleaners, snapshot?.details.hours, snapshot?.payment?.method, snapshot?.payment?.payerPhone, snapshot?.payment?.plan, snapshot?.serviceSlug, tick, total]);
+  }, [balance, bookingId, isQuote, location?.area, location?.contactName, location?.propertyType, location?.street, paid, preferredCleaner?.id, preferredCleaner?.name, schedule?.dateISO, schedule?.startTime, service?.name, service?.slug, slug, snapshot, snapshot?.details.cleaners, snapshot?.details.hours, snapshot?.payment?.method, snapshot?.payment?.payerPhone, snapshot?.payment?.plan, snapshot?.serviceSlug, tick, total]);
 
   const when = schedule
     ? `${parseISODate(schedule.dateISO).toLocaleDateString('en-GB', {
@@ -151,7 +157,7 @@ export default function ConfirmedScreen() {
         contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
-            Booking confirmed
+            {isQuote ? 'Request sent' : 'Booking confirmed'}
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -172,7 +178,7 @@ export default function ConfirmedScreen() {
         </View>
 
         <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-          You&apos;re booked!
+          {isQuote ? 'Quote requested' : "You're booked!"}
         </Text>
         <Text style={styles.bookingId} maxFontSizeMultiplier={1.2}>
           Booking {bookingId}
@@ -211,24 +217,37 @@ export default function ConfirmedScreen() {
             </View>
           ) : null}
           <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
-              Paid today
-            </Text>
-            <Text style={styles.rowValue} maxFontSizeMultiplier={1.3}>
-              {ugx(paid)}
-            </Text>
-          </View>
-          {balance > 0 ? (
+          {isQuote ? (
             <View style={styles.row}>
               <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
-                Balance after service
+                Price
               </Text>
               <Text style={styles.rowValue} maxFontSizeMultiplier={1.3}>
-                {ugx(balance)}
+                Quote to approve
               </Text>
             </View>
-          ) : null}
+          ) : (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
+                  Paid today
+                </Text>
+                <Text style={styles.rowValue} maxFontSizeMultiplier={1.3}>
+                  {ugx(paid)}
+                </Text>
+              </View>
+              {balance > 0 ? (
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel} maxFontSizeMultiplier={1.3}>
+                    Balance after service
+                  </Text>
+                  <Text style={styles.rowValue} maxFontSizeMultiplier={1.3}>
+                    {ugx(balance)}
+                  </Text>
+                </View>
+              ) : null}
+            </>
+          )}
         </View>
 
         {snapshot?.scope ? (

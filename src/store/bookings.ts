@@ -56,6 +56,8 @@ export type SavedBooking = {
   rescheduledAtISO?: string;
   /** P13: an authorisation attempt failed; an unpaid hold is released after 30 minutes. */
   paymentFailedAtISO?: string;
+  /** H10: a quote-mode service was submitted for pricing; nothing has been charged. */
+  quoteRequestedAtISO?: string;
   /** Why the customer cancelled, captured on P16. */
   cancelReason?: string;
   cancelledAtISO?: string;

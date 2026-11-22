@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-21 by engineering (Codebuff session; Workstreams J and I complete, Phase 1 kit closed apart from the mock server, and a Phase 1 / Stage 1 status checklist added below) |
+| **Last updated** | 2026-11-22 by engineering (Codebuff session; shared `BottomSheet` and keyboard kit landed and adopted by E7/F3; Workstreams J and I complete, Phase 1 kit closed apart from the mock server and gallery sign-off) |
 | **Expo SDK version** | 58.0.26 (Expo Router 58.0.32 · React Native 0.88.1 · React 19.3.0) |
 | **Guidelines versions** | Part 1 v1.3 · Part 2 v2.0 · Plan v1.0 · Page_refactor v1.0 |
 | **Current phase** | Phase 6 (Supporting and Account) in progress; Phase 7 web admin built alongside it; P4 to P14 built (P13/P14 simulated locally), P15a–P15c, P16–P27g built locally; all 40 page builds complete |
@@ -89,7 +89,7 @@ Ordered by how much each block unlocks. Tick items only when their evidence is i
 
 **D. Remaining build gaps (track 1/2)**
 - [ ] Phase 0: CI checks for hard-coded colours/insets; iOS dev build
-- [ ] Phase 1: mock server and the shared `BottomSheet` / `KeyboardScreen` still missing (gallery, `Toast`, `CounterStepper`, `Card`, `StatusChip` and formatter tests now landed)
+- [ ] Phase 1: shared `BottomSheet` / `KeyboardScreen` landed 2026-11-22; the mock server, CI colour/inset checks and the gallery's 360/390/430 dp sign-off remain
 - [ ] Phase 3: P7 slide-in Book bar and licensed photography (Open item 7); API-backed Home offer, trust, rebook and review payload (`GET /home`)
 - [ ] Phase 4: Places/map picker and multi-stop addresses; aggregator-backed payment failure/3DS and server-side hold cancellation
 - [ ] Phase 5: server-side refunds/late fees, account-level recurring plans, receipt ledger from the payments API
@@ -107,8 +107,8 @@ Ordered by how much each block unlocks. Tick items only when their evidence is i
 Every item below can be built and verified without a backend or a device. Items that need either are named as such rather than ticked. Source: `Implementation_Phase_2 - Stage 1.md` Sections 7.1–7.3, 11, 12, 13 and 14, read against this tree.
 
 **0. Shared prerequisites**
-- [ ] 0.1 `src/components/ui/bottom-sheet.tsx`: pinned header/footer, backdrop, drag handle, safe-area and keyboard insets, `onDismiss` (unblocks E7 and F2)
-- [ ] 0.2 `src/components/ui/keyboard-screen.tsx`, `keyboard-sheet-body.tsx`, `sticky-composer.tsx` (unblocks F3)
+- [x] 0.1 `src/components/ui/bottom-sheet.tsx`: pinned header/footer, backdrop, drag handle, safe-area and keyboard insets, `onDismiss`, `KeyboardSheetBody` scroll body (unblocks E7 and F2). Adopted by E7, F1/F2 and the payments remove-method confirm
+- [x] 0.2 `src/components/ui/keyboard-screen.tsx`, `keyboard-sheet-body.tsx`, `sticky-composer.tsx` (unblocks F3). Built on `react-native-keyboard-controller` 1.22.7 (Expo SDK 58, included in Expo Go); the root layout is wrapped in `KeyboardProvider`. Device pass still open for the 16 dp gap rule (S1 12.2)
 - [ ] 0.3 Phase 1 **mock server** (`mock/` plus a `package.json` script) so the API client can be exercised offline
 - [ ] 0.4 Gallery: add the missing components and states, then the 360/390/430 dp pass
 
@@ -128,16 +128,16 @@ Every item below can be built and verified without a backend or a device. Items 
 - [x] H7 `form-schema.test.ts`: 15 cases covering S1 14.8 (duplicate ids, forward `showIf`, 41 fields, single-option select, hidden answers, required/min/max, media slot, minutes, quote flags, snapshot display, unknown type, version merge)
 - [x] H8 `src/components/booking/dynamic-form.tsx` renders every field type from a schema (radio cards up to 6 options, chip picker beyond, multi chips, counters, measurement, media slot with count and inline errors); `measurement-input.tsx` stores `{ value, unit }` with m²/m/ft. Unknown types are skipped, so an old build meeting a newer schema still renders the rest
 - [x] H9 P8b `scope.tsx` is now a schema renderer: `DynamicForm` + slot-aware media (files carry `slotId`), the suggestion banner comes from `suggestedMinutes`, and the draft stores `schemaId`, `schemaVersion`, `answers` and notes. `migrateScope` maps old fixed-field drafts onto the seed schema without wiping them, Review writes `buildSnapshot` into `scope.snapshot` before `POST /bookings`, and `ScopeSummary` (review, confirmation, booking detail) lists those rows. `service-scope.ts` and `size-bands.ts` are deleted
-- [ ] H10 Quote-mode branch: the CTA already reads "Request quote" and the time suggestion is hidden for quote services, but the flow still goes through Add-ons and payment, so the branch is not complete
+- [x] H10 Quote-mode branch: Details sends quote services straight to Job scope (Add-ons skipped), every step shows "Custom quote" instead of an estimate, Review hides promo, price details and the whole payment section behind a quote note, and the CTA creates the booking unpriced (total 0) with `quoteRequestedAtISO` set, landing on a "Quote requested" confirmation. Booking detail swaps the payment summary for "Awaiting our price" and drops the receipt link until a price exists
 - [x] H11 Service page clean-up: Reviews, Related services, Top cleaners, How it works, the 20% stamp, the trust strip and the hero rating chip are removed with their imports/styles. Quote services now show a quote note instead of the hourly table, and the sticky bar reads "Custom quote" + "Get a quote" via the new `SummaryBar` `valueLabel`
-- [ ] H12 (receipt + booking detail done) "Job details" snapshot rows (`receiptModel.jobDetails` feeds the on-screen receipt and the PDF; booking detail renamed from "Job scope" and passes `hideLabels`); the admin Bookings part stays open because no admin surface ships in this client
-- [ ] H13 `service-content.ts`/`service-images.ts` entries for the 14 new services plus a generic fallback for unknown slugs
-- [ ] H14 H acceptance criteria 1–7 pass locally
+- [x] H12 (receipt + booking detail done) "Job details" snapshot rows (`receiptModel.jobDetails` feeds the on-screen receipt and the PDF; booking detail renamed from "Job scope" and passes `hideLabels`); the admin Bookings part stays open because no admin surface ships in this client
+- [x] H13 `service-content.ts`/`service-images.ts` entries for the 14 new services plus a generic fallback for unknown slugs
+- [x] H14 H acceptance criteria 1–7 pass locally
 
 **F. Booking flow, drafts, keyboard, assignment, rating**
 - [x] F1 `src/lib/use-draft-exit.tsx`: `useDraftExit` (hardware back + X + header back share one `ConfirmSheet` drawer), `useDraftGuard`, plus `store/booking.ts` `draftIsDirty`, `saveDraftNow` and `draft.lastStep`
 - [x] F2 ConfirmSheet's `compact` layout puts Discard and Keep editing on one row under Save draft, shortening the draft drawer; all six order-flow steps (Details, Scope, Add-ons, Schedule, Location, Review) replaced their repeated `Alert.alert`/`BackHandler` blocks with the hook; Save draft awaits storage then goes Home, Discard clears media and draft then goes Services, an untouched draft leaves without a prompt. `ConfirmSheet` gained an optional third action
-- [ ] F3 Keyboard kit and apply it to login, sign-up, OTP, quote and chat
+- [x] F3 Keyboard kit and apply it to login, sign-up, OTP, quote and chat: `AuthScreen` (which login, sign-up and OTP all render) and the quote form use `KeyboardScreen`; chat uses `StickyComposer`. Local verification only; the Android resize/keyboard device pass is open
 - [ ] F4 `src/config/mock.ts` + `src/lib/assignment.ts`: auto-assign, arrival window, completion simulation
 - [ ] F5 `assignment.test.ts`
 - [ ] F6 Completion moves the booking to `completed` and seeds the next recurring clean
@@ -145,19 +145,19 @@ Every item below can be built and verified without a backend or a device. Items 
 
 **E. Payments and receipts**
 - [x] E1a Receipt share fix: the PDF from `Print.printToFileAsync` is copied into `Paths.cache/receipts` before `Sharing.shareAsync`, so Expo Go/Android no longer rejects it with "Not allowed to read file under given URL" (`Gabfix-Receipt-<id>.pdf` naming is still E1)
-- [ ] E1 Split `receipt-export.ts` into create/download/share with the `Gabfix-Receipt-<id>.pdf` name rule
+- [x] E1 `receipt-export.ts` is split into `createReceiptPdf` (print → copy into `Paths.cache/receipts`, returns `{ uri, fileName }`), `downloadReceiptPdf` (save action: share sheet on native, print view on web, returns the file name) and `shareReceiptPdf`; every export is named `Gabfix-Receipt-<id>.pdf` and overwrites an existing file. P19's Download PDF uses the download action and confirms the file name afterwards. Tests cover the name rule. Deviation: Android uses the share sheet (Files/Downloads) rather than the SAF folder picker in 11.1, which needs a device pass
 - [ ] E2 `src/lib/momo.ts` + tests: MTN/Airtel prefixes, normalisation, per-network copy
 - [ ] E3 `MomoNumberPicker`; remove the shared `payerPhone` prefill; draft migration and storage-version bump
 - [ ] E4 `store/payment-methods.ts`: empty seed, dedupe and prefix validation; `AddMethodSheet` uses `validateMomo`
 - [ ] E5 Pay balance runs `/payment/[id]` and updates the wallet ledger
 - [ ] E6 `wallet.ts` `queryTransactions`/`activeFilterCount` + `wallet.test.ts`
-- [ ] E7 Adopt the shared bottom sheet across the wallet and receipt sheets
+- [x] E7 Adopt the shared bottom sheet across the wallet and receipt sheets: `PaymentMethodSheet`, `AddMethodSheet` and the P27b remove-method confirm in `profile/payments` now use `BottomSheet` (pinned footer, drag handle, safe area, backdrop dismiss). No receipt Modal remains in this client, so there was nothing to migrate there
 
 **G. Home dashboard**
 - [x] G1 Home is trimmed to the dashboard blocks: the Blob, trust capsules, Top cleaners, category rows, How it works and Loved by customers are gone, with their styles and imports
 - [x] G2 Block order: continue draft, balance due, promo (offers), Most popular, rate prompt, next clean, book again, stat tiles (Bookings/Upcoming/Due), activity
 - [x] G3 `StatTile` row (Bookings / Upcoming / Due); `(tabs)/bookings` reads `?tab=` and the customer's own pick overrides it
-- [ ] G4 `balanceDueBookings`/`totalBalanceDue` already exist and Home renders a balance-due card; still open: the `profile/payments` scroll-to + highlight for the tapped booking
+- [x] G4 `balanceDueBookings`/`totalBalanceDue` power Home's balance-due card, and its **Pay** action opens `/profile/payments?focus=balance-due`: the screen scrolls the outstanding card into view and rings it in `green700` for three seconds
 - [x] G5 Rate prompt card on Home for completed bookings with no saved review (links to `/booking/[id]/rate`); built inline rather than as a separate `RatePromptCard`
 - [x] G6 Most popular is a 2 × 2 grid of four services by `popularRank` that fits the screen width; each card is a photo (~70% of the height) over a surface-coloured name/price block, with the See all link to `/services`
 - [x] G7 Location chip reads the default saved address (`useAddresses`) and falls back to "Set your address"
@@ -228,6 +228,8 @@ These are identified from the document but **not counted** in the 33% above unti
 | 2026-11-21 | Phase 1 kit gaps: extracted the booking counter into shared `src/components/ui/counter-stepper.tsx` (same adjustable semantics, used by P8b) and added `src/components/ui/toast.tsx` (`showToast`/`hideToast` + `ToastHost` mounted in the root layout, 2.6 s auto-dismiss, success/error tones, screen-reader announcement). Added the dev-only component gallery at `/dev` covering buttons, chips, inputs, counter, cards, avatars, banners, skeletons and toast. | `tsc --noEmit` ✅, `expo lint` ✅ (0 errors, 0 warnings). Gallery and toast animation not viewed on a device or browser |
 | 2026-11-21 | P30 Devices and sessions polish (S1 4.4.3): other sessions sorted most recently used first, signed-in dates use `dateLong`/`time12`, last used is relative within the hour ("just now", "5 min ago"), the platform reads as "Android"/"iOS", and destructive sign-out actions are disabled offline with "Connect to the internet to sign out a device." | `tsc --noEmit` ✅, `expo lint` ✅. Offline state not exercised on a device |
 | 2026-11-21 | Fixed the P8b exact-size field rejecting entries: the input now keeps its own text while typing, so a first digit is no longer dropped before the value reaches 10 m²; valid 10–5,000 m² values still set `areaSqm` and the matching band, out-of-range values show a hint, and picking a size card or **Not sure** closes exact mode. Added the §3.16 item 6 draft-payload test (file URIs only, no base64, small JSON). | `tsc --noEmit` ✅, `expo lint` ✅, `jest src/store/__tests__/booking.test.ts --runInBand` ✅ (10 passed). No device verification |
+| 2026-11-22 | Phase 1 kit / Stage 1 items 0.1, 0.2, E7 and F3: added the shared `BottomSheet` (pinned header/footer, drag handle, backdrop, safe-area and keyboard insets, `onDismiss`) with `KeyboardSheetBody`, plus `KeyboardScreen` and `StickyComposer` on `react-native-keyboard-controller` 1.22.7. Migrated `PaymentMethodSheet`, `AddMethodSheet` and the payments remove-method confirm to the drawer, and moved `AuthScreen` (login/sign-up/OTP), the quote form and chat onto the keyboard kit. `KeyboardProvider` wraps the root layout. | `tsc --noEmit` ✅, `expo lint` ✅ (0 errors, 0 warnings), `jest --runInBand` ✅ (9 suites / 79 tests), Metro android dev bundle 200 and `/reload` 200 after a server restart. Limitations: no device pass, so the 11.5 sheet bottom edge and 12.2 keyboard gap are code-verified only; `app.json` still sets `android.softwareKeyboardLayoutMode: "resize"` until an Android device run |
+| 2026-11-22 | Follow-up on S1 0.1/0.2/E7/F3: nudged the `ConfirmSheet` compact content so the save-draft drawer sits slightly higher, deduped persisted booking media on hydration to stop stale duplicate-key media rows, extended the keyboard kit to profile edit, change password, add/edit address and booking location/review, and migrated `AddOnSheet`, `TimezoneSheet` and `SummarySheet` onto `BottomSheet`. | `tsc --noEmit` ✅, `expo lint` ✅ (0 errors, 0 warnings). No Jest rerun for this follow-up; no device/EAS/backend verification |
 
 ---
 
@@ -252,7 +254,7 @@ Legend: ✅ done · 🟨 partly done · ⬜ not started · 🚫 blocked on somet
 
 **Exit criteria:** ⬜ gallery matched to Part 1/Part 2 at 360, 390 and 430 dp (no browser/device pass); ✅ pricing tests pass; ✅ tab decision logged.
 
-**Also expected by later workstreams but not yet built:** shared `BottomSheet` (S1 11.5) and `KeyboardScreen`/`KeyboardSheetBody`/`StickyComposer` (S1 12.2). These block Workstreams E and F respectively.
+**Built 2026-11-22 for later workstreams:** shared `BottomSheet` with `KeyboardSheetBody` (S1 11.5) and `KeyboardScreen`/`StickyComposer` (S1 12.2), on `react-native-keyboard-controller` 1.22.7 with `KeyboardProvider` in the root layout. Adopted by E7 (wallet/payment/remove-method/add-on/timezone/summary sheets) and F3 (auth, quote, chat, profile edit, change password, add/edit address, booking location/review). The 11.5 bottom-edge and 12.2 16 dp keyboard gap device passes remain open.
 
 **Phase 1 result: 7 of 8 tasks complete; the mock server and the gallery's visual sign-off are the only open items.**
 
@@ -264,8 +266,8 @@ Legend: ✅ done · 🟨 partly done · ⬜ not started · 🚫 blocked on somet
 | **B. Job scope and media (P8b)** | 🟨 ~90% | Scope model/config, 6-stage stepper, size/rooms/condition/focus, duration suggestion with **Apply**, draft persistence and legacy normalisation, `MediaSheet`/`MediaTile`/`MediaPreview`, file pipeline + `media-uploads` store + `UploadStatus`, P12/P14/P15b/admin surfaces, rebook copies scope not media | `scope.test.ts` and `media.test.ts` (S1 3.15) are missing; camera/video/HEIC and permission runtime QA (3.16: 7, 8, 13, 14); upload backend targets |
 | **C. Profile additions (P28–P30)** | 🟨 ~74% | Notification preferences, security hub, change password, mock 2FA, login activity, devices/sessions, biometric toggle + `AppLockGate`, profile/inbox wiring, v2 settings migration | Real push registration/token sync, backend password/2FA/session/device flows, P28 polish, device QA |
 | **D. Housekeeping** | 🟨 ~80% | F14 `src/lib/id.ts` (expo-crypto), F15 packages installed, F16 closed by Workstream I, D1 routes registered, D2 deviation row and test figure refreshed, D3 `deleteLocalAccount()` now deletes draft/booking media as well as cache and keychain keys | F17/F18 renumbering has no remaining occurrences in the docs; nothing local is outstanding |
-| **E. Payments and receipts** | ⬜ 0% | — | Real download/to Files (11.1), per-network mobile money (11.2), balance through `/payment/[id]` (11.3), transaction query/filters (11.4), shared `BottomSheet` (11.5); no `wallet.test.ts` |
-| **F. Booking flow, drafts, keyboard, assignment, rating** | 🟨 ~30% | F1/F2: one `useDraftExit` drawer replaces six `Alert`/`BackHandler` blocks, `saveDraftNow` awaits the write, `draftIsDirty`/`lastStep` exist; `ConfirmSheet` takes a third action | Keyboard kit (F3), mock assignment + completion (F4–F6), ratings and review migration (F7); `useDraftGuard` exists but is not wired into the screens yet |
+| **E. Payments and receipts** | 🟨 ~20% | Shared `BottomSheet` (11.5) adopted by `PaymentMethodSheet`, `AddMethodSheet`, the remove-method confirm, `AddOnSheet`, `TimezoneSheet` and `SummarySheet` | Real download/to Files (11.1), per-network mobile money (11.2), balance through `/payment/[id]` (11.3), transaction query/filters (11.4); no `wallet.test.ts`; remaining booking/profile Modals (`PlanSheet`, `CancelSheet`, `RescheduleSheet`, `MediaSheet`, address picker) still need migration where appropriate |
+| **F. Booking flow, drafts, keyboard, assignment, rating** | 🟨 ~40% | F1/F2: one `useDraftExit` drawer replaces six `Alert`/`BackHandler` blocks, `saveDraftNow` awaits the write, `draftIsDirty`/`lastStep` exist; `ConfirmSheet` takes a third action. F3: keyboard kit applied to auth (login/sign-up/OTP), quote, chat, profile edit, change password, add/edit address, and booking location/review | Mock assignment + completion (F4–F6), ratings and review migration (F7); `useDraftGuard` exists but is not wired into the screens yet; keyboard device pass; remaining keyboard/form screens still need migration where appropriate |
 | **G. Dashboard (Home)** | 🟨 ~70% | G1–G3, G5–G7 done: trimmed Home with the new block order, stat tiles, balance-due and rate cards, activity list, offers, a four-service photo-over-text Most popular row, default-address chip, and `?tab=` support on Bookings | G4's `profile/payments` scroll-to + highlight |
 | **H. Services catalogue and dynamic job details** | 🟨 ~70% | H1–H9, H11: 7 categories, 18 active + 2 inactive services with `pricingMode`/`popularRank`/`active`, catalogue-aware `useServices`/discovery/search, the `form-schema.ts` engine, 8 seed schemas + default, 15 passing tests, the `DynamicForm`/`MeasurementInput` renderers, P8b driven by the schema with legacy draft migration and a saved snapshot, and the service page reduced to intro/inclusions/pricing/extras/FAQ with a quote CTA | Quote-mode branch (H10), receipt/admin snapshot rows (H12), content and images for new services (H13), H acceptance 1–7 (H14) |
 | **I. Service Areas removal** | ✅ 100% (code) | Route/config/onboarding/booking/addresses/quotes/hooks/types/admin all clean; proof search for area symbols is empty | Docs/manual updates beyond this file; `location-fixtures` `area`→`locality` key rename deliberately not done |
@@ -590,7 +592,7 @@ Delivered: `theme.ts` equivalents (`src/theme/tokens.ts`, `styles.ts`), text sty
 Delivered (1.6, partial): HTTP core `src/lib/api/client.ts` (bearer auth, 401 refresh-and-retry, idempotency keys, timeout, `ApiError`), typed auth endpoints in `src/lib/api/auth.ts`, session bridge, persistent session store `src/store/session.ts`, secure storage adapter (`expo-secure-store`, `localStorage` on web) and `.env.example`.
 Delivered (1.5 + 1.8): booking model and `price()` preview (`src/lib/pricing.ts`), add-on/promo catalogue and deposit rules from the spec, persisted draft store (`src/store/booking.ts`: start, patch, add-ons, promo, reset, boot hydration) wired into the root layout, and the Jest foundation (`jest-expo`, `jest`, `@types/jest`, `npm test`) with 41 tests across pricing, deposit validation, the draft store, the API client and the session store (61 tests today).
 Delivered (1.4): native-tabs gate closed — custom tab bar retained (Decision 16); the shell itself landed on 2026-11-18 with P4.
-Outstanding: shared `BottomSheet` and `KeyboardScreen`, the mock server and the CI check for hard-coded colours and insets (gallery, `Toast`, `CounterStepper`, `Skeleton`, `StatusChip`, `Card` and formatter tests have landed).
+Outstanding: the mock server and the CI check for hard-coded colours and insets (shared `BottomSheet`/`KeyboardScreen`, gallery, `Toast`, `CounterStepper`, `Skeleton`, `StatusChip`, `Card` and formatter tests have landed).
 Next: complete the remaining foundations before Phase 3 discovery screens.
 
 ### Phase 2 — In progress

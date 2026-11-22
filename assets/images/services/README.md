@@ -9,17 +9,35 @@ photography, keeping the **exact filenames** so the app picks them up without co
 |---|---|
 | `home-clean.jpg` | `home-clean` |
 | `deep-clean.jpg` | `deep-clean` |
+| `post-construction-clean.jpg` | `post-construction-clean` |
 | `office-clean.jpg` | `office-clean` |
 | `move-out-clean.jpg` | `move-out-clean` |
+| `carpet-clean.jpg` | `carpet-clean` |
+| `sofa-clean.jpg` | `sofa-clean` |
+| `chair-clean.jpg` | `chair-clean` |
+| `pavers-clean.jpg` | `pavers-clean` |
+| `roof-clean.jpg` | `roof-clean` |
+| `terrazzo-polish.jpg` | `terrazzo-polish` |
+| `fumigation.jpg` | `fumigation` |
+| `electrical-works.jpg` | `electrical-works` |
+| `plumbing-works.jpg` | `plumbing-works` |
+| `handyman-works.jpg` | `handyman-works` |
+| `tiling.jpg` | `tiling` |
+| `painting.jpg` | `painting` |
+| `renovation.jpg` | `renovation` |
+| `pavers-laying.jpg` | `pavers-laying` |
+| `landscaping.jpg` | `landscaping` |
+| `default.jpg` | generic fallback for any slug without its own photo |
 
 Add a new service by dropping `<slug>.jpg` here and adding one line in
-`src/config/service-images.ts`.
+`src/config/service-images.ts`. Until that file lands, `serviceImage()` falls back to the
+photo of the service's category and then to `default.jpg`, so the slot is never empty.
 
 ## Export requirements
 
 - **Format:** sRGB JPEG or WebP (export as `.jpg` to keep the same filename), progressive.
 - **Dimensions:** 1200 × 800 px (3:2). 1600 × 1067 px preferred if the source allows.
-- **Size:** target < 300 KB each (these four placeholders total ~116 KB).
+- **Size:** target < 300 KB each (the current placeholders are ~25–55 KB each).
 - **Rights:** commercial app use, with model/property releases for recognizable people or spaces.
 
 ## Composition and safe areas

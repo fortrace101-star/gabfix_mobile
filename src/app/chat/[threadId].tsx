@@ -6,8 +6,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +16,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/ui/empty-state';
+import { StickyComposer } from '@/components/ui/sticky-composer';
 import { TopBar } from '@/components/ui/top-bar';
 import { clockLabel } from '@/lib/chat';
 import {
@@ -217,13 +216,11 @@ export default function ChatThreadScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}>
+      <StickyComposer>
         <FlatList
           ref={listRef}
           inverted
+          style={styles.flex}
           data={ordered}
           keyExtractor={(message) => message.id}
           renderItem={({ item }) => (
@@ -303,7 +300,7 @@ export default function ChatThreadScreen() {
             />
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </StickyComposer>
     </SafeAreaView>
   );
 }

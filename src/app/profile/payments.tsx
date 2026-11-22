@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -12,10 +12,18 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ScrollViewInstance,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { AddMethodSheet } from '@/components/wallet/add-method-sheet';
 import { PaymentMethodSheet } from '@/components/wallet/payment-method-sheet';
@@ -193,6 +201,8 @@ function LoadingState() {
 /** P27b Payments and wallet. All data is derived from local booking records. */
 export default function PaymentsScreen() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ focus?: string }>();
+  const focus = typeof params.focus === 'string' ? params.focus : undefined;
   const bookings = useBookings();
   const bookingsHydrated = useBookingsHydrated();
   const methodsHydrated = usePaymentMethodsHydrated();
@@ -203,6 +213,9 @@ export default function PaymentsScreen() {
   const [addOpen, setAddOpen] = useState(false);
   const [payAction, setPayAction] = useState<PayAction | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; label: string } | null>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const [focusY, setFocusY] = useState<number | null>(null);
+  const [highlight, setHighlight] = useState(false);
 
   const dueBookings = useMemo(() => balanceDueBookings(bookings), [bookings]);
   const dueTotal = useMemo(() => totalBalanceDue(bookings), [bookings]);
@@ -215,6 +228,21 @@ export default function PaymentsScreen() {
   );
 
   const hydrated = bookingsHydrated && methodsHydrated;
+
+  // Home's "Pay" opens this screen with focus=balance-due: scroll the outstanding card into
+  // view and ring it briefly so the reason for the visit is obvious.
+  useEffect(() => {
+    if (!hydrated || focus !== 'balance-due' || focusY === null) return;
+    const scroll = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(focusY - space[3], 0), animated: true });
+      setHighlight(true);
+    }, 150);
+    const clear = setTimeout(() => setHighlight(false), 3000);
+    return () => {
+      clearTimeout(scroll);
+      clearTimeout(clear);
+    };
+  }, [hydrated, focus, focusY]);
 
   const confirmRemove = (id: string, label: string) => {
     setRemoveTarget({ id, label });
@@ -248,10 +276,14 @@ export default function PaymentsScreen() {
         <LoadingState />
       ) : (
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space[6] }]}>
           {dueBookings.length > 0 ? (
-            <View style={styles.balanceCard}>
+            <View
+              accessibilityLabel={highlight ? 'Balance due, highlighted' : undefined}
+              onLayout={(event) => setFocusY(event.nativeEvent.layout.y)}
+              style={[styles.balanceCard, highlight && styles.balanceCardFocus]}>
               <View style={styles.balanceHeader}>
                 <View style={styles.balanceHeaderCopy}>
                   <Text style={styles.balanceKicker} maxFontSizeMultiplier={1.2}>
@@ -445,47 +477,25 @@ export default function PaymentsScreen() {
         onClose={() => setPayAction(null)}
         onPay={onPay}
       />
-      <Modal
-        animationType="slide"
-        onRequestClose={() => setRemoveTarget(null)}
-        transparent
-        visible={removeTarget !== null}>
-        {removeTarget ? (
-          <View style={styles.confirmBackdrop}>
-            <Pressable
-              accessibilityLabel="Close remove method"
-              accessibilityRole="button"
-              onPress={() => setRemoveTarget(null)}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={[styles.confirmSheet, { paddingBottom: insets.bottom + space[4] }]}>
-              <View style={styles.confirmIcon}>
-                <Trash2 size={24} color={colors.error} strokeWidth={2} />
-              </View>
-              <Text style={styles.confirmTitle} maxFontSizeMultiplier={1.3}>
-                Remove this method?
-              </Text>
-              <Text style={styles.confirmBody} maxFontSizeMultiplier={1.3}>
-                {removeTarget.label} will no longer appear at checkout on this device.
-              </Text>
-              <Button
-                label="Remove method"
-                variant="destructive"
-                onPress={() => {
-                  removePaymentMethod(removeTarget.id);
-                  setRemoveTarget(null);
-                }}
-                style={styles.fullWidth}
-              />
-              <Button
-                label="Keep method"
-                variant="ghost"
-                onPress={() => setRemoveTarget(null)}
-              />
-            </View>
-          </View>
-        ) : null}
-      </Modal>
+      <BottomSheet
+        visible={removeTarget !== null}
+        onDismiss={() => setRemoveTarget(null)}
+        title="Remove this method?"
+        contentContainerStyle={styles.confirmContent}>
+        <Text style={styles.confirmBody} maxFontSizeMultiplier={1.3}>
+          {removeTarget?.label} will no longer appear at checkout on this device.
+        </Text>
+        <Button
+          label="Remove method"
+          variant="destructive"
+          onPress={() => {
+            if (removeTarget) removePaymentMethod(removeTarget.id);
+            setRemoveTarget(null);
+          }}
+          style={styles.fullWidth}
+        />
+        <Button label="Keep method" variant="ghost" onPress={() => setRemoveTarget(null)} />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -503,6 +513,7 @@ const styles = StyleSheet.create({
     gap: space[3],
     ...shadow.card,
   },
+  balanceCardFocus: { borderWidth: 2, borderColor: colors.green700 },
   balanceHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: space[3] },
   balanceHeaderCopy: { flex: 1, gap: 2 },
   balanceKicker: {
@@ -676,25 +687,7 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   emptyFilterText: { ...text.caption, color: colors.textMuted },
-  confirmBackdrop: { flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
-  confirmSheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    paddingHorizontal: space[4],
-    paddingTop: space[6],
-    alignItems: 'center',
-    gap: space[3],
-  },
-  confirmIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.errorBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmTitle: { ...text.h3, textAlign: 'center' },
-  confirmBody: { ...text.bodyM, color: colors.textMuted, textAlign: 'center' },
+  confirmContent: { paddingHorizontal: space[4], paddingTop: space[3], gap: space[3] },
+  confirmBody: { ...text.bodyM, color: colors.textMuted },
   fullWidth: { alignSelf: 'stretch' },
 });

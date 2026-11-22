@@ -82,14 +82,15 @@ export function useDraftExit({ step, enabled = true }: Options): DraftExit {
       visible={open}
       title="Save as draft?"
       body="Your choices are kept so you can finish booking later."
-      confirmLabel="Save draft"
+      confirmLabel="Keep editing"
       destructive={false}
       icon={FileText}
       extraLabel="Discard"
       onExtra={discard}
-      cancelLabel="Keep editing"
+      cancelLabel="Save draft"
       compact
-      onConfirm={() => {
+      onConfirm={() => setOpen(false)}
+      onCancel={() => {
         void save();
       }}
       onClose={() => setOpen(false)}

@@ -4,9 +4,7 @@ import { Check, Home, MapPin, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
   Linking,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +18,7 @@ import { ChipSelector } from '@/components/booking/chip-selector';
 import { StepperHeader } from '@/components/booking/stepper-header';
 import { SummaryBar } from '@/components/booking/summary-bar';
 import { SummarySheet } from '@/components/booking/summary-sheet';
+import { StickyComposer } from '@/components/ui/sticky-composer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { PermissionCard } from '@/components/ui/permission-card';
@@ -240,9 +239,7 @@ export default function LocationScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.screen}>
+    <StickyComposer style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Location'}
         onBack={requestExit}
@@ -508,7 +505,8 @@ export default function LocationScreen() {
 
       <SummaryBar
         caption={form.street ? `${locality ? `${locality} · ` : ''}${form.street}` : 'Add your address'}
-        total={quote.total}
+        total={service?.pricingMode === 'quote' ? 0 : quote.total}
+        valueLabel={service?.pricingMode === 'quote' ? 'Custom quote' : undefined}
         actionLabel="Next"
         onPress={onNext}
         disabled={!complete}
@@ -522,7 +520,7 @@ export default function LocationScreen() {
         serviceName={service?.name}
         visible={summaryOpen}
       />
-    </KeyboardAvoidingView>
+    </StickyComposer>
   );
 }
 
