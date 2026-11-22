@@ -1,4 +1,5 @@
 import { paymentMethodLabel } from '@/lib/booking-policy';
+import { scopeRows } from '@/lib/booking-scope';
 import { price } from '@/lib/pricing';
 import type { SavedBooking } from '@/store/bookings';
 import { ugx } from '@/utils/format';
@@ -36,6 +37,8 @@ export type ReceiptModel = {
   issued: string;
   serviceDate: string;
   address: string;
+  /** Job-details snapshot captured when the booking was placed. */
+  jobDetails: ReceiptLine[];
   lines: ReceiptLine[];
   total: number;
   paid: number;
@@ -95,6 +98,7 @@ export function receiptModel(booking: SavedBooking): ReceiptModel {
     issued: receiptIssuedLabel(booking.createdAtISO),
     serviceDate: receiptDateLabel(booking.dateISO),
     address: [booking.area, booking.street].filter(Boolean).join(', ') || 'To confirm',
+    jobDetails: scopeRows(booking.scope).map((row) => ({ label: row.label, value: row.display })),
     lines,
     total,
     paid: booking.paid,
@@ -147,6 +151,17 @@ export function receiptHtml(booking: SavedBooking): string {
     ? `<tr><td>Digital tip</td><td class="amount">${escapeHtml(ugx(receipt.tip))}</td></tr>`
     : '';
 
+  const jobDetails =
+    receipt.jobDetails.length > 0
+      ? `<h2>Job details</h2>
+  <table>${receipt.jobDetails
+    .map(
+      (row) =>
+        `<tr><td>${escapeHtml(row.label)}</td><td class="amount">${escapeHtml(row.value)}</td></tr>`,
+    )
+    .join('')}</table>`
+      : '';
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -195,6 +210,8 @@ export function receiptHtml(booking: SavedBooking): string {
     <div><span>Service date</span><strong>${escapeHtml(receipt.serviceDate)}</strong></div>
     <div><span>Address</span><strong>${escapeHtml(receipt.address)}</strong></div>
   </div>
+
+  ${jobDetails}
 
   <h2>Charges</h2>
   <table>${rows}</table>

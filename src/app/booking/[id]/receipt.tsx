@@ -172,6 +172,17 @@ export default function ReceiptScreen() {
           <LineItem label="Total" value={ugx(receipt.total)} strong />
         </View>
 
+        {receipt.jobDetails.length > 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+              Job details
+            </Text>
+            {receipt.jobDetails.map((line) => (
+              <LineItem key={line.label} label={line.label} value={line.value} />
+            ))}
+          </View>
+        ) : null}
+
         <View style={styles.card}>
           <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
             Payments

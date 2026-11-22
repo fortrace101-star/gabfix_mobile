@@ -248,9 +248,9 @@ export default function BookingDetailScreen() {
         {booking.scope || (booking.media?.length ?? 0) > 0 ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle} maxFontSizeMultiplier={1.3}>
-              Job scope
+              Job details
             </Text>
-            <ScopeSummary scope={booking.scope} media={booking.media ?? []} compact />
+            <ScopeSummary scope={booking.scope} media={booking.media ?? []} compact hideLabels />
             {uploads.length > 0 ? (
               <UploadStatus
                 items={uploads}
@@ -374,20 +374,12 @@ export default function BookingDetailScreen() {
               />
             ) : null}
             {booking.status === 'upcoming' ? (
-              <>
-                <Button
-                  label="Reschedule"
-                  variant="secondary"
-                  icon={CalendarDays}
-                  onPress={() => setRescheduleOpen(true)}
-                />
-                <Button
-                  label="Cancel booking"
-                  variant="dangerGhost"
-                  icon={XCircle}
-                  onPress={() => setCancelOpen(true)}
-                />
-              </>
+              <Button
+                label="Reschedule"
+                variant="secondary"
+                icon={CalendarDays}
+                onPress={() => setRescheduleOpen(true)}
+              />
             ) : null}
             {booking.status !== 'upcoming' ? (
               <>
@@ -409,6 +401,14 @@ export default function BookingDetailScreen() {
                 router.push({ pathname: '/help/contact', params: { bookingId: booking.id } } as Href)
               }
             />
+            {booking.status === 'upcoming' ? (
+              <Button
+                label="Cancel booking"
+                variant="dangerGhost"
+                icon={XCircle}
+                onPress={() => setCancelOpen(true)}
+              />
+            ) : null}
           </View>
         </View>
 

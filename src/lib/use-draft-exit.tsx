@@ -88,6 +88,7 @@ export function useDraftExit({ step, enabled = true }: Options): DraftExit {
       extraLabel="Discard"
       onExtra={discard}
       cancelLabel="Keep editing"
+      compact
       onConfirm={() => {
         void save();
       }}

@@ -12,9 +12,11 @@ type Props = {
   body: string;
   confirmLabel: string;
   cancelLabel?: string;
-  /** Optional third action between confirm and cancel, e.g. "Discard". */
+  /** Optional third action, e.g. "Discard". Stacks by default; see `compact`. */
   extraLabel?: string;
   onExtra?: () => void;
+  /** Tighter sheet with the extra and cancel actions side by side under the confirm button. */
+  compact?: boolean;
   destructive?: boolean;
   busy?: boolean;
   icon?: LucideIcon;
@@ -31,6 +33,7 @@ export function ConfirmSheet({
   cancelLabel = 'Cancel',
   extraLabel,
   onExtra,
+  compact = false,
   destructive = true,
   busy = false,
   icon: Icon = ShieldAlert,
@@ -48,7 +51,13 @@ export function ConfirmSheet({
           onPress={busy ? undefined : onClose}
           style={StyleSheet.absoluteFill}
         />
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space[6]) }]}>
+        <View
+          style={[
+            styles.sheet,
+            compact && styles.sheetCompact,
+            { paddingBottom: Math.max(insets.bottom, space[6]) },
+          ]}
+        >
           <View style={styles.handle} />
           <Pressable
             accessibilityRole="button"
@@ -58,7 +67,7 @@ export function ConfirmSheet({
             style={styles.close}>
             <X size={22} color={colors.text} strokeWidth={2} />
           </Pressable>
-          <View style={[styles.icon, destructive && styles.iconDanger]}>
+          <View style={[styles.icon, destructive && styles.iconDanger, compact && styles.iconCompact]}>
             <Icon size={26} color={destructive ? colors.error : colors.green500} strokeWidth={2} />
           </View>
           <Text style={styles.title} maxFontSizeMultiplier={1.3}>
@@ -73,10 +82,33 @@ export function ConfirmSheet({
             loading={busy}
             onPress={onConfirm}
           />
-          {extraLabel && onExtra ? (
-            <Button label={extraLabel} variant="dangerGhost" disabled={busy} onPress={onExtra} />
-          ) : null}
-          <Button label={cancelLabel} variant="ghost" disabled={busy} onPress={onClose} />
+          {compact ? (
+            <View style={styles.actionsRow}>
+              <Button
+                label={cancelLabel}
+                variant="ghost"
+                disabled={busy}
+                onPress={onClose}
+                style={styles.rowButton}
+              />
+              {extraLabel && onExtra ? (
+                <Button
+                  label={extraLabel}
+                  variant="dangerGhost"
+                  disabled={busy}
+                  onPress={onExtra}
+                  style={styles.rowButton}
+                />
+              ) : null}
+            </View>
+          ) : (
+            <>
+              {extraLabel && onExtra ? (
+                <Button label={extraLabel} variant="dangerGhost" disabled={busy} onPress={onExtra} />
+              ) : null}
+              <Button label={cancelLabel} variant="ghost" disabled={busy} onPress={onClose} />
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -93,6 +125,7 @@ const styles = StyleSheet.create({
     paddingTop: space[2],
     gap: space[3],
   },
+  sheetCompact: { paddingTop: space[1], gap: space[2] },
   handle: {
     alignSelf: 'center',
     width: 40,
@@ -112,6 +145,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconDanger: { backgroundColor: colors.errorBg },
+  iconCompact: { width: 44, height: 44 },
+  actionsRow: { flexDirection: 'row', gap: space[3] },
+  rowButton: { flex: 1 },
   title: { ...text.h2, textAlign: 'center' },
   body: { ...text.bodyM, color: colors.textMuted, textAlign: 'center' },
 });

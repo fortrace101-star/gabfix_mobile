@@ -130,13 +130,13 @@ Every item below can be built and verified without a backend or a device. Items 
 - [x] H9 P8b `scope.tsx` is now a schema renderer: `DynamicForm` + slot-aware media (files carry `slotId`), the suggestion banner comes from `suggestedMinutes`, and the draft stores `schemaId`, `schemaVersion`, `answers` and notes. `migrateScope` maps old fixed-field drafts onto the seed schema without wiping them, Review writes `buildSnapshot` into `scope.snapshot` before `POST /bookings`, and `ScopeSummary` (review, confirmation, booking detail) lists those rows. `service-scope.ts` and `size-bands.ts` are deleted
 - [ ] H10 Quote-mode branch: the CTA already reads "Request quote" and the time suggestion is hidden for quote services, but the flow still goes through Add-ons and payment, so the branch is not complete
 - [x] H11 Service page clean-up: Reviews, Related services, Top cleaners, How it works, the 20% stamp, the trust strip and the hero rating chip are removed with their imports/styles. Quote services now show a quote note instead of the hourly table, and the sticky bar reads "Custom quote" + "Get a quote" via the new `SummaryBar` `valueLabel`
-- [ ] H12 Receipt, booking details and admin Bookings show the snapshot as "Job details"
+- [ ] H12 (receipt + booking detail done) "Job details" snapshot rows (`receiptModel.jobDetails` feeds the on-screen receipt and the PDF; booking detail renamed from "Job scope" and passes `hideLabels`); the admin Bookings part stays open because no admin surface ships in this client
 - [ ] H13 `service-content.ts`/`service-images.ts` entries for the 14 new services plus a generic fallback for unknown slugs
 - [ ] H14 H acceptance criteria 1–7 pass locally
 
 **F. Booking flow, drafts, keyboard, assignment, rating**
 - [x] F1 `src/lib/use-draft-exit.tsx`: `useDraftExit` (hardware back + X + header back share one `ConfirmSheet` drawer), `useDraftGuard`, plus `store/booking.ts` `draftIsDirty`, `saveDraftNow` and `draft.lastStep`
-- [x] F2 All six order-flow steps (Details, Scope, Add-ons, Schedule, Location, Review) replaced their repeated `Alert.alert`/`BackHandler` blocks with the hook; Save draft awaits storage then goes Home, Discard clears media and draft then goes Services, an untouched draft leaves without a prompt. `ConfirmSheet` gained an optional third action
+- [x] F2 ConfirmSheet's `compact` layout puts Discard and Keep editing on one row under Save draft, shortening the draft drawer; all six order-flow steps (Details, Scope, Add-ons, Schedule, Location, Review) replaced their repeated `Alert.alert`/`BackHandler` blocks with the hook; Save draft awaits storage then goes Home, Discard clears media and draft then goes Services, an untouched draft leaves without a prompt. `ConfirmSheet` gained an optional third action
 - [ ] F3 Keyboard kit and apply it to login, sign-up, OTP, quote and chat
 - [ ] F4 `src/config/mock.ts` + `src/lib/assignment.ts`: auto-assign, arrival window, completion simulation
 - [ ] F5 `assignment.test.ts`
