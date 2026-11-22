@@ -14,6 +14,8 @@ type Props = {
   disabled?: boolean;
   /** Opens the shared price breakdown sheet (P8–P11). */
   onDetailsPress?: () => void;
+  /** Replaces the money total, e.g. "Custom quote" for quote-only services. */
+  valueLabel?: string;
 };
 
 /** Sticky summary bar (Gabfix_App_Ui_2.md, 2.2): caption plus live total on the left, CTA right. */
@@ -24,6 +26,7 @@ export function SummaryBar({
   onPress,
   disabled = false,
   onDetailsPress,
+  valueLabel,
 }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -49,7 +52,7 @@ export function SummaryBar({
           ) : null}
         </View>
         <Text style={styles.total} maxFontSizeMultiplier={1.2} numberOfLines={1}>
-          {ugx(total)}
+          {valueLabel ?? ugx(total)}
         </Text>
       </Pressable>
       <Button label={actionLabel} onPress={onPress} disabled={disabled} style={styles.action} />

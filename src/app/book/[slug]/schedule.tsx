@@ -1,9 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { CalendarX2, ChevronLeft, ChevronRight, Clock, Info, Repeat, Users, X } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
-  BackHandler,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,11 +23,10 @@ import { serviceBySlug } from '@/config/services';
 import { useAvailability } from '@/hooks/use-availability';
 import { getAvailability } from '@/lib/api/availability';
 import { price, type BookingFrequency } from '@/lib/pricing';
-import { deleteDraftMedia } from '@/lib/media';
+import { useDraftExit } from '@/lib/use-draft-exit';
 import {
   getBookingDraft,
   patchDraft,
-  resetDraft,
   startDraft,
   useBookingDraft,
 } from '@/store/booking';
@@ -124,34 +122,7 @@ export default function ScheduleScreen() {
     if (!current || current.serviceSlug !== slug) startDraft(slug);
   }, [slug]);
 
-  const leave = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/home');
-  }, []);
-
-  const confirmClose = useCallback(() => {
-    Alert.alert('Save as draft?', 'Your choices are kept so you can finish booking later.', [
-      { text: 'Keep editing', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: () => {
-          deleteDraftMedia();
-          resetDraft();
-          leave();
-        },
-      },
-      { text: 'Save draft', onPress: leave },
-    ]);
-  }, [leave]);
-
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      confirmClose();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [confirmClose]);
+  const { requestExit, sheet } = useDraftExit({ step: 'schedule' });
 
   if (!active) return <View style={styles.screen} />;
 
@@ -226,19 +197,20 @@ export default function ScheduleScreen() {
     <View style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Schedule'}
-        onBack={leave}
+        onBack={requestExit}
         right={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close and save options"
             hitSlop={8}
-            onPress={confirmClose}
+            onPress={requestExit}
             style={styles.close}>
             <X size={22} color={colors.text} strokeWidth={2} />
           </Pressable>
         }
       />
       <StepperHeader current={2} />
+      {sheet}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.intro}>

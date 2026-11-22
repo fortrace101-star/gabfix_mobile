@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
+import { emptyScope, migrateScope } from '@/lib/booking-scope';
 import {
   emptyDraft,
   type BookingDetails,
   type BookingDraft,
+  type BookingDraftStep,
   type BookingMedia,
   type BookingMediaItem,
   type BookingScope,
@@ -37,24 +39,6 @@ const persist = (draft: BookingDraft | null) => {
   void write.catch(() => undefined);
 };
 
-/** Drafts saved before P8b used different scope values; map them onto the Stage 1 model. */
-const legacySizeBands: Record<string, BookingScope['sizeBand']> = {
-  studio: 'small',
-  one_two_bed: 'medium',
-  three_four_bed: 'large',
-  five_plus_bed: 'large',
-};
-
-const normaliseScope = (base: BookingScope, saved?: BookingScope): BookingScope => {
-  const merged = { ...base, ...(saved ?? {}) } as BookingScope & { condition?: string };
-  if ((merged.condition as string | undefined) === 'moderate') merged.condition = 'typical';
-  const legacyBand = merged.sizeBand ? legacySizeBands[merged.sizeBand] : undefined;
-  if (legacyBand) merged.sizeBand = legacyBand;
-  if (merged.sizeBand === undefined) delete merged.sizeBand;
-  merged.focusAreas = Array.isArray(merged.focusAreas) ? merged.focusAreas : [];
-  return merged;
-};
-
 const withScopeDefaults = (draft: BookingDraft): BookingDraft => {
   const base = emptyDraft(draft.serviceSlug);
   return {
@@ -62,7 +46,8 @@ const withScopeDefaults = (draft: BookingDraft): BookingDraft => {
     ...draft,
     details: { ...base.details, ...draft.details },
     addOns: Array.isArray(draft.addOns) ? draft.addOns : [],
-    scope: normaliseScope(base.scope as BookingScope, draft.scope),
+    // Old fixed-field drafts are mapped onto the seed schema's answers (never wiped).
+    scope: migrateScope(draft.scope, draft.serviceSlug),
     media: { items: draft.media?.items ?? [], uploaded: draft.media?.uploaded ?? false },
   };
 };
@@ -91,7 +76,7 @@ export const getBookingDraft = () => state.draft;
 
 /** Start or replace the draft when a service card is tapped. */
 export function startDraft(serviceSlug: string): void {
-  setDraft(emptyDraft(serviceSlug));
+  setDraft({ ...emptyDraft(serviceSlug), scope: emptyScope(serviceSlug) });
 }
 
 /** P18: replace the draft with one prefilled from an earlier booking. */
@@ -149,6 +134,38 @@ export function setPromoCode(promoCode: string | undefined): void {
 
 export function resetDraft(): void {
   setDraft(null);
+}
+
+/** True when the draft differs from a freshly started one (12.1 "has changes"). */
+export function draftIsDirty(draft: BookingDraft | null): boolean {
+  if (!draft) return false;
+  const strip = (value: BookingDraft) => {
+    const copy = { ...value };
+    delete copy.lastStep;
+    return JSON.stringify(copy);
+  };
+  return strip(draft) !== strip(emptyDraft(draft.serviceSlug));
+}
+
+/** Awaits the AsyncStorage write so Home never reads a stale draft after Save draft. */
+export async function saveDraftNow(): Promise<void> {
+  if (!state.draft) return;
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state.draft));
+  } catch {
+    // The draft is already in memory; a failed write must not trap the customer.
+  }
+}
+
+/** Remembers the step the customer reached so Home's draft card resumes there. */
+export function setDraftStep(step: BookingDraftStep): void {
+  if (!state.draft || state.draft.lastStep === step) return;
+  setDraft({ ...state.draft, lastStep: step });
+}
+
+/** Route for Home's Continue card; older drafts without a step open Details. */
+export function lastStepRoute(draft: BookingDraft | null): string {
+  return `/book/[slug]/${draft?.lastStep ?? 'details'}`;
 }
 
 export function useBookingDraft(): BookingDraft | null {

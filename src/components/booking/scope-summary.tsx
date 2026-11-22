@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { Play } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { scopeSummary } from '@/lib/booking-scope';
+import { scopeRows } from '@/lib/booking-scope';
 import type { BookingMediaItem, BookingScope } from '@/lib/pricing';
 import { colors, font, radius, space, text } from '@/theme';
 
@@ -17,7 +17,7 @@ type Props = {
 
 /** Facts + thumbnail strip for review, confirmation and booking detail (Phase 2, 3.12). */
 export function ScopeSummary({ scope, media = [], compact = false, hideLabels = false }: Props) {
-  const facts = scopeSummary(scope);
+  const rows = scopeRows(scope);
   const photos = media.filter((item) => item.kind === 'image').length;
   const videos = media.filter((item) => item.kind === 'video').length;
   const mediaLine =
@@ -27,16 +27,36 @@ export function ScopeSummary({ scope, media = [], compact = false, hideLabels = 
 
   return (
     <View style={[styles.root, compact && styles.compact]}>
-      <View style={styles.row}>
-        {!hideLabels ? (
-          <Text style={styles.label} maxFontSizeMultiplier={1.3}>
-            Job scope
+      {rows.length > 0 ? (
+        <View style={[styles.facts, hideLabels && styles.factsLeft]}>
+          {!hideLabels ? (
+            <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+              Job details
+            </Text>
+          ) : null}
+          {rows.map((row) => (
+            <View key={row.fieldId} style={styles.factRow}>
+              <Text style={styles.factLabel} maxFontSizeMultiplier={1.3}>
+                {row.label}
+              </Text>
+              <Text style={styles.factValue} maxFontSizeMultiplier={1.3}>
+                {row.display}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={styles.row}>
+          {!hideLabels ? (
+            <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+              Job details
+            </Text>
+          ) : null}
+          <Text style={[styles.value, hideLabels && styles.valueLeft]} maxFontSizeMultiplier={1.3}>
+            Not set
           </Text>
-        ) : null}
-        <Text style={[styles.value, hideLabels && styles.valueLeft]} maxFontSizeMultiplier={1.3}>
-          {facts}
-        </Text>
-      </View>
+        </View>
+      )}
       <View style={styles.row}>
         {!hideLabels ? (
           <Text style={styles.label} maxFontSizeMultiplier={1.3}>
@@ -80,6 +100,11 @@ const styles = StyleSheet.create({
   label: { ...text.caption, color: colors.textMuted, flexShrink: 0 },
   value: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 14, flex: 1, textAlign: 'right' },
   valueLeft: { textAlign: 'left' },
+  facts: { gap: 6 },
+  factsLeft: { alignItems: 'flex-start' },
+  factRow: { flexDirection: 'row', justifyContent: 'space-between', gap: space[3] },
+  factLabel: { ...text.caption, color: colors.textMuted, flexShrink: 1 },
+  factValue: { ...text.bodyM, fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right', flexShrink: 1 },
   strip: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2], marginTop: 2 },
   thumb: {
     width: 56,

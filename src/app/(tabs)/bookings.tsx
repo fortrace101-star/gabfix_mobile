@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   CalendarDays,
   CalendarX2,
@@ -228,7 +228,13 @@ export default function BookingsScreen() {
   const hydrated = useBookingsHydrated();
   const requests = useQuoteRequests();
   const requestsHydrated = useQuotesHydrated();
-  const [tab, setTab] = useState<BookingsTab>('upcoming');
+  // Home's "All bookings" link opens a specific segment via `?tab=completed`.
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const requestedTab = TABS.find((item) => item.value === params.tab)?.value;
+  // No effect: the route param is the fallback until the customer picks a segment.
+  const [pickedTab, setPickedTab] = useState<BookingsTab | null>(null);
+  const tab = pickedTab ?? requestedTab ?? 'upcoming';
+  const setTab = setPickedTab;
   const [refreshing, setRefreshing] = useState(false);
 
   // P13: release any unpaid hold that has passed its 30-minute window.

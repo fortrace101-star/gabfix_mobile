@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Info, TriangleAlert, X } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AddOnCard } from '@/components/booking/add-on-card';
 import { AddOnSheet } from '@/components/booking/add-on-sheet';
@@ -13,11 +13,10 @@ import { addOns, type AddOnId } from '@/config/add-ons';
 import { pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
 import { addOnPrice, price } from '@/lib/pricing';
-import { deleteDraftMedia } from '@/lib/media';
+import { useDraftExit } from '@/lib/use-draft-exit';
 import {
   getBookingDraft,
   patchDetails,
-  resetDraft,
   startDraft,
   toggleAddOn,
   useBookingDraft,
@@ -51,27 +50,7 @@ export default function AddOnsScreen() {
     if (!current || current.serviceSlug !== slug) startDraft(slug);
   }, [slug]);
 
-  const leave = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/home');
-  }, []);
-
-  const confirmClose = useCallback(() => {
-    Alert.alert('Save as draft?', 'Your choices are kept so you can finish booking later.', [
-      { text: 'Keep editing', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: () => {
-          deleteDraftMedia();
-          resetDraft();
-          if (router.canGoBack()) router.back();
-          else router.replace('/home');
-        },
-      },
-      { text: 'Save draft', onPress: leave },
-    ]);
-  }, [leave]);
+  const { requestExit, sheet } = useDraftExit({ step: 'add-ons' });
 
   if (!active) return <View style={styles.screen} />;
 
@@ -90,19 +69,20 @@ export default function AddOnsScreen() {
     <View style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Extras'}
-        onBack={leave}
+        onBack={requestExit}
         right={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close and save options"
             hitSlop={8}
-            onPress={confirmClose}
+            onPress={requestExit}
             style={styles.close}>
             <X size={22} color={colors.text} strokeWidth={2} />
           </Pressable>
         }
       />
       <StepperHeader current={0} />
+      {sheet}
 
       <ScrollView
         showsVerticalScrollIndicator={false}

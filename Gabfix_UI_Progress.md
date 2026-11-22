@@ -57,6 +57,9 @@ Report this figure at the end of every session that changes the build. It is a w
 | 2026-11-20 | P7 parallax and browser QA | **65%** | +1 | P7 hero parallax (43 px offset at 140 px scroll), fixed landing bottom inset and Home step-copy clipping, rebook date fit; headless-Chrome pass over Home, Services, Search, P7, P8 and P15a with no console errors |
 | 2026-11-20 | Remaining screen builds closed | **66%** | +1 | P13 failure/auto-cancel, P19 PDF, P25/P27c photo attach, P26 force-update gate, P27g sign-in/roles, P7 photo slot/art/fade header; scripted browser pass over each, typecheck/lint and both production builds pass. Screen builds now 100%; licensed photography remains a content input |
 | 2026-11-21 | Phase 2 Stage 1 Workstreams I/J and Phase 1 kit | **66%** | +0 | Service Areas removed (I), ticket centre and referral stage lists (J), shared `CounterStepper`/`Toast`, `/dev` gallery; Phase 1 track re-scored 78 → 80 because 7 of 8 tasks are now complete (65.9% raw). Phase 2 is tracked separately; no device or backend verification |
+| 2026-11-21 | Home dashboard rebuilt (G1–G3, G5–G7), service page trimmed (H11) | **66%** | +0 | Home now runs draft → stat tiles → balance due → rate prompt → next clean → activity → offers → four-service photo-over-text Most popular → book again, with the Blob, trust capsules, Top cleaners, category rows, How it works and reviews removed; Bookings accepts `?tab=`. Service page loses Reviews/Related/Top cleaners/How it works/stamp/trust/rating and uses a quote note + "Get a quote" bar for quote services. Typecheck, lint and 8 suites / 77 tests pass; no device pass |
+| 2026-11-21 | P8b on schemas (H9), Home shows four services | **66%** | +0 | `scope.tsx` now renders the service's seed schema, drafts store schema answers (legacy drafts migrate), Review writes the snapshot and `ScopeSummary` lists it; Home drops the category rows and caps Most popular at four. Typecheck, lint and 8 suites / 77 tests pass; device pass still outstanding |
+| 2026-11-21 | Receipt share fix, H8 renderers, F1–F2 | **66%** | +0 | Receipt PDFs are staged into the scoped cache dir before sharing (Expo Go rejected `Print`'s own cache path), `DynamicForm`/`MeasurementInput` can draw any seed schema, and one `useDraftExit` drawer replaces the six copy-pasted exit alerts. Typecheck, lint and 8 suites / 76 tests pass; no device pass yet |
 | 2026-11-21 | Workstream D closed, Workstream H started | **66%** | +0 | Registered the three missing routes, refreshed stale deviation rows, delete-account now removes draft/booking media; new 7-category/18-service catalogue with `pricingMode`/`popularRank`/`active`, catalogue-aware discovery and search, and the `form-schema` engine with 8 seed schemas and 15 tests. Typecheck, lint and 8 suites / 76 tests pass |
 
 ### Next Up Checklist
@@ -123,17 +126,17 @@ Every item below can be built and verified without a backend or a device. Items 
 - [x] H5 `src/lib/form-schema.ts`: `validateSchema`, `visibleFields`, `visibleAnswers`, `validateAnswers`, `suggestedMinutes`, `requiresQuote`, `buildSnapshot`, `mergeAnswers`, `defaultSchema`
 - [x] H6 `src/config/form-schemas.ts`: cleaning, upholstery, surface, pest, repairs, building and outdoor seeds plus the global default and `schemaFor()`
 - [x] H7 `form-schema.test.ts`: 15 cases covering S1 14.8 (duplicate ids, forward `showIf`, 41 fields, single-option select, hidden answers, required/min/max, media slot, minutes, quote flags, snapshot display, unknown type, version merge)
-- [ ] H8 `DynamicForm` and `MeasurementInput` renderers with inline errors and a required media slot (next slice)
-- [ ] H9 P8b `scope.tsx` renders the service's schema; draft stores `schemaId`, answers and the snapshot; `buildSnapshot` feeds booking details
-- [ ] H10 Quote-mode branch: no hourly price or payment step; details and photos end in the quote flow
-- [ ] H11 Service page clean-up (S1 14.5): remove Reviews, Related services, Top cleaners, How it works, the discount badge, the trust strip and the rating chip; quote CTA
+- [x] H8 `src/components/booking/dynamic-form.tsx` renders every field type from a schema (radio cards up to 6 options, chip picker beyond, multi chips, counters, measurement, media slot with count and inline errors); `measurement-input.tsx` stores `{ value, unit }` with m²/m/ft. Unknown types are skipped, so an old build meeting a newer schema still renders the rest
+- [x] H9 P8b `scope.tsx` is now a schema renderer: `DynamicForm` + slot-aware media (files carry `slotId`), the suggestion banner comes from `suggestedMinutes`, and the draft stores `schemaId`, `schemaVersion`, `answers` and notes. `migrateScope` maps old fixed-field drafts onto the seed schema without wiping them, Review writes `buildSnapshot` into `scope.snapshot` before `POST /bookings`, and `ScopeSummary` (review, confirmation, booking detail) lists those rows. `service-scope.ts` and `size-bands.ts` are deleted
+- [ ] H10 Quote-mode branch: the CTA already reads "Request quote" and the time suggestion is hidden for quote services, but the flow still goes through Add-ons and payment, so the branch is not complete
+- [x] H11 Service page clean-up: Reviews, Related services, Top cleaners, How it works, the 20% stamp, the trust strip and the hero rating chip are removed with their imports/styles. Quote services now show a quote note instead of the hourly table, and the sticky bar reads "Custom quote" + "Get a quote" via the new `SummaryBar` `valueLabel`
 - [ ] H12 Receipt, booking details and admin Bookings show the snapshot as "Job details"
 - [ ] H13 `service-content.ts`/`service-images.ts` entries for the 14 new services plus a generic fallback for unknown slugs
 - [ ] H14 H acceptance criteria 1–7 pass locally
 
 **F. Booking flow, drafts, keyboard, assignment, rating**
-- [ ] F1 `src/lib/use-draft-exit.ts`: `saveDraftNow`, `draftIsDirty`, `lastStep`, `useDraftGuard`
-- [ ] F2 Wire the exit guard and discard confirmation into the five order-flow steps
+- [x] F1 `src/lib/use-draft-exit.tsx`: `useDraftExit` (hardware back + X + header back share one `ConfirmSheet` drawer), `useDraftGuard`, plus `store/booking.ts` `draftIsDirty`, `saveDraftNow` and `draft.lastStep`
+- [x] F2 All six order-flow steps (Details, Scope, Add-ons, Schedule, Location, Review) replaced their repeated `Alert.alert`/`BackHandler` blocks with the hook; Save draft awaits storage then goes Home, Discard clears media and draft then goes Services, an untouched draft leaves without a prompt. `ConfirmSheet` gained an optional third action
 - [ ] F3 Keyboard kit and apply it to login, sign-up, OTP, quote and chat
 - [ ] F4 `src/config/mock.ts` + `src/lib/assignment.ts`: auto-assign, arrival window, completion simulation
 - [ ] F5 `assignment.test.ts`
@@ -141,6 +144,7 @@ Every item below can be built and verified without a backend or a device. Items 
 - [ ] F7 Optional job/cleaner ratings, review migration and the split rows on P27f
 
 **E. Payments and receipts**
+- [x] E1a Receipt share fix: the PDF from `Print.printToFileAsync` is copied into `Paths.cache/receipts` before `Sharing.shareAsync`, so Expo Go/Android no longer rejects it with "Not allowed to read file under given URL" (`Gabfix-Receipt-<id>.pdf` naming is still E1)
 - [ ] E1 Split `receipt-export.ts` into create/download/share with the `Gabfix-Receipt-<id>.pdf` name rule
 - [ ] E2 `src/lib/momo.ts` + tests: MTN/Airtel prefixes, normalisation, per-network copy
 - [ ] E3 `MomoNumberPicker`; remove the shared `payerPhone` prefill; draft migration and storage-version bump
@@ -150,13 +154,13 @@ Every item below can be built and verified without a backend or a device. Items 
 - [ ] E7 Adopt the shared bottom sheet across the wallet and receipt sheets
 
 **G. Home dashboard**
-- [ ] G1 Remove the Blob, trust capsules, Top cleaners, category rows, How it works and Loved by customers, plus dead styles/imports
-- [ ] G2 New block order (continue draft, balance due, rate prompt, next clean, activity, offers, most popular, book again)
-- [ ] G3 Stat tile row via `StatTile`; Bookings accepts a `tab` param
-- [ ] G4 `dueSummary` in `wallet.ts`, `BalanceDueCard`, and `profile/payments` scroll-to + highlight
-- [ ] G5 `RatePromptCard` for completed unrated bookings
-- [ ] G6 Most popular as a horizontal photo-over-text row from `popularRank` with See all
-- [ ] G7 Location chip reads the default saved address, not a served area
+- [x] G1 Home is trimmed to the dashboard blocks: the Blob, trust capsules, Top cleaners, category rows, How it works and Loved by customers are gone, with their styles and imports
+- [x] G2 Block order is continue draft, stat tiles, balance due, rate prompt, next clean, activity, offers, Most popular, book again
+- [x] G3 `StatTile` row (Bookings / Upcoming / Due); `(tabs)/bookings` reads `?tab=` and the customer's own pick overrides it
+- [ ] G4 `balanceDueBookings`/`totalBalanceDue` already exist and Home renders a balance-due card; still open: the `profile/payments` scroll-to + highlight for the tapped booking
+- [x] G5 Rate prompt card on Home for completed bookings with no saved review (links to `/booking/[id]/rate`); built inline rather than as a separate `RatePromptCard`
+- [x] G6 Most popular is a horizontal photo-over-text row of four services by `popularRank`, with the See all link to `/services`
+- [x] G7 Location chip reads the default saved address (`useAddresses`) and falls back to "Set your address"
 
 **J. Leftovers (blocked on contracts)**
 - [ ] J1 Ticket create/reply against `/support/tickets` once the contract exists
@@ -261,9 +265,9 @@ Legend: ✅ done · 🟨 partly done · ⬜ not started · 🚫 blocked on somet
 | **C. Profile additions (P28–P30)** | 🟨 ~74% | Notification preferences, security hub, change password, mock 2FA, login activity, devices/sessions, biometric toggle + `AppLockGate`, profile/inbox wiring, v2 settings migration | Real push registration/token sync, backend password/2FA/session/device flows, P28 polish, device QA |
 | **D. Housekeeping** | 🟨 ~80% | F14 `src/lib/id.ts` (expo-crypto), F15 packages installed, F16 closed by Workstream I, D1 routes registered, D2 deviation row and test figure refreshed, D3 `deleteLocalAccount()` now deletes draft/booking media as well as cache and keychain keys | F17/F18 renumbering has no remaining occurrences in the docs; nothing local is outstanding |
 | **E. Payments and receipts** | ⬜ 0% | — | Real download/to Files (11.1), per-network mobile money (11.2), balance through `/payment/[id]` (11.3), transaction query/filters (11.4), shared `BottomSheet` (11.5); no `wallet.test.ts` |
-| **F. Booking flow, drafts, keyboard, assignment, rating** | ⬜ 0% | `Avatar`, `ConfirmSheet` and the five booking steps exist as a base | `use-draft-exit`/`useDraftGuard`/`saveDraftNow`, keyboard kit/provider, `config/mock.ts` + `assignment.ts` + completion, optional job/cleaner ratings + review migration |
-| **G. Dashboard (Home)** | ⬜ 0% | `StatTile` exists; Most popular section exists in its old form | Remove Blob/trust capsules/Top cleaners/category rows/How it works/Loved by customers; stat tiles, Balance due card, `dueSummary`, new Most popular row, `popularRank` |
-| **H. Services catalogue and dynamic job details** | 🟨 ~35% | H1–H7: 7 categories, 18 active + 2 inactive services with `pricingMode`/`popularRank`/`active`, catalogue-aware `useServices`/discovery/search, the `form-schema.ts` engine, 8 seed schemas + default and 15 passing tests | `DynamicForm`/`MeasurementInput` (H8), P8b schema wiring and draft snapshot (H9), quote-mode branch (H10), service-page clean-up (H11), receipt/admin snapshot rows (H12), content and images for new services (H13), H acceptance 1–7 (H14) |
+| **F. Booking flow, drafts, keyboard, assignment, rating** | 🟨 ~30% | F1/F2: one `useDraftExit` drawer replaces six `Alert`/`BackHandler` blocks, `saveDraftNow` awaits the write, `draftIsDirty`/`lastStep` exist; `ConfirmSheet` takes a third action | Keyboard kit (F3), mock assignment + completion (F4–F6), ratings and review migration (F7); `useDraftGuard` exists but is not wired into the screens yet |
+| **G. Dashboard (Home)** | 🟨 ~70% | G1–G3, G5–G7 done: trimmed Home with the new block order, stat tiles, balance-due and rate cards, activity list, offers, a four-service photo-over-text Most popular row, default-address chip, and `?tab=` support on Bookings | G4's `profile/payments` scroll-to + highlight |
+| **H. Services catalogue and dynamic job details** | 🟨 ~70% | H1–H9, H11: 7 categories, 18 active + 2 inactive services with `pricingMode`/`popularRank`/`active`, catalogue-aware `useServices`/discovery/search, the `form-schema.ts` engine, 8 seed schemas + default, 15 passing tests, the `DynamicForm`/`MeasurementInput` renderers, P8b driven by the schema with legacy draft migration and a saved snapshot, and the service page reduced to intro/inclusions/pricing/extras/FAQ with a quote CTA | Quote-mode branch (H10), receipt/admin snapshot rows (H12), content and images for new services (H13), H acceptance 1–7 (H14) |
 | **I. Service Areas removal** | ✅ 100% (code) | Route/config/onboarding/booking/addresses/quotes/hooks/types/admin all clean; proof search for area symbols is empty | Docs/manual updates beyond this file; `location-fixtures` `area`→`locality` key rename deliberately not done |
 | **J. Bookings, Help Centre and Refer polish** | ✅ ~85% | Segmented active label, red cancel, ticket centre + list/detail + local store, chip migration, referral stage lists | `/support/tickets` backend and replies, referral API, device/VoiceOver QA |
 

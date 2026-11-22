@@ -8,10 +8,9 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Alert,
-  BackHandler,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -38,6 +37,7 @@ import {
 import { hourlyRate, pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
 import { ScopeSummary } from '@/components/booking/scope-summary';
+import { snapshotScope } from '@/lib/booking-scope';
 import { createBooking } from '@/lib/api/bookings';
 import {
   price,
@@ -46,11 +46,10 @@ import {
   type PaymentPlan,
 } from '@/lib/pricing';
 import { totalAccountBalance } from '@/lib/wallet';
-import { deleteDraftMedia } from '@/lib/media';
+import { useDraftExit } from '@/lib/use-draft-exit';
 import {
   getBookingDraft,
   patchDraft,
-  resetDraft,
   setPromoCode,
   startDraft,
   useBookingDraft,
@@ -322,34 +321,7 @@ export default function ReviewScreen() {
     if (!current || current.serviceSlug !== slug) startDraft(slug);
   }, [slug]);
 
-  const leave = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/home');
-  }, []);
-
-  const confirmClose = useCallback(() => {
-    Alert.alert('Save as draft?', 'Your choices are kept so you can finish booking later.', [
-      { text: 'Keep editing', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: () => {
-          deleteDraftMedia();
-          resetDraft();
-          leave();
-        },
-      },
-      { text: 'Save draft', onPress: leave },
-    ]);
-  }, [leave]);
-
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      confirmClose();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [confirmClose]);
+  const { requestExit, sheet } = useDraftExit({ step: 'review' });
 
   if (!active) return <View style={styles.screen} />;
 
@@ -487,7 +459,12 @@ export default function ReviewScreen() {
     try {
       const current = getBookingDraft();
       if (!current) return;
-      const { bookingId } = await createBooking(current, total);
+      // Write the human-readable job-details snapshot once, before the booking is saved.
+      const scoped = current.scope
+        ? { ...current, scope: snapshotScope(current.scope) }
+        : current;
+      if (scoped.scope) patchDraft({ scope: scoped.scope });
+      const { bookingId } = await createBooking(scoped, total);
 
       if (dueToday > 0) {
         router.push({
@@ -530,19 +507,20 @@ export default function ReviewScreen() {
       style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Review'}
-        onBack={leave}
+        onBack={requestExit}
         right={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close and save options"
             hitSlop={8}
-            onPress={confirmClose}
+            onPress={requestExit}
             style={styles.close}>
             <X size={22} color={colors.text} strokeWidth={2} />
           </Pressable>
         }
       />
       <StepperHeader current={5} />
+      {sheet}
 
       <ScrollView
         keyboardShouldPersistTaps="handled"

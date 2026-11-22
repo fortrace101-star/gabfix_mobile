@@ -31,15 +31,8 @@ describe('booking draft store', () => {
       serviceSlug: 'deep-clean',
       details: { cleaners: 1, hours: 4, frequency: 'once', materials: false },
       addOns: [],
-      scope: {
-        bathrooms: 1,
-        bedrooms: 2,
-        floors: 1,
-        focusAreas: [],
-        livingAreas: 1,
-        meetingRooms: 1,
-        toilets: 2,
-      },
+      // Deep cleaning inherits the cleaning schema, so the draft starts schema-versioned.
+      scope: { schemaId: 'cleaning', schemaVersion: 1, answers: {} },
       media: { items: [], uploaded: false },
     });
   });
@@ -70,6 +63,26 @@ describe('booking draft store', () => {
     expect(store.getBookingDraft()?.serviceSlug).toBe('office-clean');
     expect(store.getBookingDraft()?.addOns).toEqual(['laundry']);
     expect(store.getBookingDraft()?.details.frequency).toBe('weekly');
+  });
+
+  it('maps an old fixed-field scope onto the seed schema answers', async () => {
+    const { store, storage } = await loadStore();
+    await storage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        serviceSlug: 'deep-clean',
+        details: { cleaners: 1, hours: 4, frequency: 'once', materials: false },
+        addOns: [],
+        scope: { sizeBand: 'medium', bedrooms: 3, bathrooms: 2, condition: 'heavy' },
+      }),
+    );
+    await store.hydrateBookingDraft();
+
+    expect(store.getBookingDraft()?.scope).toEqual({
+      schemaId: 'cleaning',
+      schemaVersion: 1,
+      answers: { size: '3-4', bedrooms: 3, bathrooms: 2, condition: 'heavy' },
+    });
   });
 
   it('discards corrupt or unrelated stored data instead of crashing', async () => {

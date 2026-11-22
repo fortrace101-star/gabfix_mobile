@@ -1,5 +1,5 @@
 import { hourlyRate, pricing, type Frequency } from '@/config/pricing';
-import type { PropertySizeBand } from '@/config/size-bands';
+import type { BookingScope } from '@/lib/form-schema';
 
 /** Booking model from Gabfix_App_Ui_2.md, Section 3.5. Persisted by `src/store/booking.ts`. */
 export type BookingFrequency = Frequency;
@@ -8,23 +8,8 @@ export type BookingCondition = 'light' | 'typical' | 'heavy';
 export type BookingFocusArea = string;
 export type BookingWorkstations = '1-5' | '6-15' | '16-40' | '40+';
 
-export type BookingScope = {
-  /** Unset until the customer picks a size band. */
-  sizeBand?: PropertySizeBand;
-  /** Exact size when the customer taps “I know the exact size”. */
-  areaSqm?: number;
-  bedrooms: number;
-  bathrooms: number;
-  livingAreas: number;
-  /** Office-only counters. */
-  workstations?: BookingWorkstations;
-  meetingRooms?: number;
-  toilets?: number;
-  floors?: number;
-  /** Unset for services that do not ask about condition. */
-  condition?: BookingCondition;
-  focusAreas: BookingFocusArea[];
-};
+/** Job-details answers, schema versioned (Section 14.4). Persisted by the booking store. */
+export type { BookingScope };
 
 export type BookingMediaItem = {
   id: string;
@@ -38,6 +23,8 @@ export type BookingMediaItem = {
   assetId?: string;
   width?: number;
   height?: number;
+  /** P8b media-slot id, so the job card can show "Photo of the leak" with its picture. */
+  slotId?: string;
 };
 
 export type BookingMedia = {
@@ -85,6 +72,14 @@ export type BookingLocation = {
   alternateContactPhone?: string;
 };
 
+export type BookingDraftStep =
+  | 'details'
+  | 'scope'
+  | 'add-ons'
+  | 'schedule'
+  | 'location'
+  | 'review';
+
 export type BookingDraft = {
   serviceSlug: string;
   details: BookingDetails;
@@ -101,6 +96,8 @@ export type BookingDraft = {
   rebookedFrom?: string;
   /** P18: “Book same cleaner” preference sent with the availability request. */
   preferredCleanerId?: string;
+  /** Last order-flow step reached, so Home's Continue card resumes in place. */
+  lastStep?: BookingDraftStep;
 };
 
 export type PriceBreakdown = {
@@ -166,14 +163,5 @@ export const emptyDraft = (serviceSlug: string): BookingDraft => ({
     materials: false,
   },
   addOns: [],
-  scope: {
-    bedrooms: 2,
-    bathrooms: 1,
-    livingAreas: 1,
-    meetingRooms: 1,
-    toilets: 2,
-    floors: 1,
-    focusAreas: [],
-  },
   media: { items: [], uploaded: false },
 });

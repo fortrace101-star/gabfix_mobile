@@ -1,10 +1,9 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import * as Location from 'expo-location';
 import { Check, Home, MapPin, X } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
-  BackHandler,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -28,11 +27,10 @@ import { TopBar } from '@/components/ui/top-bar';
 import type { FixturePlace } from '@/config/location-fixtures';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingLocation } from '@/lib/pricing';
-import { deleteDraftMedia } from '@/lib/media';
+import { useDraftExit } from '@/lib/use-draft-exit';
 import {
   getBookingDraft,
   patchDraft,
-  resetDraft,
   startDraft,
   useBookingDraft,
 } from '@/store/booking';
@@ -174,36 +172,7 @@ export default function LocationScreen() {
     update({ street: address, landmark: '', addressId: undefined, lat: undefined, lng: undefined });
   };
 
-  const leave = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/home');
-  }, []);
-
-  const confirmClose = useCallback(() => {
-    Alert.alert('Save as draft?', 'Your choices are kept so you can finish booking later.', [
-      { text: 'Keep editing', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: () => {
-          deleteDraftMedia();
-          resetDraft();
-          if (router.canGoBack()) router.back();
-          else router.replace('/home');
-        },
-      },
-      { text: 'Save draft', onPress: leave },
-    ]);
-  }, [leave]);
-
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (router.canGoBack()) return false;
-      confirmClose();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [confirmClose]);
+  const { requestExit, sheet } = useDraftExit({ step: 'location' });
 
   if (!active) return <View style={styles.screen} />;
 
@@ -276,19 +245,20 @@ export default function LocationScreen() {
       style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Location'}
-        onBack={leave}
+        onBack={requestExit}
         right={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close and save options"
             hitSlop={8}
-            onPress={confirmClose}
+            onPress={requestExit}
             style={styles.close}>
             <X size={22} color={colors.text} strokeWidth={2} />
           </Pressable>
         }
       />
       <StepperHeader current={3} />
+      {sheet}
 
       <ScrollView
         keyboardShouldPersistTaps="handled"

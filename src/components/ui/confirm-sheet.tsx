@@ -12,6 +12,9 @@ type Props = {
   body: string;
   confirmLabel: string;
   cancelLabel?: string;
+  /** Optional third action between confirm and cancel, e.g. "Discard". */
+  extraLabel?: string;
+  onExtra?: () => void;
   destructive?: boolean;
   busy?: boolean;
   icon?: LucideIcon;
@@ -26,6 +29,8 @@ export function ConfirmSheet({
   body,
   confirmLabel,
   cancelLabel = 'Cancel',
+  extraLabel,
+  onExtra,
   destructive = true,
   busy = false,
   icon: Icon = ShieldAlert,
@@ -68,6 +73,9 @@ export function ConfirmSheet({
             loading={busy}
             onPress={onConfirm}
           />
+          {extraLabel && onExtra ? (
+            <Button label={extraLabel} variant="dangerGhost" disabled={busy} onPress={onExtra} />
+          ) : null}
           <Button label={cancelLabel} variant="ghost" disabled={busy} onPress={onClose} />
         </View>
       </View>

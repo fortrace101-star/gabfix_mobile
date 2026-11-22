@@ -2,19 +2,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ArrowLeft,
-  CalendarCheck,
   Check,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
-  Clock,
   Share2,
-  ShieldCheck,
   Sparkles,
-  Star,
-  Wallet,
   X,
-  type LucideIcon,
 } from 'lucide-react-native';
 import { useState } from 'react';
 import {
@@ -29,17 +22,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SummaryBar } from '@/components/booking/summary-bar';
-import { ReviewCard } from '@/components/reviews/review-card';
 import { ServiceHeroArt } from '@/components/service/service-hero-art';
 import { ServicePhoto } from '@/components/service/service-photo';
-import { Stars } from '@/components/reviews/stars';
 import { ErrorState } from '@/components/ui/error-state';
 import { RetryHint } from '@/components/ui/retry-hint';
 import { Skeleton } from '@/components/ui/skeleton';
 import { addOns } from '@/config/add-ons';
-import { cleanersForService } from '@/config/cleaners';
-import { reviewsForService } from '@/config/reviews';
-import { relatedServices } from '@/config/service-content';
 import { hourlyRate, pricing } from '@/config/pricing';
 import { fromHourly, serviceBySlug } from '@/config/services';
 import { useServiceContent } from '@/hooks/use-service-content';
@@ -47,19 +35,11 @@ import { supportsNativeDriver } from '@/lib/animation';
 import { colors, font, radius, shadow, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
-const stampRotation = '-8deg';
-
 const priceRows = [
   { label: '2 hours', rate: hourlyRate(2) },
   { label: '3 hours', rate: hourlyRate(3) },
   { label: '4 to 7 hours', rate: hourlyRate(4) },
   { label: '8 hours', rate: hourlyRate(8) },
-];
-
-const steps = [
-  { icon: CalendarCheck, title: 'Pick a time', caption: 'Choose a date, start time and how often.' },
-  { icon: ShieldCheck, title: 'We match a cleaner', caption: 'A vetted cleaner confirms before the visit.' },
-  { icon: Sparkles, title: 'Your clean happens', caption: 'Pay after the service, or in full at checkout.' },
 ];
 
 function ServiceLandingSkeleton({ onBack, top }: { onBack: () => void; top: number }) {
@@ -91,19 +71,6 @@ function ServiceLandingSkeleton({ onBack, top }: { onBack: () => void; top: numb
   );
 }
 
-function TrustItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
-  return (
-    <View style={styles.trustItem}>
-      <View style={styles.trustIcon}>
-        <Icon size={18} color={colors.green700} strokeWidth={2} />
-      </View>
-      <Text style={styles.trustText} maxFontSizeMultiplier={1.3}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
 /** P7 Service landing. Editorial copy comes from `GET /services/{slug}` with a local fallback. */
 export default function ServiceLandingScreen() {
   const params = useLocalSearchParams<{ slug?: string }>();
@@ -129,6 +96,8 @@ export default function ServiceLandingScreen() {
     outputRange: [-8, 0],
     extrapolate: 'clamp',
   });
+
+  const isQuote = service?.pricingMode === 'quote';
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -226,31 +195,14 @@ export default function ServiceLandingScreen() {
             <Text style={styles.heroTitle} maxFontSizeMultiplier={1.2}>
               {service?.name ?? content.slug}
             </Text>
-            <View style={styles.ratingChip}>
-              <Star size={14} color={colors.yellow500} fill={colors.yellow500} strokeWidth={1.5} />
-              <Text style={styles.ratingText} maxFontSizeMultiplier={1.2}>
-                {content.rating} · {content.reviewCount} reviews
-              </Text>
-            </View>
           </View>
           </LinearGradient>
         </Animated.View>
 
         <View style={styles.sheet}>
-          <View style={styles.stamp} pointerEvents="none">
-            <Text style={styles.stampTop}>20% off</Text>
-            <Text style={styles.stampBottom}>first clean</Text>
-          </View>
-
           <Text style={styles.intro} maxFontSizeMultiplier={1.3}>
             {content.intro}
           </Text>
-
-          <View style={styles.trust}>
-            <TrustItem icon={ShieldCheck} label="Vetted cleaners" />
-            <TrustItem icon={Wallet} label="Upfront pricing" />
-            <TrustItem icon={Clock} label="Free changes 24 h" />
-          </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
@@ -288,6 +240,14 @@ export default function ServiceLandingScreen() {
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
               Pricing
             </Text>
+            {isQuote ? (
+              <View style={styles.card}>
+                <Text style={styles.priceNote} maxFontSizeMultiplier={1.3}>
+                  Send photos and job details and we quote the work. You approve the price before
+                  anything starts.
+                </Text>
+              </View>
+            ) : (
             <View style={styles.card}>
               <View style={styles.priceHeader}>
                 <Text style={styles.priceHeaderText} maxFontSizeMultiplier={1.2}>
@@ -314,6 +274,7 @@ export default function ServiceLandingScreen() {
                 checkout.
               </Text>
             </View>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -340,110 +301,6 @@ export default function ServiceLandingScreen() {
                   </View>
                 );
               })}
-            </ScrollView>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              How it works
-            </Text>
-            <View style={styles.timeline}>
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <View key={step.title} style={styles.timelineRow}>
-                    <View style={styles.timelineMark}>
-                      <View style={styles.timelineCircle}>
-                        <Icon size={16} color={colors.surface} strokeWidth={2} />
-                      </View>
-                      {index < steps.length - 1 ? <View style={styles.timelineLine} /> : null}
-                    </View>
-                    <View style={styles.timelineBody}>
-                      <Text style={styles.timelineTitle} maxFontSizeMultiplier={1.3}>
-                        {step.title}
-                      </Text>
-                      <Text style={styles.timelineCaption} maxFontSizeMultiplier={1.3}>
-                        {step.caption}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.reviewSectionHeader}>
-              <View style={styles.reviewSummary}>
-                <Text style={styles.ratingBig} maxFontSizeMultiplier={1.2}>
-                  {content.rating}
-                </Text>
-                <View style={styles.reviewSummaryBody}>
-                  <Stars value={content.rating} />
-                  <Text style={styles.reviewCount} maxFontSizeMultiplier={1.3}>
-                    {content.reviewCount} verified reviews
-                  </Text>
-                </View>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Read all reviews"
-                hitSlop={8}
-                onPress={() => router.push(`/service/${slug}/reviews` as Href)}
-                style={styles.readAll}>
-                <Text style={styles.readAllText} maxFontSizeMultiplier={1.2}>
-                  Read all reviews
-                </Text>
-                <ChevronRight size={14} color={colors.green700} strokeWidth={2} />
-              </Pressable>
-            </View>
-            {reviewsForService(slug)
-              .slice(0, 3)
-              .map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Top cleaners
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.cleaners}>
-              {cleanersForService(slug).map((cleaner) => (
-                <Pressable
-                  key={cleaner.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${cleaner.name}'s profile`}
-                  onPress={() => router.push(`/cleaner/${cleaner.id}` as Href)}
-                  style={({ pressed }) => [
-                    styles.cleanerCard,
-                    pressed && styles.cleanerPressed,
-                  ]}>
-                  <View style={styles.cleanerAvatar}>
-                    <Text style={styles.cleanerInitials} maxFontSizeMultiplier={1.2}>
-                      {cleaner.initials}
-                    </Text>
-                  </View>
-                  <Text
-                    style={styles.cleanerName}
-                    maxFontSizeMultiplier={1.3}
-                    numberOfLines={1}>
-                    {cleaner.name}
-                  </Text>
-                  <View style={styles.cleanerMeta}>
-                    <Star size={12} color={colors.yellow600} fill={colors.yellow500} strokeWidth={1.5} />
-                    <Text style={styles.cleanerMetaText} maxFontSizeMultiplier={1.2}>
-                      {cleaner.rating.toFixed(1)} · {cleaner.jobsDone} jobs
-                    </Text>
-                  </View>
-                  <Text style={styles.cleanerLink} maxFontSizeMultiplier={1.2}>
-                    View profile
-                  </Text>
-                </Pressable>
-              ))}
             </ScrollView>
           </View>
 
@@ -483,36 +340,6 @@ export default function ServiceLandingScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-              Related services
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.addOns}>
-              {relatedServices(slug).map((related) => (
-                <Pressable
-                  key={related.slug}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${related.name}. From ${ugx(fromHourly)} per hour`}
-                  onPress={() =>
-                    router.push({ pathname: '/service/[slug]', params: { slug: related.slug } })
-                  }
-                  style={({ pressed }) => [styles.relatedCard, pressed && styles.relatedPressed]}>
-                  <ServicePhoto slug={related.slug} style={styles.relatedPhoto} />
-                  <View style={styles.relatedBody}>
-                    <Text style={styles.relatedName} maxFontSizeMultiplier={1.3}>
-                      {related.name}
-                    </Text>
-                    <Text style={styles.relatedPrice} maxFontSizeMultiplier={1.2}>
-                      From {ugx(fromHourly)}/hr
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
         </View>
       </Animated.ScrollView>
 
@@ -550,9 +377,10 @@ export default function ServiceLandingScreen() {
       </Animated.View>
 
       <SummaryBar
-        caption="From, per hour"
+        caption={isQuote ? 'Quoted after your photos' : 'From, per hour'}
         total={fromHourly}
-        actionLabel="Book now"
+        valueLabel={isQuote ? 'Custom quote' : undefined}
+        actionLabel={isQuote ? 'Get a quote' : 'Book now'}
         onPress={book}
       />
     </View>
@@ -617,17 +445,6 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     color: colors.surface,
   },
-  ratingChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    height: 28,
-    paddingHorizontal: space[3],
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(22,34,26,0.35)',
-  },
-  ratingText: { ...text.caption, color: colors.surface, fontFamily: font.bodySemi },
   sheet: {
     marginTop: -20,
     paddingTop: space[6],
@@ -639,44 +456,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     zIndex: 1,
   },
-  stamp: {
-    position: 'absolute',
-    top: -38,
-    right: space[4],
-    width: 76,
-    height: 76,
-    borderRadius: radius.pill,
-    borderWidth: 3,
-    borderColor: colors.surface,
-    backgroundColor: colors.yellow500,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ rotate: stampRotation }],
-    zIndex: 2,
-    elevation: 12,
-    ...shadow.card,
-  },
-  stampTop: { fontFamily: font.heading, fontSize: 14, color: colors.green900 },
-  stampBottom: { fontFamily: font.bodySemi, fontSize: 9, color: colors.green900 },
   intro: { ...text.bodyL, color: colors.textMuted, marginTop: space[2] },
-  trust: {
-    flexDirection: 'row',
-    gap: space[2],
-    backgroundColor: colors.surface,
-    borderRadius: radius.card,
-    padding: space[3],
-    ...shadow.card,
-  },
-  trustItem: { flex: 1, alignItems: 'center', gap: 6 },
-  trustIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.green50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trustText: { ...text.caption, fontSize: 11, textAlign: 'center' },
   section: { gap: space[3] },
   sectionTitle: { ...text.h2 },
   card: {
@@ -727,64 +507,6 @@ const styles = StyleSheet.create({
   },
   addOnTitle: { ...text.bodyM, fontFamily: font.bodySemi },
   addOnMeta: { ...text.caption },
-  timeline: { gap: 0 },
-  timelineRow: { flexDirection: 'row', gap: space[3] },
-  timelineMark: { alignItems: 'center', width: 32 },
-  timelineCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.pill,
-    backgroundColor: colors.green500,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timelineLine: { flex: 1, width: 2, backgroundColor: colors.green100, minHeight: space[5] },
-  timelineBody: { flex: 1, gap: 2, paddingBottom: space[4] },
-  timelineTitle: { ...text.bodyM, fontFamily: font.bodySemi },
-  timelineCaption: { ...text.caption },
-  reviewSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space[2],
-  },
-  reviewSummary: { flexDirection: 'row', alignItems: 'center', gap: space[3], flex: 1 },
-  readAll: { flexDirection: 'row', alignItems: 'center', gap: 1 },
-  readAllText: {
-    ...text.caption,
-    color: colors.green700,
-    fontFamily: font.bodySemi,
-  },
-  ratingBig: {
-    fontFamily: font.poppinsBold,
-    fontSize: 40,
-    lineHeight: 46,
-    color: colors.text,
-  },
-  reviewSummaryBody: { gap: 2 },
-  reviewCount: { ...text.caption },
-  stars: { flexDirection: 'row', gap: 2 },
-  reviewCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.card,
-    padding: space[4],
-    gap: space[2],
-    ...shadow.card,
-  },
-  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.green100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontFamily: font.poppinsSemi, fontSize: 14, color: colors.green900 },
-  reviewWho: { flex: 1, gap: 2 },
-  reviewName: { ...text.bodyM, fontFamily: font.bodySemi },
-  reviewDate: { ...text.caption },
-  reviewComment: { ...text.body, color: colors.textMuted, lineHeight: 21 },
   faqHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -794,42 +516,6 @@ const styles = StyleSheet.create({
   },
   faqQuestion: { ...text.bodyM, fontFamily: font.bodySemi, flex: 1 },
   faqAnswer: { ...text.caption, lineHeight: 20, paddingBottom: space[2] },
-  cleaners: { gap: space[3], paddingRight: space[4] },
-  cleanerCard: {
-    width: 156,
-    gap: space[1],
-    padding: space[3],
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
-  cleanerPressed: { backgroundColor: colors.green50 },
-  cleanerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.pill,
-    backgroundColor: colors.green100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: space[1],
-  },
-  cleanerInitials: { fontFamily: font.poppinsSemi, fontSize: 16, color: colors.green900 },
-  cleanerName: { ...text.bodyM, fontFamily: font.bodySemi },
-  cleanerMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  cleanerMetaText: { ...text.caption, fontSize: 11 },
-  cleanerLink: { ...text.caption, color: colors.green700, fontFamily: font.bodySemi },
-  relatedCard: {
-    width: 200,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-    ...shadow.card,
-  },
-  relatedPressed: { opacity: 0.85 },
-  relatedPhoto: { width: '100%', height: 88, backgroundColor: colors.green50 },
-  relatedBody: { padding: space[3], gap: space[1] },
-  relatedName: { ...text.bodyM, fontFamily: font.bodySemi },
-  relatedPrice: { ...text.caption, color: colors.green700 },
   emptyBack: { position: 'absolute', left: space[4], zIndex: 1, width: 44, height: 44 },
   skeletonHero: {
     minHeight: 210,

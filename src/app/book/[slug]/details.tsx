@@ -1,9 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Info, Repeat, X } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Alert,
-  BackHandler,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,8 +20,8 @@ import { TopBar } from '@/components/ui/top-bar';
 import { pricing } from '@/config/pricing';
 import { serviceBySlug } from '@/config/services';
 import { price, type BookingFrequency } from '@/lib/pricing';
-import { deleteDraftMedia } from '@/lib/media';
-import { getBookingDraft, patchDetails, resetDraft, startDraft, useBookingDraft } from '@/store/booking';
+import { useDraftExit } from '@/lib/use-draft-exit';
+import { getBookingDraft, patchDetails, startDraft, useBookingDraft } from '@/store/booking';
 import { colors, font, radius, space, text } from '@/theme';
 import { ugx } from '@/utils/format';
 
@@ -97,34 +95,7 @@ export default function JobDetailsScreen() {
     if (!current || current.serviceSlug !== slug) startDraft(slug);
   }, [slug]);
 
-  const leave = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/home');
-  }, []);
-
-  const confirmClose = useCallback(() => {
-    Alert.alert('Save as draft?', 'Your choices are kept so you can finish booking later.', [
-      { text: 'Keep editing', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: () => {
-          deleteDraftMedia();
-          resetDraft();
-          leave();
-        },
-      },
-      { text: 'Save draft', onPress: leave },
-    ]);
-  }, [leave]);
-
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      confirmClose();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [confirmClose]);
+  const { requestExit, sheet } = useDraftExit({ step: 'details' });
 
   if (!active) return <View style={styles.screen} />;
 
@@ -141,19 +112,20 @@ export default function JobDetailsScreen() {
     <View style={styles.screen}>
       <TopBar
         title={service?.name ?? 'Job details'}
-        onBack={confirmClose}
+        onBack={requestExit}
         right={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close and save options"
             hitSlop={8}
-            onPress={confirmClose}
+            onPress={requestExit}
             style={styles.close}>
             <X size={22} color={colors.text} strokeWidth={2} />
           </Pressable>
         }
       />
       <StepperHeader current={0} />
+      {sheet}
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
