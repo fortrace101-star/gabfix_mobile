@@ -1351,7 +1351,7 @@ Notifications.setNotificationHandler({
 
 SDK 58 uses `shouldShowBanner` and `shouldShowList`; `shouldShowAlert` is deprecated. Check the shape against the v58 page before coding.
 
-**Tap handling.** Listen once in the root layout with `addNotificationResponseReceivedListener` plus `getLastNotificationResponse()` at start (the pattern in Expo's docs). Read `data.url`, accept it only if it starts with `/` and matches an allowlist (`/booking/`, `/profile/`, `/notifications`, `/offers`, `/messages`, `/chat/`), then `router.push(url as Href)` and `clearLastNotificationResponse()`. Reject anything else: a push payload is not trusted input.
+**Tap handling.** Listen once in the root layout with `addNotificationResponseReceivedListener` plus `getLastNotificationResponse()` at start (the pattern in Expo's docs). Read `data.url`, accept it only if it starts with `/` and matches an allowlist (`/booking/`, `/profile/`, `/notifications`, `/messages`, `/chat/`), then `router.push(url as Href)` and `clearLastNotificationResponse()`. Reject anything else: a push payload is not trusted input.
 
 **Toggle behaviour on the page:**
 

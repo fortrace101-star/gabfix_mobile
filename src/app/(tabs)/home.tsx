@@ -33,7 +33,7 @@ import { useStatusBarStyle } from '@/hooks/use-status-bar-style';
 import { buildRebookDraft } from '@/lib/rebook';
 import { price } from '@/lib/pricing';
 import { balanceDueBookings, totalBalanceDue } from '@/lib/wallet';
-import { offers } from '@/config/offers';
+import { promos } from '@/config/promos';
 import { fromHourly, serviceBySlug } from '@/config/services';
 import { startRebookDraft, useBookingDraft } from '@/store/booking';
 import {
@@ -79,9 +79,9 @@ const bookingDay = (booking: SavedBooking): string => {
 };
 
 /** How long each promo stays on screen before the carousel advances. */
-const OFFER_INTERVAL_MS = 4_500;
+const PROMO_INTERVAL_MS = 4_500;
 /** Keep autoplay out of the way for a moment after the customer swipes. */
-const OFFER_RESUME_DELAY_MS = 6_000;
+const PROMO_RESUME_DELAY_MS = 6_000;
 
 /** P4 Home tab shell. Discovery data is still local; `GET /home` replaces it in Phase 3. */
 export default function HomeTab() {
@@ -103,7 +103,7 @@ export default function HomeTab() {
   const { services, refresh: refreshServices } = useServices();
   const bookings = useBookings();
   const [refreshing, setRefreshing] = useState(false);
-  const [activeOffer, setActiveOffer] = useState(0);
+  const [activePromo, setActivePromo] = useState(0);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -180,42 +180,42 @@ export default function HomeTab() {
   const draftService = serviceBySlug(draft?.serviceSlug);
   const draftTotal = draft ? price(draft).total : 0;
   const popularWidth = (width - space[4] * 2 - space[3]) / 2;
-  const offerWidth = width - space[4] * 2;
-  const offerStep = offerWidth + space[3];
-  const offerCarousel = useRef<ScrollViewInstance>(null);
-  const activeOfferRef = useRef(0);
-  const offerPauseUntil = useRef(0);
+  const promoWidth = width - space[4] * 2;
+  const promoStep = promoWidth + space[3];
+  const promoCarousel = useRef<ScrollViewInstance>(null);
+  const activePromoRef = useRef(0);
+  const promoPauseUntil = useRef(0);
 
-  const goToOffer = useCallback(
+  const goToPromo = useCallback(
     (index: number) => {
-      const clamped = Math.max(0, Math.min(offers.length - 1, index));
-      activeOfferRef.current = clamped;
-      setActiveOffer(clamped);
-      offerCarousel.current?.scrollTo({
-        x: clamped * offerStep,
+      const clamped = Math.max(0, Math.min(promos.length - 1, index));
+      activePromoRef.current = clamped;
+      setActivePromo(clamped);
+      promoCarousel.current?.scrollTo({
+        x: clamped * promoStep,
         animated: true,
       });
     },
-    [offerStep],
+    [promoStep],
   );
 
   useFocusEffect(
     useCallback(() => {
-      if (offers.length < 2) return undefined;
+      if (promos.length < 2) return undefined;
       const timer = setInterval(() => {
-        if (Date.now() < offerPauseUntil.current) return;
-        const next = (activeOfferRef.current + 1) % offers.length;
-        goToOffer(next);
-      }, OFFER_INTERVAL_MS);
+        if (Date.now() < promoPauseUntil.current) return;
+        const next = (activePromoRef.current + 1) % promos.length;
+        goToPromo(next);
+      }, PROMO_INTERVAL_MS);
       return () => clearInterval(timer);
-    }, [goToOffer]),
+    }, [goToPromo]),
   );
 
-  const onOfferScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(event.nativeEvent.contentOffset.x / offerStep);
-    const clamped = Math.max(0, Math.min(offers.length - 1, next));
-    activeOfferRef.current = clamped;
-    if (clamped !== activeOffer) setActiveOffer(clamped);
+  const onPromoScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const next = Math.round(event.nativeEvent.contentOffset.x / promoStep);
+    const clamped = Math.max(0, Math.min(promos.length - 1, next));
+    activePromoRef.current = clamped;
+    if (clamped !== activePromo) setActivePromo(clamped);
   };
 
   return (
@@ -400,77 +400,77 @@ export default function HomeTab() {
             </Pressable>
           ) : null}
 
-          {offers.length > 0 ? (
-            <View style={styles.offerBlock}>
+          {promos.length > 0 ? (
+            <View style={styles.promoBlock}>
               <ScrollView
-                ref={offerCarousel}
+                ref={promoCarousel}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 decelerationRate="fast"
                 disableIntervalMomentum
                 snapToAlignment="start"
-                snapToInterval={offerStep}
-                onScroll={onOfferScroll}
+                snapToInterval={promoStep}
+                onScroll={onPromoScroll}
                 onScrollBeginDrag={() => {
-                  offerPauseUntil.current = Date.now() + OFFER_RESUME_DELAY_MS;
+                  promoPauseUntil.current = Date.now() + PROMO_RESUME_DELAY_MS;
                 }}
                 scrollEventThrottle={16}
-                style={styles.offerScroll}
-                contentContainerStyle={styles.offerRow}
+                style={styles.promoScroll}
+                contentContainerStyle={styles.promoRow}
               >
-                {offers.map((offer) => (
+                {promos.map((promo) => (
                   <Pressable
-                    key={offer.code}
+                    key={promo.code}
                     accessibilityRole="button"
-                    accessibilityLabel={`${offer.title}. ${offer.discountLabel} off. Code ${offer.code}. Open offers`}
-                    onPress={() => router.push('/offers')}
-                    style={[styles.offer, { width: offerWidth }]}
+                    accessibilityLabel={`${promo.title}. ${promo.discountLabel} off. Code ${promo.code}. Open promos`}
+                    onPress={() => router.push('/profile/promos')}
+                    style={[styles.promo, { width: promoWidth }]}
                   >
                     <LinearGradient
                       colors={[colors.yellow500, colors.yellow600]}
                       end={{ x: 1, y: 1 }}
                       start={{ x: 0, y: 0 }}
-                      style={styles.offerInner}
+                      style={styles.promoInner}
                     >
-                      <View style={styles.offerCircle} />
-                      <View style={styles.offerCopy}>
+                      <View style={styles.promoCircle} />
+                      <View style={styles.promoCopy}>
                         <Text
-                          style={styles.offerTitle}
+                          style={styles.promoTitle}
                           maxFontSizeMultiplier={1.3}
                           numberOfLines={2}
                         >
-                          {offer.title}
+                          {promo.title}
                         </Text>
                         <Text
-                          style={styles.offerCaption}
+                          style={styles.promoCaption}
                           maxFontSizeMultiplier={1.2}
                         >
-                          {offer.caption}
+                          {promo.caption}
                         </Text>
-                        <View style={styles.offerCode}>
+                        <View style={styles.promoCode}>
                           <Text
-                            style={styles.offerCodeLabel}
+                            style={styles.promoCodeLabel}
                             maxFontSizeMultiplier={1.2}
                           >
                             CODE
                           </Text>
                           <Text
-                            style={styles.offerCodeText}
+                            style={styles.promoCodeText}
                             maxFontSizeMultiplier={1.2}
                           >
-                            {offer.code}
+                            {promo.code}
                           </Text>
                         </View>
                       </View>
-                      <View style={styles.offerBadge}>
+                      <View style={styles.promoBadge}>
                         <Text
-                          style={styles.offerDiscount}
+                          style={styles.promoDiscount}
                           maxFontSizeMultiplier={1.2}
                         >
-                          {offer.discountLabel}
+                          {promo.discountLabel}
                         </Text>
                         <Text
-                          style={styles.offerOff}
+                          style={styles.promoOff}
                           maxFontSizeMultiplier={1.2}
                         >
                           OFF
@@ -480,18 +480,18 @@ export default function HomeTab() {
                   </Pressable>
                 ))}
               </ScrollView>
-              {offers.length > 1 ? (
+              {promos.length > 1 ? (
                 <View
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
-                  style={styles.offerDots}
+                  style={styles.promoDots}
                 >
-                  {offers.map((offer, index) => (
+                  {promos.map((promo, index) => (
                     <View
-                      key={offer.code}
+                      key={promo.code}
                       style={[
-                        styles.offerDot,
-                        index === activeOffer && styles.offerDotActive,
+                        styles.promoDot,
+                        index === activePromo && styles.promoDotActive,
                       ]}
                     />
                   ))}
@@ -903,11 +903,11 @@ const styles = StyleSheet.create({
     fontFamily: font.bodySemi,
     color: colors.green700,
   },
-  offerBlock: { gap: space[2] },
-  offerScroll: { marginHorizontal: -space[4] },
-  offerRow: { paddingHorizontal: space[4], gap: space[3] },
-  offer: { borderRadius: radius.card, overflow: 'hidden' },
-  offerInner: {
+  promoBlock: { gap: space[2] },
+  promoScroll: { marginHorizontal: -space[4] },
+  promoRow: { paddingHorizontal: space[4], gap: space[3] },
+  promo: { borderRadius: radius.card, overflow: 'hidden' },
+  promoInner: {
     minHeight: 116,
     borderRadius: radius.card,
     padding: space[4],
@@ -916,7 +916,7 @@ const styles = StyleSheet.create({
     gap: space[3],
     overflow: 'hidden',
   },
-  offerCircle: {
+  promoCircle: {
     position: 'absolute',
     right: -24,
     top: -12,
@@ -925,18 +925,18 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: 'rgba(255,255,255,0.28)',
   },
-  offerCopy: { flex: 1, gap: 3 },
-  offerTitle: {
+  promoCopy: { flex: 1, gap: 3 },
+  promoTitle: {
     fontFamily: font.poppinsSemi,
     fontSize: 17,
     lineHeight: 23,
     color: colors.green900,
   },
-  offerCaption: {
+  promoCaption: {
     ...text.caption,
     color: colors.green900,
   },
-  offerCode: {
+  promoCode: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
@@ -950,7 +950,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(17,60,29,0.4)',
     backgroundColor: 'rgba(255,255,255,0.32)',
   },
-  offerCodeLabel: {
+  promoCodeLabel: {
     fontFamily: font.bodySemi,
     fontSize: 9,
     lineHeight: 12,
@@ -958,14 +958,14 @@ const styles = StyleSheet.create({
     color: colors.green900,
     opacity: 0.7,
   },
-  offerCodeText: {
+  promoCodeText: {
     fontFamily: font.bodySemi,
     fontSize: 11,
     lineHeight: 15,
     letterSpacing: 0.5,
     color: colors.green900,
   },
-  offerBadge: {
+  promoBadge: {
     width: 64,
     height: 64,
     borderRadius: 32,
@@ -975,32 +975,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1,
   },
-  offerDiscount: {
+  promoDiscount: {
     fontFamily: font.poppinsBold,
     fontSize: 19,
     lineHeight: 23,
     color: colors.surface,
   },
-  offerOff: {
+  promoOff: {
     fontFamily: font.bodySemi,
     fontSize: 9,
     lineHeight: 12,
     letterSpacing: 1,
     color: colors.surface,
   },
-  offerDots: {
+  promoDots: {
     flexDirection: 'row',
     alignSelf: 'center',
     gap: 6,
     marginTop: 2,
   },
-  offerDot: {
+  promoDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.green100,
   },
-  offerDotActive: { width: 18, backgroundColor: colors.green500 },
+  promoDotActive: { width: 18, backgroundColor: colors.green500 },
   rebookCard: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -178,7 +178,6 @@ export default function RootLayout() {
                 <Stack.Screen name="cleaner/[id]" />
                 <Stack.Screen name="policies/[doc]" />
                 <Stack.Screen name="quote/[slug]" />
-                <Stack.Screen name="offers" />
                 <Stack.Screen name="refer" />
                 <Stack.Screen name="refer/[stage]" />
                 <Stack.Screen name="addresses/index" />
@@ -199,6 +198,7 @@ export default function RootLayout() {
                 <Stack.Screen name="profile/security/two-factor" />
                 <Stack.Screen name="profile/security/activity" />
                 <Stack.Screen name="profile/devices" />
+                <Stack.Screen name="profile/promos" />
                 <Stack.Screen name="search" />
                 <Stack.Screen name="service/[slug]/reviews" />
                 <Stack.Screen name="service/[slug]" />

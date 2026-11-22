@@ -207,7 +207,7 @@ export default function ProfileTab() {
           <SettingsRow
             icon={Wallet}
             label="Promo codes"
-            caption="Apply and view available offers"
+            caption="Apply and view available promos"
             onPress={() => router.push('/profile/promos' as Href)}
           />
           <SettingsRow

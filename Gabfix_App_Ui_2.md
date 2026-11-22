@@ -886,7 +886,7 @@ On completed cards and on Home: **Book again** → creates a draft copying `deta
 
 ### P20. Offers, Promo Codes and Refer and Earn
 
-**Route:** `app/offers.tsx`, `app/refer.tsx`
+**Route:** `app/profile/promos.tsx`, `app/refer.tsx`
 
 - **Offer card:** `borderRadius:20; overflow:'hidden'; height:140; flexDirection:'row'`. Left (`flex:1; padding:16; backgroundColor:yellow50`): title H3, caption expiry, code chip (`borderStyle:'dashed'; borderWidth:1.5; borderColor:yellow600; paddingHorizontal:10; height:28; radius:8`) with copy icon (`Clipboard.setStringAsync`, toast "Code copied"). Right: image `width:120`. Button "Use now" applies the code to a new draft.
 - **Refer and earn:** hero `LinearGradient yellow500 → yellow600`, big code in a white pill (`Poppins 700 24`, letterSpacing 2), buttons **Share on WhatsApp** (`Linking.openURL('whatsapp://send?text=…')`, fallback `Share.share`) and **Share via SMS**. Progress list: invited, joined, first booking done, reward earned (UGX, dummy values).

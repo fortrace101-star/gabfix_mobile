@@ -2,7 +2,7 @@ import { pricing } from './pricing';
 
 export type PromoCode = keyof typeof pricing.promos;
 
-export type Offer = {
+export type Promo = {
   code: PromoCode;
   title: string;
   caption: string;
@@ -13,10 +13,10 @@ export type Offer = {
 };
 
 /**
- * Dummy P20 offers. The codes are the same ones P12 validates in `pricing.promos`;
- * replace this list with `GET /offers` when the offers API lands.
+ * Dummy P20 promos. The codes are the same ones P12 validates in `pricing.promos`;
+ * replace this list with `GET /promos` when the promos API lands.
  */
-export const offers: readonly Offer[] = [
+export const promos: readonly Promo[] = [
   {
     code: 'WELCOME20',
     title: '20% off your first home clean',

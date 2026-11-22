@@ -6,12 +6,12 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TopBar } from '@/components/ui/top-bar';
-import { type Offer, offers } from '@/config/offers';
+import { type Promo, promos } from '@/config/promos';
 import { getBookingDraft, setPromoCode, startDraft, useBookingDraft } from '@/store/booking';
 import { colors, font, radius, space, text } from '@/theme';
 
-/** P20 Offers. Codes apply to the active draft, or start the offer's service. */
-export default function OffersScreen() {
+/** P20 Promotions. Codes apply to the active draft, or start the promo's service. */
+export default function PromosScreen() {
   const insets = useSafeAreaInsets();
   const draft = useBookingDraft();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -22,51 +22,51 @@ export default function OffersScreen() {
     return () => clearTimeout(timer);
   }, [copiedCode]);
 
-  const copy = async (offer: Offer) => {
+  const copy = async (promo: Promo) => {
     try {
-      await Clipboard.setStringAsync(offer.code);
-      setCopiedCode(offer.code);
+      await Clipboard.setStringAsync(promo.code);
+      setCopiedCode(promo.code);
     } catch {
-      Alert.alert('Could not copy', `Copy the code manually: ${offer.code}`);
+      Alert.alert('Could not copy', `Copy the code manually: ${promo.code}`);
     }
   };
 
-  const applyOffer = (offer: Offer) => {
+  const applyPromo = (promo: Promo) => {
     const current = getBookingDraft();
-    const slug = current?.serviceSlug ?? offer.serviceSlug;
+    const slug = current?.serviceSlug ?? promo.serviceSlug;
     if (!current) startDraft(slug);
-    setPromoCode(offer.code);
+    setPromoCode(promo.code);
     router.push({ pathname: '/book/[slug]/details', params: { slug } });
   };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <TopBar title="Offers" />
+      <TopBar title="Promotions" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.intro}>
           <Text style={styles.title} maxFontSizeMultiplier={1.3}>
             Offers for you
           </Text>
           <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>
-            Tap a code to copy it, or use an offer straight in your next booking.
+            Tap a code to copy it, or use a promo straight in your next booking.
           </Text>
         </View>
 
-        {offers.map((offer) => (
-          <OfferCard
-            key={offer.code}
-            offer={offer}
-            applied={draft?.promoCode === offer.code}
-            onCopy={() => void copy(offer)}
-            onUse={() => applyOffer(offer)}
+        {promos.map((promo) => (
+          <PromoCard
+            key={promo.code}
+            promo={promo}
+            applied={draft?.promoCode === promo.code}
+            onCopy={() => void copy(promo)}
+            onUse={() => applyPromo(promo)}
           />
         ))}
 
         <View style={styles.note}>
           <Tag size={18} color={colors.green700} strokeWidth={2} />
           <Text style={styles.noteText} maxFontSizeMultiplier={1.3}>
-            One promo code per booking. Offers cannot be combined with another code or a
-            referral reward.
+            One promo code per booking. Promos cannot be combined with another code or a referral
+            reward.
           </Text>
         </View>
       </ScrollView>
@@ -83,43 +83,43 @@ export default function OffersScreen() {
   );
 }
 
-function OfferCard({
-  offer,
+function PromoCard({
+  promo,
   applied,
   onCopy,
   onUse,
 }: {
-  offer: Offer;
+  promo: Promo;
   applied: boolean;
   onCopy: () => void;
   onUse: () => void;
 }) {
   return (
-    <View style={styles.offer}>
-      <View style={styles.offerLeft}>
-        <Text style={styles.offerTitle} maxFontSizeMultiplier={1.3} numberOfLines={2}>
-          {offer.title}
+    <View style={styles.promo}>
+      <View style={styles.promoLeft}>
+        <Text style={styles.promoTitle} maxFontSizeMultiplier={1.3} numberOfLines={2}>
+          {promo.title}
         </Text>
-        <Text style={styles.offerCaption} maxFontSizeMultiplier={1.2} numberOfLines={2}>
-          {offer.caption} · Expires {offer.expiry}
+        <Text style={styles.promoCaption} maxFontSizeMultiplier={1.2} numberOfLines={2}>
+          {promo.caption} · Expires {promo.expiry}
         </Text>
 
-        <View style={styles.offerActions}>
+        <View style={styles.promoActions}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Copy code ${offer.code}`}
+            accessibilityLabel={`Copy code ${promo.code}`}
             hitSlop={6}
             onPress={onCopy}
             style={styles.codeChip}>
             <Text style={styles.codeText} maxFontSizeMultiplier={1.2}>
-              {offer.code}
+              {promo.code}
             </Text>
             <Copy size={13} color={colors.yellow800} strokeWidth={2} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
-              applied ? `${offer.code} applied to your booking` : `Use ${offer.code} now`
+              applied ? `${promo.code} applied to your booking` : `Use ${promo.code} now`
             }
             hitSlop={8}
             onPress={onUse}
@@ -138,13 +138,13 @@ function OfferCard({
         </View>
       </View>
 
-      <View style={styles.offerArt}>
+      <View style={styles.promoArt}>
         <View style={styles.artCircle} />
         <View style={styles.artIcon}>
           <Sparkles size={24} color={colors.green700} strokeWidth={2} />
         </View>
         <Text style={styles.artDiscount} maxFontSizeMultiplier={1.2}>
-          {offer.discountLabel}
+          {promo.discountLabel}
         </Text>
         <Text style={styles.artOff} maxFontSizeMultiplier={1.2}>
           OFF
@@ -160,22 +160,22 @@ const styles = StyleSheet.create({
   intro: { gap: space[1] },
   title: { ...text.h2 },
   subtitle: { ...text.caption },
-  offer: {
+  promo: {
     minHeight: 140,
     flexDirection: 'row',
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.yellow50,
   },
-  offerLeft: {
+  promoLeft: {
     flex: 1,
     padding: space[3],
     gap: 4,
     justifyContent: 'center',
   },
-  offerTitle: { ...text.h3, fontSize: 16, lineHeight: 22 },
-  offerCaption: { ...text.caption, color: colors.yellow800 },
-  offerActions: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  promoTitle: { ...text.h3, fontSize: 16, lineHeight: 22 },
+  promoCaption: { ...text.caption, color: colors.yellow800 },
+  promoActions: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   codeChip: {
     height: 28,
     borderRadius: 8,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     color: colors.green700,
   },
   useNowTextApplied: { color: colors.textMuted },
-  offerArt: {
+  promoArt: {
     width: 108,
     backgroundColor: colors.yellow500,
     alignItems: 'center',
