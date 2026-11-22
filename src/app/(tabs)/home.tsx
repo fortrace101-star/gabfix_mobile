@@ -179,7 +179,7 @@ export default function HomeTab() {
 
   const draftService = serviceBySlug(draft?.serviceSlug);
   const draftTotal = draft ? price(draft).total : 0;
-  const popularWidth = Math.min(220, width * 0.58);
+  const popularWidth = (width - space[4] * 2 - space[3]) / 2;
   const offerWidth = width - space[4] * 2;
   const offerStep = offerWidth + space[3];
   const offerCarousel = useRef<ScrollViewInstance>(null);
@@ -356,15 +356,6 @@ export default function HomeTab() {
             </Pressable>
           ) : null}
 
-          <View style={styles.statRow}>
-            <StatTile label="Bookings" value={bookings.length} />
-            <StatTile
-              label="Upcoming"
-              value={bookings.filter((b) => b.status === 'upcoming').length}
-            />
-            <StatTile label="Due" value={dueTotal > 0 ? ugx(dueTotal) : '—'} />
-          </View>
-
           {dueTotal > 0 ? (
             <Pressable
               accessibilityRole="button"
@@ -402,178 +393,6 @@ export default function HomeTab() {
                 />
               </View>
             </Pressable>
-          ) : null}
-
-          {rateBooking ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Rate your ${rateBooking.serviceName}`}
-              onPress={() =>
-                router.push(`/booking/${rateBooking.id}/rate` as never)
-              }
-              style={styles.rateCard}
-            >
-              <View style={styles.rateIcon}>
-                <Sparkles size={20} color={colors.green700} strokeWidth={2} />
-              </View>
-              <View style={styles.draftBody}>
-                <Text style={styles.draftKicker} maxFontSizeMultiplier={1.2}>
-                  How did it go?
-                </Text>
-                <Text
-                  style={styles.draftTitle}
-                  maxFontSizeMultiplier={1.3}
-                  numberOfLines={1}
-                >
-                  {rateBooking.serviceName}
-                </Text>
-                <Text
-                  style={styles.draftMeta}
-                  maxFontSizeMultiplier={1.2}
-                  numberOfLines={1}
-                >
-                  {rateBooking.cleanerName ?? 'Your clean'} ·{' '}
-                  {bookingDay(rateBooking)}
-                </Text>
-              </View>
-              <View style={styles.resume}>
-                <Text style={styles.resumeText} maxFontSizeMultiplier={1.2}>
-                  Rate
-                </Text>
-                <ChevronRight
-                  size={14}
-                  color={colors.green700}
-                  strokeWidth={2}
-                />
-              </View>
-            </Pressable>
-          ) : null}
-
-          {nextBooking ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Next booking: ${nextBooking.serviceName}. View details`}
-              onPress={() => router.push(`/booking/${nextBooking.id}` as never)}
-              style={styles.upcomingCard}
-            >
-              <View style={styles.upcomingTop}>
-                <View style={styles.rebookBody}>
-                  <Text style={styles.draftKicker} maxFontSizeMultiplier={1.3}>
-                    Next clean
-                  </Text>
-                  <Text
-                    style={styles.draftTitle}
-                    maxFontSizeMultiplier={1.3}
-                    numberOfLines={1}
-                  >
-                    {nextBooking.serviceName}
-                  </Text>
-                  <Text
-                    style={styles.draftMeta}
-                    maxFontSizeMultiplier={1.2}
-                    numberOfLines={1}
-                  >
-                    {bookingWhen(nextBooking)}
-                    {nextBooking.area ? ` · ${nextBooking.area}` : ''}
-                  </Text>
-                </View>
-                <View style={styles.confirmedPill}>
-                  <Text
-                    style={styles.confirmedText}
-                    maxFontSizeMultiplier={1.2}
-                  >
-                    Confirmed
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.upcomingActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Track booking ${nextBooking.id}`}
-                  onPress={(event) => {
-                    event.stopPropagation();
-                    router.push(`/booking/${nextBooking.id}/track` as never);
-                  }}
-                  style={styles.trackButton}
-                >
-                  <Navigation
-                    size={14}
-                    color={colors.surface}
-                    strokeWidth={2.2}
-                  />
-                  <Text style={styles.trackText} maxFontSizeMultiplier={1.2}>
-                    Track
-                  </Text>
-                </Pressable>
-                <View style={styles.detailsRow}>
-                  <Text style={styles.detailsText} maxFontSizeMultiplier={1.2}>
-                    View details
-                  </Text>
-                  <ChevronRight
-                    size={18}
-                    color={colors.green700}
-                    strokeWidth={2}
-                  />
-                </View>
-              </View>
-            </Pressable>
-          ) : null}
-
-          {recentBookings.length > 0 ? (
-            <View style={styles.sectionBlock}>
-              <View style={base.between}>
-                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-                  Activity
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push('/(tabs)/bookings')}
-                  hitSlop={8}
-                >
-                  <Text style={styles.seeAll} maxFontSizeMultiplier={1.3}>
-                    All bookings
-                  </Text>
-                </Pressable>
-              </View>
-              <View style={[base.card, styles.activityCard]}>
-                {recentBookings.map((booking, index) => (
-                  <Pressable
-                    key={booking.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${booking.serviceName}, ${booking.status}`}
-                    onPress={() =>
-                      router.push(`/booking/${booking.id}` as never)
-                    }
-                    style={[
-                      styles.activityRow,
-                      index > 0 && styles.activityDivider,
-                    ]}
-                  >
-                    <View style={styles.activityBody}>
-                      <Text
-                        style={styles.activityTitle}
-                        maxFontSizeMultiplier={1.3}
-                        numberOfLines={1}
-                      >
-                        {booking.serviceName}
-                      </Text>
-                      <Text
-                        style={styles.activityMeta}
-                        maxFontSizeMultiplier={1.2}
-                        numberOfLines={1}
-                      >
-                        {bookingWhen(booking)} · {booking.status}
-                      </Text>
-                    </View>
-                    <ChevronRight
-                      size={18}
-                      color={colors.textMuted}
-                      strokeWidth={2}
-                    />
-                  </Pressable>
-                ))}
-              </View>
-            </View>
           ) : null}
 
           {offers.length > 0 ? (
@@ -691,12 +510,7 @@ export default function HomeTab() {
             </Pressable>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.popularScroll}
-            contentContainerStyle={styles.popularRow}
-          >
+          <View style={styles.popularGrid}>
             {popularServices.map((service) => (
               <Pressable
                 key={service.slug}
@@ -710,41 +524,150 @@ export default function HomeTab() {
                 }
                 style={[styles.popularCard, { width: popularWidth }]}
               >
-                <ServicePhoto
-                  slug={service.slug}
-                  cardUri={service.cardImage}
-                  style={styles.popularPhoto}
-                />
-                <LinearGradient
-                  colors={[
-                    'rgba(11,28,17,0.02)',
-                    'rgba(11,28,17,0.34)',
-                    'rgba(11,28,17,0.86)',
-                  ]}
-                  locations={[0, 0.45, 1]}
-                  style={styles.popularScrim}
-                  pointerEvents="none"
-                />
-                {service.tag ? (
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{service.tag}</Text>
-                  </View>
-                ) : null}
-                <Text
-                  style={styles.popularName}
-                  maxFontSizeMultiplier={1.3}
-                  numberOfLines={2}
-                >
-                  {service.name}
-                </Text>
-                <Text style={styles.popularPrice} maxFontSizeMultiplier={1.3}>
-                  {service.pricingMode === 'quote'
-                    ? 'Get a quote'
-                    : `From ${ugx(fromHourly)}/hr`}
-                </Text>
+                <View style={styles.popularMedia}>
+                  <ServicePhoto
+                    slug={service.slug}
+                    cardUri={service.cardImage}
+                    style={styles.popularPhoto}
+                  />
+                  {service.tag ? (
+                    <View style={styles.tag}>
+                      <Text style={styles.tagText}>{service.tag}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.popularInfo}>
+                  <Text
+                    style={styles.popularName}
+                    maxFontSizeMultiplier={1.2}
+                    numberOfLines={2}
+                  >
+                    {service.name}
+                  </Text>
+                  <Text style={styles.popularPrice} maxFontSizeMultiplier={1.2}>
+                    {service.pricingMode === 'quote'
+                      ? 'Get a quote'
+                      : `From ${ugx(fromHourly)}/hr`}
+                  </Text>
+                </View>
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
+
+          {rateBooking ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Rate your ${rateBooking.serviceName}`}
+              onPress={() =>
+                router.push(`/booking/${rateBooking.id}/rate` as never)
+              }
+              style={styles.rateCard}
+            >
+              <View style={styles.rateIcon}>
+                <Sparkles size={20} color={colors.green700} strokeWidth={2} />
+              </View>
+              <View style={styles.draftBody}>
+                <Text style={styles.draftKicker} maxFontSizeMultiplier={1.2}>
+                  How did it go?
+                </Text>
+                <Text
+                  style={styles.draftTitle}
+                  maxFontSizeMultiplier={1.3}
+                  numberOfLines={1}
+                >
+                  {rateBooking.serviceName}
+                </Text>
+                <Text
+                  style={styles.draftMeta}
+                  maxFontSizeMultiplier={1.2}
+                  numberOfLines={1}
+                >
+                  {rateBooking.cleanerName ?? 'Your clean'} ·{' '}
+                  {bookingDay(rateBooking)}
+                </Text>
+              </View>
+              <View style={styles.resume}>
+                <Text style={styles.resumeText} maxFontSizeMultiplier={1.2}>
+                  Rate
+                </Text>
+                <ChevronRight
+                  size={14}
+                  color={colors.green700}
+                  strokeWidth={2}
+                />
+              </View>
+            </Pressable>
+          ) : null}
+
+          {nextBooking ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Next booking: ${nextBooking.serviceName}. View details`}
+              onPress={() => router.push(`/booking/${nextBooking.id}` as never)}
+              style={styles.upcomingCard}
+            >
+              <View style={styles.upcomingTop}>
+                <View style={styles.rebookBody}>
+                  <Text style={styles.draftKicker} maxFontSizeMultiplier={1.3}>
+                    Next clean
+                  </Text>
+                  <Text
+                    style={styles.draftTitle}
+                    maxFontSizeMultiplier={1.3}
+                    numberOfLines={1}
+                  >
+                    {nextBooking.serviceName}
+                  </Text>
+                  <Text
+                    style={styles.draftMeta}
+                    maxFontSizeMultiplier={1.2}
+                    numberOfLines={1}
+                  >
+                    {bookingWhen(nextBooking)}
+                    {nextBooking.area ? ` · ${nextBooking.area}` : ''}
+                  </Text>
+                </View>
+                <View style={styles.confirmedPill}>
+                  <Text
+                    style={styles.confirmedText}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    Confirmed
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.upcomingActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Track booking ${nextBooking.id}`}
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    router.push(`/booking/${nextBooking.id}/track` as never);
+                  }}
+                  style={styles.trackButton}
+                >
+                  <Navigation
+                    size={14}
+                    color={colors.surface}
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.trackText} maxFontSizeMultiplier={1.2}>
+                    Track
+                  </Text>
+                </Pressable>
+                <View style={styles.detailsRow}>
+                  <Text style={styles.detailsText} maxFontSizeMultiplier={1.2}>
+                    View details
+                  </Text>
+                  <ChevronRight
+                    size={18}
+                    color={colors.green700}
+                    strokeWidth={2}
+                  />
+                </View>
+              </View>
+            </Pressable>
+          ) : null}
 
           {lastRebookable ? (
             <View style={styles.rebookCard}>
@@ -786,6 +709,72 @@ export default function HomeTab() {
                   Book again
                 </Text>
               </Pressable>
+            </View>
+          ) : null}
+
+          <View style={styles.statRow}>
+            <StatTile label="Bookings" value={bookings.length} />
+            <StatTile
+              label="Upcoming"
+              value={bookings.filter((b) => b.status === 'upcoming').length}
+            />
+            <StatTile label="Due" value={dueTotal > 0 ? ugx(dueTotal) : '—'} />
+          </View>
+
+          {recentBookings.length > 0 ? (
+            <View style={styles.sectionBlock}>
+              <View style={base.between}>
+                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+                  Activity
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/(tabs)/bookings')}
+                  hitSlop={8}
+                >
+                  <Text style={styles.seeAll} maxFontSizeMultiplier={1.3}>
+                    All bookings
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={[base.card, styles.activityCard]}>
+                {recentBookings.map((booking, index) => (
+                  <Pressable
+                    key={booking.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${booking.serviceName}, ${booking.status}`}
+                    onPress={() =>
+                      router.push(`/booking/${booking.id}` as never)
+                    }
+                    style={[
+                      styles.activityRow,
+                      index > 0 && styles.activityDivider,
+                    ]}
+                  >
+                    <View style={styles.activityBody}>
+                      <Text
+                        style={styles.activityTitle}
+                        maxFontSizeMultiplier={1.3}
+                        numberOfLines={1}
+                      >
+                        {booking.serviceName}
+                      </Text>
+                      <Text
+                        style={styles.activityMeta}
+                        maxFontSizeMultiplier={1.2}
+                        numberOfLines={1}
+                      >
+                        {bookingWhen(booking)} · {booking.status}
+                      </Text>
+                    </View>
+                    <ChevronRight
+                      size={18}
+                      color={colors.textMuted}
+                      strokeWidth={2}
+                    />
+                  </Pressable>
+                ))}
+              </View>
             </View>
           ) : null}
         </View>
@@ -1180,20 +1169,16 @@ const styles = StyleSheet.create({
   activityBody: { flex: 1, gap: 2 },
   activityTitle: { ...text.bodyM, fontFamily: font.bodySemi },
   activityMeta: { ...text.caption, textTransform: 'capitalize' },
-  popularScroll: { marginHorizontal: -space[4] },
-  popularRow: { paddingHorizontal: space[4], gap: space[3] },
+  popularGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3] },
   popularCard: {
-    aspectRatio: 0.82,
     borderRadius: radius.card,
-    backgroundColor: colors.green700,
-    padding: space[3],
-    gap: space[1],
-    justifyContent: 'flex-end',
+    backgroundColor: colors.surface,
     overflow: 'hidden',
     ...shadow.card,
   },
+  popularMedia: { aspectRatio: 1.1, backgroundColor: colors.green100 },
   popularPhoto: { ...StyleSheet.absoluteFill },
-  popularScrim: { ...StyleSheet.absoluteFill },
+  popularInfo: { padding: space[3], gap: 2 },
   tag: {
     position: 'absolute',
     top: space[2],
@@ -1213,9 +1198,13 @@ const styles = StyleSheet.create({
   },
   popularName: {
     fontFamily: font.bodySemi,
-    fontSize: 16,
-    lineHeight: 21,
-    color: colors.surface,
+    fontSize: 14,
+    lineHeight: 19,
+    color: colors.text,
   },
-  popularPrice: { ...text.caption, color: colors.surface, opacity: 0.85 },
+  popularPrice: {
+    ...text.caption,
+    fontFamily: font.bodySemi,
+    color: colors.green700,
+  },
 });

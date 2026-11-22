@@ -155,11 +155,11 @@ Every item below can be built and verified without a backend or a device. Items 
 
 **G. Home dashboard**
 - [x] G1 Home is trimmed to the dashboard blocks: the Blob, trust capsules, Top cleaners, category rows, How it works and Loved by customers are gone, with their styles and imports
-- [x] G2 Block order is continue draft, stat tiles, balance due, rate prompt, next clean, activity, offers, Most popular, book again
+- [x] G2 Block order: continue draft, balance due, promo (offers), Most popular, rate prompt, next clean, book again, stat tiles (Bookings/Upcoming/Due), activity
 - [x] G3 `StatTile` row (Bookings / Upcoming / Due); `(tabs)/bookings` reads `?tab=` and the customer's own pick overrides it
 - [ ] G4 `balanceDueBookings`/`totalBalanceDue` already exist and Home renders a balance-due card; still open: the `profile/payments` scroll-to + highlight for the tapped booking
 - [x] G5 Rate prompt card on Home for completed bookings with no saved review (links to `/booking/[id]/rate`); built inline rather than as a separate `RatePromptCard`
-- [x] G6 Most popular is a horizontal photo-over-text row of four services by `popularRank`, with the See all link to `/services`
+- [x] G6 Most popular is a 2 × 2 grid of four services by `popularRank` that fits the screen width; each card is a photo (~70% of the height) over a surface-coloured name/price block, with the See all link to `/services`
 - [x] G7 Location chip reads the default saved address (`useAddresses`) and falls back to "Set your address"
 
 **J. Leftovers (blocked on contracts)**
